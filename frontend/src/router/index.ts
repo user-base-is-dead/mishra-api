@@ -167,6 +167,15 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/privacy',
+    name: 'PrivacyPolicy',
+    component: () => import('@/views/public/PrivacyPolicyView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Privacy Policy'
+    }
+  },
+  {
     path: '/legal/:documentId',
     name: 'LegalDocument',
     component: () => import('@/views/public/LegalDocumentView.vue'),
