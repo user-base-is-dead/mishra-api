@@ -596,7 +596,7 @@ onMounted(() => {
   color: #a78bfa;
 }
 .code-url {
-  color: #14b8a6;
+  color: #d4a017;
 }
 .code-comment {
   color: #64748b;
