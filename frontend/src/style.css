@@ -76,10 +76,13 @@
 
   .btn-primary {
     @apply bg-gradient-to-br from-primary-300 via-primary-500 to-primary-700;
-    @apply text-white shadow-gold-md;
-    @apply hover:from-primary-400 hover:via-primary-600 hover:to-primary-800 hover:shadow-gold-lg;
+    @apply text-white;
+    box-shadow: 0 6px 24px rgba(212, 160, 23, 0.28);
+    @apply hover:from-primary-400 hover:via-primary-600 hover:to-primary-800;
     @apply active:scale-[0.97];
-    @apply dark:shadow-gold-md;
+  }
+  .btn-primary:hover {
+    box-shadow: 0 12px 48px rgba(184, 134, 11, 0.35);
   }
 
   .btn-secondary {
@@ -260,7 +263,8 @@
   }
 
   .stat-icon-primary {
-    @apply bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400 shadow-gold-sm;
+    @apply bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400;
+    box-shadow: 0 2px 8px rgba(212, 160, 23, 0.20);
   }
 
   .stat-icon-success {

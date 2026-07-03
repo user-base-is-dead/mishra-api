@@ -33,7 +33,7 @@
           <div
             class="mb-4 inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl shadow-lg shadow-primary-500/30"
           >
-            <img :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain ring-1 ring-primary-300 shadow-gold-md rounded-2xl" />
+            <img :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain ring-1 ring-primary-300 rounded-2xl" style="box-shadow: 0 6px 24px rgba(212,160,23,0.28)" />
           </div>
           <h1 class="text-gradient mb-2 text-3xl font-bold">
             {{ siteName }}
@@ -45,7 +45,7 @@
       </div>
 
       <!-- Card Container -->
-      <div class="card-glass rounded-2xl p-8 shadow-glass shadow-gold-md border border-primary-200/60 dark:border-dark-700/50">
+      <div class="card-glass rounded-2xl p-8 shadow-glass border border-primary-200/60 dark:border-dark-700/50" style="box-shadow: 0 6px 24px rgba(212,160,23,0.28)">
         <slot />
       </div>
 
