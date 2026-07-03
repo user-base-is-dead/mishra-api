@@ -15,7 +15,7 @@
   <!-- Default Home Page -->
   <div
     v-else
-    class="relative flex min-h-screen flex-col overflow-hidden bg-gradient-to-br from-gray-50 via-primary-50/30 to-gray-100 dark:from-dark-950 dark:via-dark-900 dark:to-dark-950"
+    class="relative flex min-h-screen flex-col overflow-hidden bg-primary-50 bg-mesh-gradient dark:bg-dark-950"
   >
     <!-- Background Decorations -->
     <div class="pointer-events-none absolute inset-0 overflow-hidden">
@@ -32,7 +32,7 @@
         class="absolute bottom-1/4 right-1/4 h-64 w-64 rounded-full bg-primary-400/10 blur-3xl"
       ></div>
       <div
-        class="absolute inset-0 bg-[linear-gradient(rgba(20,184,166,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(20,184,166,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"
+        class="absolute inset-0 bg-[linear-gradient(rgba(212,160,23,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(212,160,23,0.04)_1px,transparent_1px)] bg-[size:64px_64px]"
       ></div>
     </div>
 
@@ -118,7 +118,7 @@
           <!-- Left: Text Content -->
           <div class="flex-1 text-center lg:text-left">
             <h1
-              class="mb-4 text-4xl font-bold text-gray-900 dark:text-white md:text-5xl lg:text-6xl"
+              class="mb-4 text-4xl font-bold text-gradient md:text-5xl lg:text-6xl"
             >
               {{ siteName }}
             </h1>
@@ -490,7 +490,7 @@ onMounted(() => {
 /* Terminal Window */
 .terminal-window {
   width: 420px;
-  background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+  background: linear-gradient(145deg, #2e2820 0%, #17130e 100%);
   border-radius: 14px;
   box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.4),
@@ -510,7 +510,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background: rgba(30, 41, 59, 0.8);
+  background: rgba(46, 40, 32, 0.8);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -637,8 +637,8 @@ onMounted(() => {
 :deep(.dark) .terminal-window {
   box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(20, 184, 166, 0.2),
-    0 0 40px rgba(20, 184, 166, 0.1),
+    0 0 0 1px rgba(212, 160, 23, 0.2),
+    0 0 40px rgba(212, 160, 23, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 </style>

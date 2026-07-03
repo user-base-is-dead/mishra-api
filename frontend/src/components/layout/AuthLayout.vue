@@ -1,5 +1,5 @@
 <template>
-  <div class="relative flex min-h-screen items-center justify-center overflow-hidden p-4">
+  <div class="relative flex min-h-screen items-center justify-center overflow-hidden p-4 bg-primary-50 bg-mesh-gradient dark:bg-dark-950">
     <!-- Background -->
     <div
       class="absolute inset-0 bg-gradient-to-br from-gray-50 via-primary-50/30 to-gray-100 dark:from-dark-950 dark:via-dark-900 dark:to-dark-950"
@@ -20,7 +20,7 @@
 
       <!-- Grid Pattern -->
       <div
-        class="absolute inset-0 bg-[linear-gradient(rgba(20,184,166,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(20,184,166,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"
+        class="absolute inset-0 bg-[linear-gradient(rgba(212,160,23,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(212,160,23,0.04)_1px,transparent_1px)] bg-[size:64px_64px]"
       ></div>
     </div>
 
@@ -33,7 +33,7 @@
           <div
             class="mb-4 inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl shadow-lg shadow-primary-500/30"
           >
-            <img :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain" />
+            <img :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain ring-1 ring-primary-300 shadow-gold-md rounded-2xl" />
           </div>
           <h1 class="text-gradient mb-2 text-3xl font-bold">
             {{ siteName }}
@@ -45,7 +45,7 @@
       </div>
 
       <!-- Card Container -->
-      <div class="card-glass rounded-2xl p-8 shadow-glass">
+      <div class="card-glass rounded-2xl p-8 shadow-glass shadow-gold-md border border-primary-200/60 dark:border-dark-700/50">
         <slot />
       </div>
 
@@ -83,6 +83,6 @@ onMounted(() => {
 
 <style scoped>
 .text-gradient {
-  @apply bg-gradient-to-r from-primary-600 to-primary-500 bg-clip-text text-transparent;
+  @apply bg-gradient-to-r from-primary-700 via-primary-500 to-primary-300 bg-clip-text text-transparent;
 }
 </style>
