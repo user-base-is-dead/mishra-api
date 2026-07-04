@@ -1,7 +1,7 @@
-//! AWS Event Stream 解析器
+//! AWS Event Stream parser
 //!
-//! 提供对 AWS Event Stream 协议的解析支持，
-//! 用于处理 generateAssistantResponse 端点的流式响应
+//! provide for AWS Event Stream the protocol parsing support,
+//! used to handle generateAssistantResponse the streaming response of the endpoint
 
 pub mod crc;
 pub mod decoder;

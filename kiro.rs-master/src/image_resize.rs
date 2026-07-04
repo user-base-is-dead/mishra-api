@@ -199,21 +199,21 @@ fn peek_dimensions(format: &str, data_base64: &str) -> Option<(u32, u32)> {
     reader.into_dimensions().ok()
 }
 
-/// Anthropic 图片 token 公式的长边上限：超过则按比例缩到该长边再计 token，
-/// 与上游实际计费一致（大图会被下采样到 ~1568px 长边）。
+/// Anthropic image token The formula long side limit: if exceeded, scale proportionally to that long side before computing. token,
+/// Consistent with the actual upstream billing (large images are downsampled to ~1568px long side).
 const IMAGE_TOKEN_MAX_LONG_SIDE: u32 = 1568;
-/// 每个图片 token 覆盖的像素数：tokens ≈ (w×h) / 750。
+/// each image token the number of covered pixels:tokens ≈ (w×h) / 750.
 const IMAGE_TOKEN_PIXELS_PER_TOKEN: f64 = 750.0;
-/// 头部解析失败时的保底 token 数（避免把图片当 0 token，破坏 cache 口径精度）。
+/// the fallback when header parsing fails token count (avoid treating the image as 0 token, breaks cache basisprecision).
 const IMAGE_TOKEN_FALLBACK: u32 = 1_600;
 
-/// 估算单张图片的输入 token，对齐 Anthropic 计费口径 `tokens ≈ (w×h)/750`。
+/// estimate the input of a single image token, align Anthropic billing basis `tokens ≈ (w×h)/750`.
 ///
-/// 只读图片头拿宽高（<1ms，不解码像素）；超过长边上限时按等比缩放后的尺寸计算
-/// （与上游对大图下采样后再计费一致）。头部无法解析时退回固定保底值，确保图片
-/// 始终贡献非零 token —— 这对 prompt cache 的 creation/read 数值精度至关重要。
+/// read only the image header to get width and height (<1ms, does not decode pixels); when the long side exceeds the limit, computes using the proportionally scaled size.
+/// (consistent with upstream downsampling large images before billing). When the header cannot be parsed, it falls back to a fixed minimum value to ensure the image
+/// always contributesnonzero token —— this for prompt cache of creation/read numeric precision is crucial.
 ///
-/// `media_type` 形如 "image/png"；`data_base64` 是原始 base64 数据。
+/// `media_type` like "image/png";`data_base64` is raw base64 data.
 pub fn estimate_image_tokens(media_type: &str, data_base64: &str) -> u32 {
     let format = media_type.rsplit('/').next().unwrap_or("").to_ascii_lowercase();
     let Some((w, h)) = peek_dimensions(&format, data_base64) else {
@@ -222,7 +222,7 @@ pub fn estimate_image_tokens(media_type: &str, data_base64: &str) -> u32 {
     if w == 0 || h == 0 {
         return IMAGE_TOKEN_FALLBACK;
     }
-    // 等比缩放到长边上限内（仅用于计 token，不改变实际图片）。
+    // Scales proportionally within the long side limit (only for computing token, does not change the actual image).
     let (mut fw, mut fh) = (w as f64, h as f64);
     let long = fw.max(fh);
     let cap = IMAGE_TOKEN_MAX_LONG_SIDE as f64;
@@ -367,24 +367,24 @@ mod tests {
 
     #[test]
     fn estimate_image_tokens_matches_anthropic_formula() {
-        // 750×750 = 562500 像素 / 750 = 750 token。
+        // 750×750 = 562500 pixel / 750 = 750 token.
         let img = make_png(750, 750);
         let tokens = estimate_image_tokens("image/png", &img);
-        assert_eq!(tokens, 750, "750x750 应约 750 token，实测 {tokens}");
+        assert_eq!(tokens, 750, "750x750 should be about 750 token, measured {tokens}");
     }
 
     #[test]
     fn estimate_image_tokens_caps_oversized() {
-        // 超大图（3000×3000）按长边 1568 等比缩放后再计：1568²/750 ≈ 3277。
+        // oversized image (3000×3000) by long side 1568 count after proportional scaling:1568²/750 ≈ 3277.
         let img = make_png(3000, 3000);
         let tokens = estimate_image_tokens("image/png", &img);
         let expected = (1568.0_f64 * 1568.0 / 750.0).round() as u32;
-        assert_eq!(tokens, expected, "超大图应缩到长边上限后计 token");
+        assert_eq!(tokens, expected, "An oversized image should be scaled to the long side limit before computing. token");
     }
 
     #[test]
     fn estimate_image_tokens_fallback_on_garbage() {
-        // 非法 base64 / 无法解析头 → 保底非零，绝不返回 0。
+        // invalid base64 / nonemethodparsehead → guarantee non zero, never return 0.
         let tokens = estimate_image_tokens("image/png", "not-valid-base64!!!");
         assert_eq!(tokens, IMAGE_TOKEN_FALLBACK);
     }

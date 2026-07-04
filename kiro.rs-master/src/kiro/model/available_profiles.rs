@@ -1,45 +1,45 @@
-//! 可用 Profile 查询数据模型
+//! available Profile querydata model
 //!
-//! 对应上游 `ListAvailableProfiles`（AWS JSON 1.0，target
-//! `AmazonCodeWhispererService.ListAvailableProfiles`）的响应类型。
+//! corresponding upstream `ListAvailableProfiles`(AWS JSON 1.0,target
+//! `AmazonCodeWhispererService.ListAvailableProfiles`) the response type.
 //!
-//! Enterprise / IAM Identity Center (IdC) 账号需要真实的 `profileArn` 才能调用
-//! 流式端点 `generateAssistantResponse`——不带 profileArn 会被上游以
-//! `400 {"message":"profileArn is required for this request."}` 拒绝；带 BuilderID
-//! 占位符则会因 token 身份不匹配被拒绝。真实 profileArn 只能通过本接口获取。
+//! Enterprise / IAM Identity Center (IdC) the account needs a real `profileArn` in order to call
+//! streaming endpoint `generateAssistantResponse`——without profileArn will beupstreamto
+//! `400 {"message":"profileArn is required for this request."}` reject; with BuilderID
+//! placeholderthen will because of token Rejected due to identity mismatch. The real profileArn can only be obtained through this interface.
 
 use serde::Deserialize;
 
-/// `ListAvailableProfiles` 响应
+/// `ListAvailableProfiles` response
 #[derive(Debug, Clone, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ListAvailableProfilesResponse {
-    /// 该凭据可用的 profile 列表
+    /// thiscredentialavailableof profile list
     #[serde(default)]
     pub profiles: Vec<AvailableProfile>,
 
-    /// 分页 token（本项目只取第一个 profile，通常无需翻页）
+    /// pagination token(this project only takes the first profile, usually no pagination needed)
     #[serde(default)]
     #[allow(dead_code)]
     pub next_token: Option<String>,
 }
 
-/// 单个可用 profile
+/// single available profile
 #[derive(Debug, Clone, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct AvailableProfile {
-    /// Profile ARN（真实可用的 profileArn）
+    /// Profile ARN(realavailableof profileArn)
     #[serde(default)]
     pub arn: Option<String>,
 
-    /// Profile 名称（如 `KiroProfile-us-east-1`）
+    /// Profile name (such as `KiroProfile-us-east-1`)
     #[serde(default)]
     #[allow(dead_code)]
     pub profile_name: Option<String>,
 }
 
 impl ListAvailableProfilesResponse {
-    /// 返回第一个非空的真实 profileArn（若有）。
+    /// return the first non empty real profileArn(ifhas).
     pub fn first_arn(&self) -> Option<&str> {
         self.profiles
             .iter()

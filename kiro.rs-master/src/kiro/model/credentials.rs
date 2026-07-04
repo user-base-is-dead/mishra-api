@@ -1,7 +1,7 @@
-//! Kiro OAuth 凭证数据模型
+//! Kiro OAuth credentialdata model
 //!
-//! 支持从 Kiro IDE 的凭证文件加载，使用 Social 认证方式
-//! 支持单凭据和多凭据配置格式
+//! support from Kiro IDE load from the credential file, use Social authmethod
+//! Supports single credential and multi credential config formats.
 
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -15,22 +15,22 @@ pub const BUILDER_ID_PROFILE_ARN: &str =
 pub const SOCIAL_PROFILE_ARN: &str =
     "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK";
 
-/// Kiro OAuth 凭证
+/// Kiro OAuth credential
 ///
-/// `Debug` 输出经过脱敏处理：access_token / refresh_token / client_secret /
-/// kiro_api_key / proxy_password 等敏感字段只显示长度，不会泄露明文。
+/// `Debug` the output is redacted:access_token / refresh_token / client_secret /
+/// kiro_api_key / proxy_password Sensitive fields such as this only show the length and do not leak the plaintext.
 #[derive(Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct KiroCredentials {
-    /// 凭据唯一标识符（自增 ID）
+    /// credential unique identifier (auto increment ID)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<u64>,
 
-    /// 访问令牌
+    /// access token
     #[serde(skip_serializing_if = "Option::is_none")]
     pub access_token: Option<String>,
 
-    /// 刷新令牌
+    /// refresh token
     #[serde(skip_serializing_if = "Option::is_none")]
     pub refresh_token: Option<String>,
 
@@ -38,116 +38,116 @@ pub struct KiroCredentials {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub profile_arn: Option<String>,
 
-    /// 过期时间 (RFC3339 格式)
+    /// expiry time (RFC3339 format)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expires_at: Option<String>,
 
-    /// 认证方式 (social / idc)
+    /// authmethod (social / idc)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub auth_method: Option<String>,
 
-    /// 身份提供商（BuilderId / Enterprise / Github / Google / IAM_SSO）
+    /// identityprovidevendor(BuilderId / Enterprise / Github / Google / IAM_SSO)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
 
-    /// OIDC Client ID (IdC 认证需要)
+    /// OIDC Client ID (IdC auth needs)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
 
-    /// OIDC Client Secret (IdC 认证需要)
+    /// OIDC Client Secret (IdC auth needs)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub client_secret: Option<String>,
 
-    /// SSO Start URL（Enterprise / IAM Identity Center 账号专用）
+    /// SSO Start URL(Enterprise / IAM Identity Center account dedicateduse)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub start_url: Option<String>,
 
-    /// 凭据优先级（数字越小优先级越高，默认为 0）
+    /// Credential priority (a smaller number means higher priority, default is 0)
     #[serde(default)]
     #[serde(skip_serializing_if = "is_zero")]
     pub priority: u32,
 
-    /// 凭据级 Region 配置（用于 OIDC token 刷新）
-    /// 未配置时回退到 config.json 的全局 region
+    /// credential level Region config(used for OIDC token refresh)
+    /// fall back when not configured to config.json global region
     #[serde(skip_serializing_if = "Option::is_none")]
     pub region: Option<String>,
 
-    /// 凭据级 Auth Region（用于 Token 刷新）
+    /// credential level Auth Region(used for Token refresh)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub auth_region: Option<String>,
 
-    /// 凭据级 API Region（用于 API 请求）
+    /// credential level API Region(used for API request)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub api_region: Option<String>,
 
-    /// 凭据级 Machine ID 配置（可选）
-    /// 未配置时回退到 config.json 的 machineId；都未配置时由 refreshToken 派生
+    /// credential level Machine ID config (optional)
+    /// fall back when not configured to config.json of machineId; when neither is configured by refreshToken derive
     #[serde(skip_serializing_if = "Option::is_none")]
     pub machine_id: Option<String>,
 
-    /// 用户邮箱（从 Anthropic API 获取）
+    /// useremail(from Anthropic API fetch)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
 
-    /// 订阅等级（KIRO PRO+ / KIRO FREE 等）
+    /// subscriptionetc.level(KIRO PRO+ / KIRO FREE etc.)
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub subscription_title: Option<String>,
 
-    /// 凭据级代理 URL（可选）
-    /// 支持 http/https/socks5 协议
-    /// 特殊值 "direct" 表示显式不使用代理（即使全局配置了代理）
-    /// 未配置时回退到全局代理配置
+    /// credential levelproxy URL(optional)
+    /// support http/https/socks5 protocol
+    /// special value "direct" Indicates explicitly using no proxy (even if a proxy is globally configured).
+    /// Falls back to the global proxy config when not configured.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proxy_url: Option<String>,
 
-    /// 凭据级代理认证用户名（可选）
+    /// Credential level proxy auth username (optional).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proxy_username: Option<String>,
 
-    /// 凭据级代理认证密码（可选）
+    /// Credential level proxy auth password (optional).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proxy_password: Option<String>,
 
-    /// 凭据是否被禁用（默认为 false）
+    /// Whether the credential is disabled (default is false)
     #[serde(default)]
     pub disabled: bool,
 
-    /// Kiro API Key（headless 模式）
-    /// 格式: ksk_xxxxxxxx
-    /// 设置后直接作为 Bearer Token 使用，无需 refreshToken
+    /// Kiro API Key(headless mode)
+    /// format: ksk_xxxxxxxx
+    /// after setting directly as Bearer Token use, no need refreshToken
     #[serde(skip_serializing_if = "Option::is_none")]
     pub kiro_api_key: Option<String>,
 
-    /// 端点名称（可选）
+    /// endpoint name (optional)
     ///
-    /// 决定该凭据走哪套 Kiro API。未配置时回退到 `config.defaultEndpoint`（默认 "ide"）。
-    /// 端点名必须在启动时注册的端点 registry 中存在。
+    /// decide which set this credential goes through Kiro API. fall back when not configured to `config.defaultEndpoint`(default "ide").
+    /// The endpoint name must be among the endpoints registered at startup. registry exists in.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
 
-    /// 账号所属分组（可属于多个分组）
+    /// The groups the account belongs to (may belong to multiple).
     ///
-    /// 客户端 Key 绑定某个分组后，用该 Key 发起的请求只会调度到 groups 包含该分组名的账号。
-    /// 空数组表示该账号不属于任何分组（仅未绑定分组的 Key / master apiKey 可使用）。
+    /// client Key after binding to a group, use that Key The requests it initiates are only scheduled to groups accounts containing this group name.
+    /// An empty array means the account belongs to no group (only accounts not bound to a group Key / master apiKey canuse).
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<String>,
 
-    /// 账号来源渠道（纯备注）
+    /// Account source channel (a plain note).
     ///
-    /// 标记该账号的购买来源/渠道，便于运营追踪。不参与调度、导出或筛选。
+    /// mark the purchase source of this account/channel, convenient for operations tracking. Does not participate in scheduling, export, or filtering.
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source_channel: Option<String>,
 }
 
-/// 判断是否为零（用于跳过序列化）
+/// Determines whether it is zero (used to skip serialization).
 fn is_zero(value: &u32) -> bool {
     *value == 0
 }
 
-/// 仅显示长度，不暴露明文。例如 `Some(42 chars)` 或 `None`。
+/// Shows only the length, does not expose the plaintext. For example `Some(42 chars)` or `None`.
 fn fmt_redacted(value: &Option<String>) -> String {
     match value {
         Some(s) if !s.is_empty() => format!("Some({} chars)", s.chars().count()),
@@ -158,7 +158,7 @@ fn fmt_redacted(value: &Option<String>) -> String {
 
 impl std::fmt::Debug for KiroCredentials {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // 单独脱敏所有可能含密钥/Token 的字段，其他元数据正常打印
+        // Individually redacts all that may contain the key./Token field; other metadata is printed normally.
         f.debug_struct("KiroCredentials")
             .field("id", &self.id)
             .field("access_token", &fmt_redacted(&self.access_token))
@@ -199,37 +199,37 @@ fn canonicalize_auth_method_value(value: &str) -> &str {
     }
 }
 
-/// 凭据配置（支持单对象或数组格式）
+/// Credential config (supports single object or array format).
 ///
-/// 自动识别配置文件格式：
-/// - 单对象格式（旧格式，向后兼容）
-/// - 数组格式（新格式，支持多凭据）
+/// Auto detects the config file format:
+/// - Single object format (old format, backward compatible).
+/// - Array format (new format, supports multiple credentials).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum CredentialsConfig {
-    /// 单个凭据（旧格式）
+    /// single credential (old format)
     Single(KiroCredentials),
-    /// 多凭据数组（新格式）
+    /// multiple credential array (new format)
     Multiple(Vec<KiroCredentials>),
 }
 
 impl CredentialsConfig {
-    /// 从文件加载凭据配置
+    /// load the credential configuration from the file
     ///
-    /// - 如果文件不存在，返回空数组
-    /// - 如果文件内容为空，返回空数组
-    /// - 支持单对象或数组格式
+    /// - If the file does not exist, returns an empty array.
+    /// - If the file content is empty, returns an empty array.
+    /// - supports single object or array format
     pub fn load<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
         let path = path.as_ref();
 
-        // 文件不存在时返回空数组
+        // Returns an empty array when the file does not exist.
         if !path.exists() {
             return Ok(CredentialsConfig::Multiple(vec![]));
         }
 
         let content = fs::read_to_string(path)?;
 
-        // 文件为空时返回空数组
+        // return an empty array when the file is empty
         if content.trim().is_empty() {
             return Ok(CredentialsConfig::Multiple(vec![]));
         }
@@ -238,7 +238,7 @@ impl CredentialsConfig {
         Ok(config)
     }
 
-    /// 转换为按优先级排序的凭据列表
+    /// Converts to a credential list sorted by priority.
     pub fn into_sorted_credentials(self) -> Vec<KiroCredentials> {
         match self {
             CredentialsConfig::Single(mut cred) => {
@@ -246,7 +246,7 @@ impl CredentialsConfig {
                 vec![cred]
             }
             CredentialsConfig::Multiple(mut creds) => {
-                // 按优先级排序（数字越小优先级越高）
+                // Sorts by priority (a smaller number means higher priority).
                 creds.sort_by_key(|c| c.priority);
                 for cred in &mut creds {
                     cred.canonicalize_auth_method();
@@ -256,23 +256,23 @@ impl CredentialsConfig {
         }
     }
 
-    /// 判断是否为多凭据格式（数组格式）
+    /// Determines whether it is the multi credential format (array format).
     pub fn is_multiple(&self) -> bool {
         matches!(self, CredentialsConfig::Multiple(_))
     }
 }
 
 impl KiroCredentials {
-    /// 特殊值：显式不使用代理
+    /// Special value: explicitly uses no proxy.
     pub const PROXY_DIRECT: &'static str = "direct";
 
-    /// 获取默认凭证文件路径
+    /// get the default credential file path
     pub fn default_credentials_path() -> &'static str {
         "credentials.json"
     }
 
-    /// 获取有效的 Auth Region（用于 Token 刷新）
-    /// 优先级：凭据.auth_region > 凭据.region > config.auth_region > config.region
+    /// fetchvalid Auth Region(used for Token refresh)
+    /// priority:credential.auth_region > credential.region > config.auth_region > config.region
     pub fn effective_auth_region<'a>(&'a self, config: &'a Config) -> &'a str {
         self.auth_region
             .as_deref()
@@ -280,17 +280,17 @@ impl KiroCredentials {
             .unwrap_or(config.effective_auth_region())
     }
 
-    /// 获取有效的 API Region（用于 API 请求）
-    /// 优先级：凭据.api_region > config.api_region > config.region
+    /// fetchvalid API Region(used for API request)
+    /// priority:credential.api_region > config.api_region > config.region
     pub fn effective_api_region<'a>(&'a self, config: &'a Config) -> &'a str {
         self.api_region
             .as_deref()
             .unwrap_or(config.effective_api_region())
     }
 
-    /// 获取有效的代理配置
-    /// 优先级：凭据代理 > 全局代理 > 无代理
-    /// 特殊值 "direct" 表示显式不使用代理（即使全局配置了代理）
+    /// get the effective proxy configuration
+    /// priority: credential proxy > global proxy > no proxy
+    /// special value "direct" Indicates explicitly using no proxy (even if a proxy is globally configured).
     pub fn effective_proxy(&self, global_proxy: Option<&ProxyConfig>) -> Option<ProxyConfig> {
         match self.proxy_url.as_deref() {
             Some(url) if url.eq_ignore_ascii_case(Self::PROXY_DIRECT) => None,
@@ -328,7 +328,7 @@ impl KiroCredentials {
         true
     }
 
-    /// 是否为 Social 登录（Github / Google）。
+    /// whether is Social login (Github / Google).
     fn is_social_login(&self) -> bool {
         self.auth_method
             .as_deref()
@@ -341,8 +341,8 @@ impl KiroCredentials {
                 .unwrap_or(false)
     }
 
-    /// 凭据缺少显式 profileArn 时应使用的默认 ARN：
-    /// Social 登录用共享 Social ARN，其余（BuilderID 等）用 BuilderID 占位符。
+    /// credential missingexplicit profileArn the default that should be used when ARN:
+    /// Social loginuseshare Social ARN, rest (BuilderID etc.) use BuilderID placeholder.
     fn default_profile_arn(&self) -> &'static str {
         if self.is_social_login() {
             SOCIAL_PROFILE_ARN
@@ -351,24 +351,24 @@ impl KiroCredentials {
         }
     }
 
-    /// 检查凭据是否支持 Opus 模型
+    /// check whether the credential supports Opus model
     ///
-    /// Free 账号不支持 Opus 模型，需要 PRO 或更高等级订阅
+    /// Free accountnot supported Opus model,need PRO or a higher tier subscription
     pub fn supports_opus(&self) -> bool {
         match &self.subscription_title {
             Some(title) => {
                 let title_upper = title.to_uppercase();
-                // 如果包含 FREE，则不支持 Opus
+                // if contains FREE,thennot supported Opus
                 !title_upper.contains("FREE")
             }
-            // 如果还没有获取订阅信息，暂时允许（首次使用时会获取）
+            // If subscription info has not been fetched yet, allow temporarily (it is fetched on first use).
             None => true,
         }
     }
 
-    /// 检查是否为 API Key 凭据
+    /// checkwhether is API Key credential
     ///
-    /// API Key 凭据直接使用 kiro_api_key 作为 Bearer Token，无需 refreshToken
+    /// API Key credentialdirectlyuse kiro_api_key as Bearer Token, no need refreshToken
     pub fn is_api_key_credential(&self) -> bool {
         self.kiro_api_key.is_some()
             || self
@@ -378,11 +378,11 @@ impl KiroCredentials {
                 .unwrap_or(false)
     }
 
-    /// 返回「可发送给上游」的真实 profileArn（跳过 BuilderID 占位符）。
+    /// Returns the real one that can be sent to upstream. profileArn(skip BuilderID placeholder).
     ///
-    /// - 真实 ARN（含 Social 共享 ARN）→ 原样返回；
-    /// - [`BUILDER_ID_PROFILE_ARN`] 占位符 → 返回 `None`（非流式/头部类调用不应发送
-    ///   BuilderID 占位符；流式请求请使用 [`Self::streaming_profile_arn`]）。
+    /// - real ARN(including Social share ARN)→ return as is;
+    /// - [`BUILDER_ID_PROFILE_ARN`] placeholder → return `None`(non streaming/header type calls should not send
+    ///   BuilderID placeholder; for streaming requests please use [`Self::streaming_profile_arn`]).
     pub fn effective_profile_arn(&self) -> Option<&str> {
         match self.profile_arn.as_deref() {
             Some(arn) if !is_placeholder_profile_arn(arn) => Some(arn),
@@ -390,17 +390,17 @@ impl KiroCredentials {
         }
     }
 
-    /// 返回流式聊天端点（`generateAssistantResponse` / `SendMessageStreaming`）
-    /// 应发送的 profileArn。
+    /// return the streaming chat endpoint (`generateAssistantResponse` / `SendMessageStreaming`)
+    /// should be sent profileArn.
     ///
-    /// 新版上游对流式端点强制要求 `profileArn`，缺失会返回
-    /// `400 {"message":"profileArn is required for this request."}`。Enterprise/IdC
-    /// 账号的真实 ARN 会先由 `resolve_profile_arn_for` 回填；纯 BuilderID 账号没有
-    /// 可解析的真实 profile，按官方 IDE 行为发送 BuilderID 占位符。
+    /// The new upstream mandatorily requires it for the streaming endpoint. `profileArn`,missing willreturn
+    /// `400 {"message":"profileArn is required for this request."}`.Enterprise/IdC
+    /// accountofreal ARN first by `resolve_profile_arn_for` backfill; pure BuilderID account has none
+    /// canparseofreal profile, by official IDE send behavior BuilderID placeholder.
     ///
-    /// - 已有显式 profileArn（真实 ARN / Social ARN / BuilderID 占位符）→ 原样返回；
-    /// - 尚未填充 → 按登录方式推断默认 ARN（Social → Social ARN，其余 → BuilderID）；
-    /// - API Key 凭据无 profileArn 概念 → 返回 `None`。
+    /// - already has explicit profileArn(real ARN / Social ARN / BuilderID placeholder)→ return as is;
+    /// - not yet filled → infer the default by the login method ARN(Social → Social ARN, rest → BuilderID);
+    /// - API Key credential none profileArn concept → return `None`.
     pub fn streaming_profile_arn(&self) -> Option<String> {
         if self.is_api_key_credential() {
             return None;
@@ -413,7 +413,7 @@ impl KiroCredentials {
     }
 }
 
-/// 判断给定 profileArn 是否为 BuilderID 占位符（非真实可用的 profile）。
+/// determine given profileArn whether is BuilderID placeholder (not a real usable one profile).
 pub fn is_placeholder_profile_arn(arn: &str) -> bool {
     arn == BUILDER_ID_PROFILE_ARN
 }
@@ -497,7 +497,7 @@ mod tests {
         assert!(json.contains("accessToken"));
         assert!(json.contains("authMethod"));
         assert!(!json.contains("refreshToken"));
-        // priority 为 0 时不序列化
+        // priority as 0 whennotserialize
         assert!(!json.contains("priority"));
     }
 
@@ -520,28 +520,28 @@ mod tests {
 
     #[test]
     fn test_effective_profile_arn_skips_placeholder() {
-        // BuilderID 占位符 → None（不发送给上游）
+        // BuilderID placeholder → None(not sent to the upstream)
         let mut cred = KiroCredentials::default();
         cred.profile_arn = Some(BUILDER_ID_PROFILE_ARN.to_string());
         assert_eq!(cred.effective_profile_arn(), None);
 
-        // Social 共享 ARN → 原样返回
+        // Social share ARN → return as is
         cred.profile_arn = Some(SOCIAL_PROFILE_ARN.to_string());
         assert_eq!(cred.effective_profile_arn(), Some(SOCIAL_PROFILE_ARN));
 
-        // 真实 Enterprise ARN → 原样返回
+        // real Enterprise ARN → return as is
         let real = "arn:aws:codewhisperer:us-east-1:123456789012:profile/REAL123";
         cred.profile_arn = Some(real.to_string());
         assert_eq!(cred.effective_profile_arn(), Some(real));
 
-        // 无 ARN → None
+        // none ARN → None
         cred.profile_arn = None;
         assert_eq!(cred.effective_profile_arn(), None);
     }
 
     #[test]
     fn test_streaming_profile_arn_includes_placeholder() {
-        // 流式端点：显式 BuilderID 占位符原样发送，缺失会被上游以 400 拒绝
+        // streaming endpoint: explicitly BuilderID The placeholder is sent as is; a missing one is by upstream 400 reject
         let mut cred = KiroCredentials::default();
         cred.profile_arn = Some(BUILDER_ID_PROFILE_ARN.to_string());
         assert_eq!(
@@ -549,12 +549,12 @@ mod tests {
             Some(BUILDER_ID_PROFILE_ARN)
         );
 
-        // 真实 ARN 原样发送
+        // real ARN send as is
         let real = "arn:aws:codewhisperer:us-east-1:123456789012:profile/REAL123";
         cred.profile_arn = Some(real.to_string());
         assert_eq!(cred.streaming_profile_arn().as_deref(), Some(real));
 
-        // 未填充 + 非 social（BuilderID 账号）→ 回退 BuilderID 占位符
+        // not filled + non social(BuilderID account)→ fallback BuilderID placeholder
         let mut builder = KiroCredentials::default();
         builder.profile_arn = None;
         builder.refresh_token = Some("r".to_string());
@@ -563,7 +563,7 @@ mod tests {
             Some(BUILDER_ID_PROFILE_ARN)
         );
 
-        // 未填充 + social → 回退 Social 共享 ARN（非占位符，原样发送）
+        // not filled + social → fallback Social share ARN(not a placeholder, sent as is)
         let mut social = KiroCredentials::default();
         social.profile_arn = None;
         social.auth_method = Some("social".to_string());
@@ -572,7 +572,7 @@ mod tests {
             Some(SOCIAL_PROFILE_ARN)
         );
 
-        // API Key 凭据无 profileArn 概念 → None
+        // API Key credential none profileArn concept → None
         let mut api = KiroCredentials::default();
         api.kiro_api_key = Some("ksk_xxx".to_string());
         assert_eq!(api.streaming_profile_arn(), None);
@@ -620,17 +620,17 @@ mod tests {
         let config: CredentialsConfig = serde_json::from_str(json).unwrap();
         let list = config.into_sorted_credentials();
 
-        // 验证按优先级排序
+        // validate sorting by priority
         assert_eq!(list[0].refresh_token, Some("t2".to_string())); // priority 0
         assert_eq!(list[1].refresh_token, Some("t3".to_string())); // priority 1
         assert_eq!(list[2].refresh_token, Some("t1".to_string())); // priority 2
     }
 
-    // ============ Region 字段测试 ============
+    // ============ Region field test ============
 
     #[test]
     fn test_region_field_parsing() {
-        // 测试解析包含 region 字段的 JSON
+        // testparsecontains region field JSON
         let json = r#"{
             "refreshToken": "test_refresh",
             "region": "us-east-1"
@@ -643,7 +643,7 @@ mod tests {
 
     #[test]
     fn test_region_field_missing_backward_compat() {
-        // 测试向后兼容：不包含 region 字段的旧格式 JSON
+        // test backward compatibility: does not include region fieldold format JSON
         let json = r#"{
             "refreshToken": "test_refresh",
             "authMethod": "social"
@@ -723,7 +723,7 @@ mod tests {
         assert!(!json.contains("region"));
     }
 
-    // ============ MachineId 字段测试 ============
+    // ============ MachineId field test ============
 
     #[test]
     fn test_machine_id_field_parsing() {
@@ -762,7 +762,7 @@ mod tests {
 
     #[test]
     fn test_multiple_credentials_with_different_regions() {
-        // 测试多凭据场景下不同凭据使用各自的 region
+        // Tests that in the multi credential case different credentials use their own region
         let json = r#"[
             {"refreshToken": "t1", "region": "us-east-1"},
             {"refreshToken": "t2", "region": "eu-west-1"},
@@ -779,7 +779,7 @@ mod tests {
 
     #[test]
     fn test_region_field_with_all_fields() {
-        // 测试包含所有字段的完整 JSON
+        // Tests the complete one containing all fields. JSON
         let json = r#"{
             "id": 1,
             "accessToken": "access",
@@ -808,7 +808,7 @@ mod tests {
 
     #[test]
     fn test_region_roundtrip() {
-        // 测试序列化和反序列化的往返一致性
+        // Tests the round trip consistency of serialization and deserialization.
         let original = KiroCredentials {
             id: Some(42),
             access_token: Some("token".to_string()),
@@ -848,7 +848,7 @@ mod tests {
         assert_eq!(parsed.machine_id, original.machine_id);
     }
 
-    // ============ auth_region / api_region 字段测试 ============
+    // ============ auth_region / api_region field test ============
 
     #[test]
     fn test_auth_region_field_parsing() {
@@ -916,7 +916,7 @@ mod tests {
 
     #[test]
     fn test_backward_compat_no_auth_api_region() {
-        // 旧格式 JSON 不包含 authRegion/apiRegion，应正常解析
+        // old format JSON does not contain authRegion/apiRegion,shouldnormalparse
         let json = r#"{
             "refreshToken": "test_refresh",
             "region": "us-east-1"
@@ -927,11 +927,11 @@ mod tests {
         assert_eq!(creds.api_region, None);
     }
 
-    // ============ effective_auth_region / effective_api_region 优先级测试 ============
+    // ============ effective_auth_region / effective_api_region prioritytest ============
 
     #[test]
     fn test_effective_auth_region_credential_auth_region_highest() {
-        // 凭据.auth_region > 凭据.region > config.auth_region > config.region
+        // credential.auth_region > credential.region > config.auth_region > config.region
         let mut config = Config::default();
         config.region = "config-region".to_string();
         config.auth_region = Some("config-auth-region".to_string());
@@ -951,7 +951,7 @@ mod tests {
 
         let mut creds = KiroCredentials::default();
         creds.region = Some("cred-region".to_string());
-        // auth_region 未设置
+        // auth_region unset
 
         assert_eq!(creds.effective_auth_region(&config), "cred-region");
     }
@@ -963,7 +963,7 @@ mod tests {
         config.auth_region = Some("config-auth-region".to_string());
 
         let creds = KiroCredentials::default();
-        // auth_region 和 region 均未设置
+        // auth_region and region all unset
 
         assert_eq!(creds.effective_auth_region(&config), "config-auth-region");
     }
@@ -972,7 +972,7 @@ mod tests {
     fn test_effective_auth_region_fallback_to_config_region() {
         let mut config = Config::default();
         config.region = "config-region".to_string();
-        // config.auth_region 未设置
+        // config.auth_region unset
 
         let creds = KiroCredentials::default();
 
@@ -981,7 +981,7 @@ mod tests {
 
     #[test]
     fn test_effective_api_region_credential_api_region_highest() {
-        // 凭据.api_region > config.api_region > config.region
+        // credential.api_region > config.api_region > config.region
         let mut config = Config::default();
         config.region = "config-region".to_string();
         config.api_region = Some("config-api-region".to_string());
@@ -1015,7 +1015,7 @@ mod tests {
 
     #[test]
     fn test_effective_api_region_ignores_credential_region() {
-        // 凭据.region 不参与 api_region 的回退链
+        // credential.region do not participate api_region fallback chain
         let mut config = Config::default();
         config.region = "config-region".to_string();
 
@@ -1027,7 +1027,7 @@ mod tests {
 
     #[test]
     fn test_auth_and_api_region_independent() {
-        // auth_region 和 api_region 互不影响
+        // auth_region and api_region do not affect each other
         let mut config = Config::default();
         config.region = "default".to_string();
 
@@ -1039,7 +1039,7 @@ mod tests {
         assert_eq!(creds.effective_api_region(&config), "api-only");
     }
 
-    // ============ 凭据级代理优先级测试 ============
+    // ============ credential level proxy priority test ============
 
     #[test]
     fn test_effective_proxy_credential_overrides_global() {

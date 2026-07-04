@@ -1,10 +1,10 @@
-//! 请求用量记录 + 时序聚合
+//! requestusagerecord + whenorder aggregate
 //!
-//! 记录每次 `/v1/messages` 请求的 token 消耗与命中信息：
-//! - 落盘：`usage_log.YYYY-MM-DD.jsonl`，每行一条 [`UsageRecord`]，按本地日期滚动
-//! - 内存：[`UsageAggregator`] 维护近 31 天的小时桶 + 近 31 天的天桶，按需查询
+//! recordeachtimes `/v1/messages` request token consumption and hit information:
+//! - persist to disk:`usage_log.YYYY-MM-DD.jsonl`,each lineoneentry [`UsageRecord`], roll by local date
+//! - memory:[`UsageAggregator`] maintain recent 31 daysmallwhenbucket + recent 31 the day bucket of days, query on demand
 //!
-//! 启动时扫描历史 JSONL 文件重建聚合，保证重启后趋势图不丢数据。
+//! scan history at startup JSONL The file rebuilds the aggregation, ensuring the trend chart does not lose data after restart.
 
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
@@ -16,24 +16,24 @@ use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, TimeZone, Timelike,
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 
-/// JSONL 文件保留天数
+/// JSONL fileretaindaycount
 const RETENTION_DAYS: i64 = 31;
-/// 小时桶数量（31 天）
+/// hourbucketcount(31 days)
 const HOUR_BUCKETS: usize = 24 * 31;
-/// 天桶数量（31 天）
+/// daybucketcount(31 days)
 const DAY_BUCKETS: usize = 31;
 
-/// 单次请求的用量记录（与 JSONL 一行一一对应）
+/// Usage record of a single request (with JSONL each line corresponds one to one)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UsageRecord {
-    /// 请求结束时间（RFC3339）
+    /// request end time (RFC3339)
     pub ts: String,
-    /// 客户端 Key id；0 表示用 master apiKey 调用
+    /// client Key id;0 means use master apiKey call
     pub key_id: u64,
-    /// 实际命中的上游凭据 id；0 表示请求未走到上游
+    /// the actually hit upstream credential id;0 means the request did not reach the upstream
     pub credential_id: u64,
-    /// 模型名（请求里声明的，可能含 -thinking 后缀）
+    /// Model name (declared in the request, may contain -thinking suffix)
     pub model: String,
     pub input_tokens: u64,
     pub output_tokens: u64,
@@ -41,34 +41,34 @@ pub struct UsageRecord {
     pub cache_creation_tokens: u64,
     #[serde(default)]
     pub cache_read_tokens: u64,
-    /// 上游 meteringEvent.usage 上报的 credit 计费量（浮点）
+    /// upstream meteringEvent.usage reported credit billing amount (floating point)
     #[serde(default)]
     pub credits: f64,
-    /// 端到端耗时（毫秒）
+    /// end to end elapsed time (milliseconds)
     #[serde(default)]
     pub duration_ms: u64,
-    /// "success" 或 "error"
+    /// "success" or "error"
     pub status: String,
 }
 
-/// 按天 rotate 的 JSONL writer
+/// by day rotate of JSONL writer
 pub struct UsageRecorder {
     inner: Mutex<RecorderState>,
     dir: PathBuf,
-    /// 保留天数（运行时可改），cleanup_old_logs 时读取。
+    /// Retention days (changeable at runtime),cleanup_old_logs whenread.
     retention_days: std::sync::atomic::AtomicI64,
 }
 
 struct RecorderState {
-    /// 当前打开的 writer 与对应日期
+    /// currentopenof writer andcorresponddate
     current_date: Option<NaiveDate>,
     writer: Option<BufWriter<File>>,
 }
 
 impl UsageRecorder {
-    /// 指定初始保留天数构造
+    /// construct with a specified initial retention days
     pub fn with_retention(dir: PathBuf, retention_days: i64) -> Self {
-        // 兜底：调用方传入空路径时归一为 "."，避免 join 出无目录前缀的路径导致写入 CWD
+        // Fallback: when the caller passes an empty path, normalizes it to ".", avoid join produces a path with no directory prefix causing a write CWD
         let dir = if dir.as_os_str().is_empty() {
             PathBuf::from(".")
         } else {
@@ -76,7 +76,7 @@ impl UsageRecorder {
         };
         if !dir.exists() {
             if let Err(e) = std::fs::create_dir_all(&dir) {
-                tracing::warn!("创建 usage_log 目录失败 {}: {}", dir.display(), e);
+                tracing::warn!("create usage_log directoryfailed {}: {}", dir.display(), e);
             }
         }
         Self {
@@ -94,19 +94,19 @@ impl UsageRecorder {
             .join(format!("usage_log.{}.jsonl", date.format("%Y-%m-%d")))
     }
 
-    /// 同步写入一条记录。失败仅 warn，不阻塞请求。
+    /// Synchronously writes one record. Failure only warn, does not block the request.
     pub fn record(&self, rec: &UsageRecord) {
         let line = match serde_json::to_string(rec) {
             Ok(s) => s,
             Err(e) => {
-                tracing::warn!("usage_log 序列化失败: {}", e);
+                tracing::warn!("usage_log serializefailed: {}", e);
                 return;
             }
         };
         let today = Local::now().date_naive();
         let mut state = self.inner.lock();
         if state.current_date != Some(today) || state.writer.is_none() {
-            // 切换到当日文件
+            // switch to the current day file
             let path = self.log_path(today);
             match OpenOptions::new().create(true).append(true).open(&path) {
                 Ok(file) => {
@@ -114,34 +114,34 @@ impl UsageRecorder {
                     state.current_date = Some(today);
                 }
                 Err(e) => {
-                    tracing::warn!("打开 usage_log {} 失败: {}", path.display(), e);
+                    tracing::warn!("open usage_log {} failed: {}", path.display(), e);
                     return;
                 }
             }
         }
         if let Some(w) = state.writer.as_mut() {
             if let Err(e) = writeln!(w, "{}", line) {
-                tracing::warn!("写入 usage_log 失败: {}", e);
+                tracing::warn!("write usage_log failed: {}", e);
                 return;
             }
-            // 立即 flush，保证崩溃时不丢失最近一条
+            // immediately flush, ensuring the most recent one is not lost on a crash.
             let _ = w.flush();
         }
     }
 
-    /// 获取保留天数
+    /// fetchretaindaycount
     pub fn retention_days(&self) -> i64 {
         self.retention_days
             .load(std::sync::atomic::Ordering::Relaxed)
     }
 
-    /// 设置保留天数（>=1）
+    /// set the retention days (>=1)
     pub fn set_retention_days(&self, days: i64) {
         self.retention_days
             .store(days.max(1), std::sync::atomic::Ordering::Relaxed);
     }
 
-    /// 清理超过保留期的旧文件
+    /// Cleans old files past the retention period.
     pub fn cleanup_old_logs(&self) {
         let cutoff = Local::now().date_naive() - Duration::days(self.retention_days());
         let entries = match std::fs::read_dir(&self.dir) {
@@ -156,7 +156,7 @@ impl UsageRecorder {
             if let Some(date) = parse_usage_log_filename(&name) {
                 if date < cutoff {
                     let _ = std::fs::remove_file(entry.path());
-                    tracing::info!("已清理过期 usage_log: {}", name);
+                    tracing::info!("cleanedexpired usage_log: {}", name);
                 }
             }
         }
@@ -164,12 +164,12 @@ impl UsageRecorder {
 }
 
 fn parse_usage_log_filename(name: &str) -> Option<NaiveDate> {
-    // 形如 usage_log.2026-05-22.jsonl
+    // like usage_log.2026-05-22.jsonl
     let body = name.strip_prefix("usage_log.")?.strip_suffix(".jsonl")?;
     NaiveDate::parse_from_str(body, "%Y-%m-%d").ok()
 }
 
-/// 单个时间桶的统计
+/// statistics of a single time bucket
 #[derive(Debug, Default, Clone, Copy, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BucketStats {
@@ -195,7 +195,7 @@ impl BucketStats {
         }
     }
 
-    /// 把另一个 stats 累加到自己上（用于 group 过滤后重新汇总）
+    /// takeanothera stats accumulate onto itself (used for group re aggregate after filtering)
     fn add_stats(&mut self, other: &BucketStats) {
         self.input_tokens += other.input_tokens;
         self.output_tokens += other.output_tokens;
@@ -207,10 +207,10 @@ impl BucketStats {
     }
 }
 
-/// 单个时间桶含分组数据
+/// single time bucket containing group data
 #[derive(Debug, Default, Clone)]
 struct BucketEntry {
-    /// 桶起始时间戳（小时桶为整点 Unix 秒；天桶为本地 0 点 Unix 秒）
+    /// Bucket start timestamp (an hour bucket is on the hour Unix seconds; the day bucket is local 0 point Unix seconds)
     ts: i64,
     overall: BucketStats,
     by_key: HashMap<u64, BucketStats>,
@@ -220,19 +220,19 @@ struct BucketEntry {
     by_key_credential: HashMap<u64, HashMap<u64, BucketStats>>,
 }
 
-/// 时间维度聚合器
+/// time dimension aggregator
 pub struct UsageAggregator {
     inner: parking_lot::RwLock<AggregatorInner>,
 }
 
 struct AggregatorInner {
-    /// 小时桶（环形数组按桶起始时间索引），最近 31 天
+    /// Hour buckets (ring array indexed by bucket start time), the most recent 31 day
     hour_buckets: Vec<BucketEntry>,
-    /// 天桶（按本地日期），最近 31 天
+    /// Day buckets (by local date), the most recent 31 day
     day_buckets: Vec<BucketEntry>,
 }
 
-/// 预设聚合查询时间范围
+/// preset aggregation query time range
 #[derive(Debug, Clone, Copy)]
 pub enum Range {
     Last24h,
@@ -290,11 +290,11 @@ impl StatsQueryWindow {
     }
 }
 
-/// 时序点（导出给前端）
+/// time series point (exported to the frontend)
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TimeSeriesPoint {
-    /// 桶起始时间（RFC3339）
+    /// bucket starttime(RFC3339)
     pub ts: String,
     pub input_tokens: u64,
     pub output_tokens: u64,
@@ -305,7 +305,7 @@ pub struct TimeSeriesPoint {
     pub credits: f64,
 }
 
-/// 模型分布
+/// modeldistribution
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ModelDistribution {
@@ -315,7 +315,7 @@ pub struct ModelDistribution {
     pub output_tokens: u64,
 }
 
-/// 上游凭据分布
+/// upstreamcredentialdistribution
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CredentialDistribution {
@@ -326,17 +326,17 @@ pub struct CredentialDistribution {
     pub errors: u64,
 }
 
-/// 概览：今日 + 累计
+/// overview:today + cumulative
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OverviewStats {
-    /// 今日（本地 0 点起）的调用次数
+    /// today(local 0 the call count starting from the point)
     pub today_calls: u64,
     pub today_input_tokens: u64,
     pub today_output_tokens: u64,
     pub today_errors: u64,
     pub today_credits: f64,
-    /// 最近 7 天累计
+    /// recent 7 daily cumulative
     pub week_calls: u64,
     pub week_input_tokens: u64,
     pub week_output_tokens: u64,
@@ -353,9 +353,9 @@ impl UsageAggregator {
         }
     }
 
-    /// 启动时从历史 JSONL 重建聚合
+    /// startwhenfromhistory JSONL rebuild aggregation
     pub fn rebuild_from_logs(&self, dir: &Path) {
-        // 兜底：空路径归一为 "."，否则 read_dir("") 会失败导致重建为 0
+        // fallback: normalize the empty path to ".", otherwise read_dir("") will fail causing a rebuild to 0
         let dir_buf;
         let dir = if dir.as_os_str().is_empty() {
             dir_buf = PathBuf::from(".");
@@ -366,7 +366,7 @@ impl UsageAggregator {
         let entries = match std::fs::read_dir(dir) {
             Ok(it) => it,
             Err(e) => {
-                tracing::warn!("读取 usage_log 目录失败 {}: {}", dir.display(), e);
+                tracing::warn!("read usage_log directoryfailed {}: {}", dir.display(), e);
                 return;
             }
         };
@@ -398,13 +398,13 @@ impl UsageAggregator {
             }
         }
         tracing::info!(
-            "UsageAggregator 重建完成：从 {} 装载 {} 条历史记录",
+            "UsageAggregator rebuild finishedinto:from {} load {} entryhistoryrecord",
             dir.display(),
             count
         );
     }
 
-    /// 接收一条记录并落入对应桶
+    /// Receives one record and places it into its bucket.
     pub fn ingest(&self, rec: &UsageRecord) {
         let dt: DateTime<Utc> = match DateTime::parse_from_rfc3339(&rec.ts) {
             Ok(d) => d.with_timezone(&Utc),
@@ -412,11 +412,11 @@ impl UsageAggregator {
         };
         let local = dt.with_timezone(&Local);
 
-        // 小时桶起始：当地小时整点 → 转回 UTC unix 秒
+        // Hour bucket start: the local hour on the hour. → convert back UTC unix second
         let hour_start = Local
             .with_ymd_and_hms(local.year(), local.month(), local.day(), local.hour(), 0, 0)
             .single();
-        // 天桶起始：本地 0 点 → 转回 UTC unix 秒
+        // day bucket start: local 0 point → convert back UTC unix second
         let day_start = Local
             .with_ymd_and_hms(local.year(), local.month(), local.day(), 0, 0, 0)
             .single();
@@ -430,7 +430,7 @@ impl UsageAggregator {
         upsert_bucket(&mut inner.day_buckets, day_ts, rec, DAY_BUCKETS);
     }
 
-    /// 时序数据查询
+    /// whenorderdataquery
     pub fn query_timeseries(
         &self,
         window: StatsQueryWindow,
@@ -445,7 +445,7 @@ impl UsageAggregator {
             .filter(|b| bucket_in_window(b, window))
             .filter(|b| bucket_matches_key(b, key_id))
             .map(|b| {
-                // 不带 group 过滤 → 走老逻辑（更快，命中预聚合 by_key/overall 桶）
+                // without group filter → takes the old logic (faster, hits the pre-aggregation). by_key/overall bucket)
                 let stats = match cred_filter {
                     None => stats_for_key(b, key_id),
                     Some(allow) => credential_group_for_key(b, key_id)
@@ -476,7 +476,7 @@ impl UsageAggregator {
         points
     }
 
-    /// 模型分布
+    /// modeldistribution
     pub fn query_by_model(
         &self,
         window: StatsQueryWindow,
@@ -509,7 +509,7 @@ impl UsageAggregator {
         out
     }
 
-    /// 上游凭据分布
+    /// upstreamcredentialdistribution
     pub fn query_by_credential(
         &self,
         window: StatsQueryWindow,
@@ -550,7 +550,7 @@ impl UsageAggregator {
         out
     }
 
-    /// 概览（今日 + 最近 7 天）
+    /// overview(today + recent 7 days)
     pub fn overview(&self) -> OverviewStats {
         let inner = self.inner.read();
         let today_start = Local
@@ -604,7 +604,7 @@ impl Default for UsageAggregator {
     }
 }
 
-/// 把记录写入对应桶；不存在则插入并按时间排序，超过容量时移除最旧的
+/// Writes the record into its bucket; if absent, inserts and sorts by time, and removes the oldest when capacity is exceeded.
 fn upsert_bucket(buckets: &mut Vec<BucketEntry>, ts: i64, rec: &UsageRecord, max: usize) {
     if let Some(b) = buckets.iter_mut().find(|b| b.ts == ts) {
         add_record_to_bucket(b, rec);

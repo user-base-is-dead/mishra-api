@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 
-/// 刷新 Token 的请求体 (Social 认证)
+/// refresh Token request body (Social auth)
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RefreshRequest {
     pub refresh_token: String,
 }
 
-/// 刷新 Token 的响应体 (Social 认证)
+/// refresh Token response body (Social auth)
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RefreshResponse {
@@ -20,7 +20,7 @@ pub struct RefreshResponse {
     pub expires_in: Option<i64>,
 }
 
-/// IdC Token 刷新请求体 (AWS SSO OIDC)
+/// IdC Token refreshrequest body (AWS SSO OIDC)
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct IdcRefreshRequest {
@@ -30,7 +30,7 @@ pub struct IdcRefreshRequest {
     pub grant_type: String,
 }
 
-/// IdC Token 刷新响应体 (AWS SSO OIDC)
+/// IdC Token refreshresponse body (AWS SSO OIDC)
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct IdcRefreshResponse {
@@ -43,9 +43,9 @@ pub struct IdcRefreshResponse {
     pub profile_arn: Option<String>,
 }
 
-// ============ AWS SSO OIDC 设备授权流程 ============
+// ============ AWS SSO OIDC device authorizationflow ============
 
-/// 注册 OIDC 客户端请求体
+/// register OIDC clientrequest body
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RegisterClientRequest {
@@ -56,20 +56,20 @@ pub struct RegisterClientRequest {
     pub issuer_url: String,
 }
 
-/// 注册 OIDC 客户端响应体
+/// register OIDC clientresponse body
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RegisterClientResponse {
     pub client_id: String,
     pub client_secret: String,
-    // 上游字段，仅用于完整反序列化记录；当前流程不依赖具体值
+    // Upstream field, used only for complete deserialization of the record; the current flow does not depend on its specific value.
     #[allow(dead_code)]
     pub client_id_issued_at: Option<i64>,
     #[allow(dead_code)]
     pub client_secret_expires_at: Option<i64>,
 }
 
-/// 发起设备授权请求体
+/// initiate device authorization request body
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StartDeviceAuthorizationRequest {
@@ -78,7 +78,7 @@ pub struct StartDeviceAuthorizationRequest {
     pub start_url: String,
 }
 
-/// 发起设备授权响应体
+/// initiate device authorization response body
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StartDeviceAuthorizationResponse {
@@ -91,7 +91,7 @@ pub struct StartDeviceAuthorizationResponse {
     pub interval: i64,
 }
 
-/// 轮询 Token 请求体（设备授权）
+/// poll Token request body (device authorization)
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateTokenRequest {
@@ -101,7 +101,7 @@ pub struct CreateTokenRequest {
     pub device_code: String,
 }
 
-/// 轮询 Token 响应体
+/// poll Token response body
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateTokenResponse {
@@ -112,19 +112,19 @@ pub struct CreateTokenResponse {
     pub expires_in: Option<i64>,
 }
 
-/// AWS SSO OIDC 错误响应
+/// AWS SSO OIDC errorresponse
 #[derive(Debug, Deserialize)]
 pub struct OidcErrorResponse {
     pub error: String,
-    // 详细描述供日志使用，反序列化时保留以便排错
+    // Detailed description for logging, kept during deserialization for troubleshooting.
     #[allow(dead_code)]
     #[serde(default)]
     pub error_description: Option<String>,
 }
 
-// ============ Social (Portal) 登录流程 ============
+// ============ Social (Portal) login flow ============
 
-/// Social token 交换请求体（PKCE）
+/// Social token exchangerequest body(PKCE)
 #[derive(Debug, Serialize)]
 pub struct SocialCreateTokenRequest {
     pub code: String,
@@ -134,7 +134,7 @@ pub struct SocialCreateTokenRequest {
     pub invitation_code: Option<String>,
 }
 
-/// Social token 响应体
+/// Social token response body
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SocialCreateTokenResponse {

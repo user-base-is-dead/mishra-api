@@ -1,16 +1,16 @@
-//! Kiro IDE 版本自动获取
+//! Kiro IDE versionauto fetch
 //!
-//! 从官方稳定版元数据端点读取 `currentRelease` 字段，得到当前发布的 Kiro IDE 版本号，
-//! 用于构造与官方 IDE 一致的 User-Agent（`KiroIDE-<version>-<machineId>`）。
+//! Reads from the official stable metadata endpoint. `currentRelease` field, obtain the currently published Kiro IDE version number,
+//! used to construct with the official IDE consistent User-Agent(`KiroIDE-<version>-<machineId>`).
 //!
-//! - 进程内缓存（`OnceLock<RwLock<Option<String>>>`）+ 后台定时刷新；
-//! - 跨平台 `currentRelease` 一致，固定使用 win32-x64 元数据即可；
-//! - 获取失败时调用方回退到 `config.kiro_version`，不阻塞启动。
+//! - enterprocessinsidecache(`OnceLock<RwLock<Option<String>>>`)+ background scheduled refresh;
+//! - cross platform `currentRelease` consistent, fixedly use win32-x64 metadatathen it is fine;
+//! - When fetching fails the caller falls back to `config.kiro_version`, does not block startup.
 //!
-//! 注意：用量类 REST 接口（getUsageLimits / ListAvailableModels / setUserPreference）
-//! 不使用这里的「最新版本」——新版 IDE 对这些接口强制要求 profileArn，对 Enterprise/IdC
-//! 账号会失败。那几个接口固定使用 [`USAGE_API_KIRO_VERSION`]：该版本无需 profileArn
-//! 即可返回订阅与用量。
+//! note:usagetype REST interface (getUsageLimits / ListAvailableModels / setUserPreference)
+//! Does not use the latest version here.——new version IDE mandatorily require for these interfaces profileArn, for Enterprise/IdC
+//! the account would fail. Those interfaces fixedly use [`USAGE_API_KIRO_VERSION`]: thisversionnoneneed profileArn
+//! can return the subscription and usage.
 
 use std::sync::OnceLock;
 use std::time::Duration;
@@ -21,15 +21,15 @@ use serde::Deserialize;
 use crate::http_client::{ProxyConfig, build_client};
 use crate::model::config::TlsBackend;
 
-/// 官方稳定版元数据端点（`currentRelease` 即当前 IDE 版本，跨平台一致）。
+/// The official stable metadata endpoint (`currentRelease` namely current IDE version, consistent across platforms).
 ///
-/// 注意：必须使用 `linux-x64` / `darwin-*` 路径——`win32-*` 路径在 CDN 上返回 403
-/// （Windows 走不同的分发格式）。版本号本身与平台无关，任选可用平台即可。
+/// note: must use `linux-x64` / `darwin-*` path——`win32-*` path in CDN returns on 403
+/// (Windows use a different distribution format). The version number itself is platform independent; any available platform works.
 const METADATA_URL: &str =
     "https://prod.download.desktop.kiro.dev/stable/metadata-linux-x64-stable.json";
 
-/// 用量类接口（getUsageLimits / ListAvailableModels / setUserPreference）固定使用的
-/// Kiro IDE 版本：该版本下上游无需 profileArn 即可返回数据，Enterprise/IdC 账号同样可用。
+/// usagetypeinterface (getUsageLimits / ListAvailableModels / setUserPreference)fixedused
+/// Kiro IDE version: under this version upstream does not need profileArn can return the data,Enterprise/IdC the account is also usable.
 pub const USAGE_API_KIRO_VERSION: &str = "0.9.2";
 
 static LATEST_VERSION: OnceLock<RwLock<Option<String>>> = OnceLock::new();
@@ -38,12 +38,12 @@ fn cell() -> &'static RwLock<Option<String>> {
     LATEST_VERSION.get_or_init(|| RwLock::new(None))
 }
 
-/// 已自动获取到的最新 Kiro IDE 版本（后台刷新成功后才有值）
+/// the latest already automatically obtained Kiro IDE version (has a value only after a successful background refresh).
 pub fn cached() -> Option<String> {
     cell().read().clone()
 }
 
-/// 返回有效的 Kiro IDE 版本：优先用自动获取到的最新版本，否则回退到 `fallback`
+/// returnvalid Kiro IDE Version: prefers the automatically fetched latest version, otherwise falls back to `fallback`
 pub fn effective(fallback: &str) -> String {
     cached().unwrap_or_else(|| fallback.to_string())
 }
@@ -54,7 +54,7 @@ struct Metadata {
     current_release: Option<String>,
 }
 
-/// 拉取一次最新版本号
+/// pull the latest version number once
 pub async fn fetch_latest(
     proxy: Option<&ProxyConfig>,
     tls_backend: TlsBackend,
@@ -63,17 +63,17 @@ pub async fn fetch_latest(
     let resp = client.get(METADATA_URL).send().await?;
     let status = resp.status();
     if !status.is_success() {
-        anyhow::bail!("获取 Kiro 版本元数据失败: {}", status);
+        anyhow::bail!("fetch Kiro version metadata failed: {}", status);
     }
     let meta: Metadata = resp.json().await?;
     meta.current_release
         .filter(|v| !v.trim().is_empty())
-        .ok_or_else(|| anyhow::anyhow!("元数据缺少 currentRelease"))
+        .ok_or_else(|| anyhow::anyhow!("metadatamissing currentRelease"))
 }
 
-/// 启动后台任务：立即拉取一次，之后每 `interval` 刷新一次。
+/// Starts a background task: fetches once immediately, then every `interval` refreshonce.
 ///
-/// 失败仅记录告警，不影响服务（调用方会回退到 `config.kiro_version`）。
+/// Failure only logs a warning and does not affect the service (the caller falls back to `config.kiro_version`).
 pub fn spawn_refresher(proxy: Option<ProxyConfig>, tls_backend: TlsBackend, interval: Duration) {
     tokio::spawn(async move {
         loop {
@@ -82,11 +82,11 @@ pub fn spawn_refresher(proxy: Option<ProxyConfig>, tls_backend: TlsBackend, inte
                     let changed = cached().as_deref() != Some(version.as_str());
                     *cell().write() = Some(version.clone());
                     if changed {
-                        tracing::info!("已自动获取 Kiro IDE 版本: {}", version);
+                        tracing::info!("alreadyauto fetch Kiro IDE version: {}", version);
                     }
                 }
                 Err(e) => {
-                    tracing::warn!("自动获取 Kiro IDE 版本失败（继续使用配置中的版本）: {}", e);
+                    tracing::warn!("auto fetch Kiro IDE The version failed (continues using the version from config).: {}", e);
                 }
             }
             tokio::time::sleep(interval).await;
@@ -107,8 +107,8 @@ mod tests {
 
     #[test]
     fn test_effective_falls_back_without_cache() {
-        // 未注入缓存时回退到 fallback（注意：其它测试可能已填充全局缓存，
-        // 故此处仅断言返回值非空且为合法字符串）
+        // fall back when no cache is injected to fallback(note: other tests may have already filled the global cache,
+        // so here it only asserts the return value is non empty and a valid string.
         let v = effective("0.9.2");
         assert!(!v.is_empty());
     }

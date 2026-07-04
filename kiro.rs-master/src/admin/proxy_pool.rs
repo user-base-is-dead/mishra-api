@@ -1,9 +1,9 @@
-//! 代理 IP 池管理
+//! proxy IP pool management
 //!
-//! 独立于凭据管理，存储为 proxy_pool.json
+//! Independent of credential management, stored as proxy_pool.json
 //!
-//! 除增删改查外，还提供主动健康检查：周期性（或按需）通过每个代理请求一个
-//! 轻量公网探测端点，记录连通性与延迟；连续探测失败达阈值的代理会被自动禁用。
+//! Besides create, read, update, and delete, it also provides active health checks: periodically (or on demand) it sends through each proxy a request to a
+//! Lightweight public probe endpoint; records connectivity and latency. A proxy whose consecutive probe failures reach the threshold is automatically disabled.
 
 use crate::http_client::{ProxyConfig, build_client};
 use crate::model::config::TlsBackend;
@@ -13,27 +13,27 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 
-/// 健康检查探测端点：返回 204 No Content 的轻量公网地址，不依赖上游 Kiro。
+/// The health check probe endpoint: returns 204 No Content a lightweight public address, not dependent on upstream. Kiro.
 const PROXY_HEALTH_CHECK_URL: &str = "https://www.gstatic.com/generate_204";
-/// 单次探测超时（秒）
+/// single probe timeout (seconds)
 const PROXY_PROBE_TIMEOUT_SECS: u64 = 8;
-/// 连续探测失败阈值：达到后自动禁用（与凭据的 MAX_FAILURES_PER_CREDENTIAL 对齐）
+/// Consecutive probe failure threshold: on reaching it, auto disables (like the credential MAX_FAILURES_PER_CREDENTIAL aligned)
 const MAX_PROXY_PROBE_FAILURES: u32 = 3;
 
-/// 代理健康状态
+/// proxy health status
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ProxyHealth {
-    /// 尚未探测
+    /// not yet probed
     #[default]
     Unknown,
-    /// 最近一次探测成功
+    /// the most recent probe succeeded
     Healthy,
-    /// 最近一次探测失败
+    /// the most recent probe failed
     Unhealthy,
 }
 
-/// 持久化的代理条目
+/// persisted proxy entry
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProxyEntry {
@@ -43,19 +43,19 @@ pub struct ProxyEntry {
     pub label: Option<String>,
     #[serde(default = "default_true")]
     pub enabled: bool,
-    /// 健康状态（健康检查结果）
+    /// Health status (the health check result).
     #[serde(default)]
     pub health: ProxyHealth,
-    /// 最近一次成功探测的延迟（毫秒）
+    /// The latency of the most recent successful probe (milliseconds).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub latency_ms: Option<u32>,
-    /// 最近一次探测时间（RFC3339）
+    /// the most recent probe time (RFC3339)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_checked_at: Option<String>,
-    /// 连续探测失败计数（成功后清零）
+    /// Consecutive probe failure count (cleared on success).
     #[serde(default)]
     pub consecutive_failures: u32,
-    /// 是否由健康检查自动禁用（区别于用户手动禁用）
+    /// Whether it was auto disabled by the health check (distinct from a user manual disable).
     #[serde(default)]
     pub auto_disabled: bool,
 }
@@ -64,28 +64,28 @@ fn default_true() -> bool {
     true
 }
 
-/// 代理分配结果
+/// proxy assignment result
 pub enum GetUrlResult {
-    /// 代理存在且已启用，返回 URL
+    /// The proxy exists and is enabled; returns URL
     Ok(String),
-    /// 代理不存在
+    /// proxydoes not exist
     NotFound,
-    /// 代理存在但已被禁用
+    /// the proxy exists but has been disabled
     Disabled,
 }
 
-/// 一次全量健康检查的摘要
+/// A summary of one full health check.
 #[derive(Debug, Clone, Default)]
 pub struct CheckSummary {
-    /// 探测成功数
+    /// probesuccesscount
     pub healthy: usize,
-    /// 探测失败数
+    /// probefailedcount
     pub unhealthy: usize,
-    /// 本轮新增的自动禁用数
+    /// The number newly auto disabled this round.
     pub auto_disabled: usize,
 }
 
-/// 单个代理探测结果
+/// single proxy probe result
 enum ProbeResult {
     Ok { latency_ms: u32 },
     Err { error: String },
@@ -93,32 +93,32 @@ enum ProbeResult {
 
 pub struct ProxyPoolManager {
     entries: Mutex<Vec<ProxyEntry>>,
-    // 仅需原子自增，不需要与 entries 联锁；约定独立使用，无锁顺序问题
+    // Only needs an atomic increment, no need to entries interlock; by convention used independently, no lock ordering issue.
     next_id: AtomicU64,
     path: Option<PathBuf>,
-    /// TLS 后端，构建探测用 HTTP client 时需要
+    /// TLS backend, build for probing HTTP client needed when
     tls_backend: TlsBackend,
 }
 
-/// 校验代理 URL 的 scheme 是否合法
+/// validateproxy URL of scheme iswhethervalid
 fn validate_proxy_url(url: &str) -> anyhow::Result<()> {
     let valid_schemes = ["http://", "https://", "socks5://", "socks4://"];
     if !valid_schemes.iter().any(|s| url.starts_with(s)) {
         anyhow::bail!(
-            "代理 URL scheme 无效，支持: http/https/socks4/socks5（收到: {}）",
+            "proxy URL scheme noneeffect,support: http/https/socks4/socks5(received: {})",
             url
         );
     }
-    // 简单检查 host:port 存在
+    // simplecheck host:port exists
     let after_scheme = valid_schemes
         .iter()
         .find(|s| url.starts_with(*s))
         .map(|s| &url[s.len()..])
         .unwrap_or(url);
-    // after_scheme 可能是 user:pass@host:port 或 host:port
+    // after_scheme may be user:pass@host:port or host:port
     let host_part = after_scheme.rsplit('@').next().unwrap_or(after_scheme);
     if !host_part.contains(':') {
-        anyhow::bail!("代理 URL 缺少端口号: {}", url);
+        anyhow::bail!("proxy URL missingendslogan: {}", url);
     }
     Ok(())
 }
@@ -148,14 +148,14 @@ impl ProxyPoolManager {
     pub fn add(&self, url: String, label: Option<String>) -> anyhow::Result<ProxyEntry> {
         let url = url.trim().to_string();
         if url.is_empty() {
-            anyhow::bail!("代理 URL 不能为空");
+            anyhow::bail!("proxy URL notcanis empty");
         }
         validate_proxy_url(&url)?;
 
         let mut entries = self.entries.lock();
 
         if entries.iter().any(|e| e.url == url) {
-            anyhow::bail!("代理 URL 已存在: {}", url);
+            anyhow::bail!("proxy URL already exists: {}", url);
         }
 
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
@@ -177,7 +177,7 @@ impl ProxyPoolManager {
         Ok(entry)
     }
 
-    /// 批量添加：在单次加锁内完成所有插入，最后统一持久化一次
+    /// Batch add: completes all inserts within a single lock, then persists once at the end.
     pub fn batch_add(&self, urls: Vec<String>) -> (Vec<ProxyEntry>, Vec<String>) {
         let mut added = vec![];
         let mut errors = vec![];
@@ -193,7 +193,7 @@ impl ProxyPoolManager {
                 continue;
             }
             if entries.iter().any(|e| e.url == url) {
-                errors.push(format!("代理 URL 已存在: {}", url));
+                errors.push(format!("proxy URL already exists: {}", url));
                 continue;
             }
             let id = self.next_id.fetch_add(1, Ordering::Relaxed);
@@ -215,7 +215,7 @@ impl ProxyPoolManager {
 
         if !added.is_empty() {
             if let Err(e) = self.persist() {
-                tracing::warn!("批量添加代理后持久化失败: {}", e);
+                tracing::warn!("Persistence failed after batch adding proxies.: {}", e);
             }
         }
 
@@ -227,23 +227,23 @@ impl ProxyPoolManager {
         let len_before = entries.len();
         entries.retain(|e| e.id != id);
         if entries.len() == len_before {
-            anyhow::bail!("代理不存在: {}", id);
+            anyhow::bail!("proxydoes not exist: {}", id);
         }
         drop(entries);
         self.persist()?;
         Ok(())
     }
 
-    /// 设置代理启用/禁用状态
+    /// set the proxy enabled/disablestate
     ///
-    /// 用户手动启用时清除「健康检查自动禁用」标记与连续失败计数，
-    /// 让该代理重新参与健康检查与分配。
+    /// On manual enable by the user, clears the health check auto disable flag and the consecutive failure count,
+    /// Lets the proxy rejoin health checks and allocation.
     pub fn set_enabled(&self, id: u64, enabled: bool) -> anyhow::Result<()> {
         let mut entries = self.entries.lock();
         let entry = entries
             .iter_mut()
             .find(|e| e.id == id)
-            .ok_or_else(|| anyhow::anyhow!("代理不存在: {}", id))?;
+            .ok_or_else(|| anyhow::anyhow!("proxydoes not exist: {}", id))?;
         entry.enabled = enabled;
         if enabled {
             entry.auto_disabled = false;
@@ -254,7 +254,7 @@ impl ProxyPoolManager {
         Ok(())
     }
 
-    /// 获取代理 URL，区分"不存在"和"已禁用"两种情况
+    /// fetchproxy URL, distinguish"does not exist"and"disabled"two cases
     pub fn get_url(&self, id: u64) -> GetUrlResult {
         match self.entries.lock().iter().find(|e| e.id == id) {
             None => GetUrlResult::NotFound,
@@ -263,7 +263,7 @@ impl ProxyPoolManager {
         }
     }
 
-    /// 获取所有「可用于分配」的代理 URL：已启用且非 Unhealthy
+    /// Gets all proxies available for allocation. URL: enabled and not Unhealthy
     pub fn assignable_urls(&self) -> Vec<String> {
         self.entries
             .lock()
@@ -285,20 +285,20 @@ impl ProxyPoolManager {
     }
 }
 
-// ============ 健康检查 ============
+// ============ healthcheck ============
 
 impl ProxyPoolManager {
-    /// 探测单个代理 URL 的连通性与延迟。
+    /// probe a single proxy URL the connectivity and latency.
     ///
-    /// 通过该代理请求 `PROXY_HEALTH_CHECK_URL`，成功（HTTP 2xx/3xx）即视为连通，
-    /// 返回往返延迟；任何网络错误或非预期状态码视为失败。
+    /// request through this proxy `PROXY_HEALTH_CHECK_URL`,success(HTTP 2xx/3xx) is treated as connected,
+    /// Returns the round trip latency; any network error or unexpected status code is treated as failure.
     async fn probe_one(&self, url: &str) -> ProbeResult {
         let proxy = ProxyConfig::new(url);
         let client = match build_client(Some(&proxy), PROXY_PROBE_TIMEOUT_SECS, self.tls_backend) {
             Ok(c) => c,
             Err(e) => {
                 return ProbeResult::Err {
-                    error: format!("构建探测 client 失败: {}", e),
+                    error: format!("buildprobe client failed: {}", e),
                 };
             }
         };
@@ -313,7 +313,7 @@ impl ProxyPoolManager {
                     }
                 } else {
                     ProbeResult::Err {
-                        error: format!("探测端点返回非预期状态: {}", status),
+                        error: format!("The probe endpoint returned an unexpected status.: {}", status),
                     }
                 }
             }
@@ -323,9 +323,9 @@ impl ProxyPoolManager {
         }
     }
 
-    /// 将一次探测结果回写到指定条目，并按需触发自动禁用。
+    /// Writes a probe result back to the given entry and triggers auto disable as needed.
     ///
-    /// 返回 `(变为不健康, 本次新自动禁用)` 供摘要统计。
+    /// return `(becomesnothealth, newly auto disabled this time)` for summary statistics.
     fn apply_probe_result(entry: &mut ProxyEntry, result: &ProbeResult) -> (bool, bool) {
         entry.last_checked_at = Some(chrono::Utc::now().to_rfc3339());
         match result {
@@ -340,7 +340,7 @@ impl ProxyPoolManager {
                 entry.latency_ms = None;
                 entry.consecutive_failures += 1;
                 tracing::warn!(
-                    "代理 #{} 探测失败（{}/{}）: {}",
+                    "proxy #{} probefailed({}/{}): {}",
                     entry.id,
                     entry.consecutive_failures,
                     MAX_PROXY_PROBE_FAILURES,
@@ -352,7 +352,7 @@ impl ProxyPoolManager {
                     entry.auto_disabled = true;
                     newly_disabled = true;
                     tracing::error!(
-                        "代理 #{} 连续探测失败 {} 次，已自动禁用",
+                        "proxy #{} consecutive probe failures {} times, has been auto disabled",
                         entry.id,
                         entry.consecutive_failures
                     );
@@ -362,11 +362,11 @@ impl ProxyPoolManager {
         }
     }
 
-    /// 全量健康检查：并发探测所有「已启用」代理，回写结果并持久化一次。
+    /// Full health check: concurrently probes all enabled proxies, writes back the results, and persists once.
     ///
-    /// 仅探测当前 enabled 的条目；用户/自动禁用的条目跳过（手动重新启用会清零计数）。
+    /// onlyprobecurrent enabled the entry; the user/Auto disabled entries are skipped (a manual re-enable zeroes the count).
     pub async fn check_all(&self) -> CheckSummary {
-        // 快照待探测的 (id, url)，避免长时间持锁
+        // snapshot the ones to be probed (id, url), to avoid holding the lock for a long time
         let targets: Vec<(u64, String)> = self
             .entries
             .lock()
@@ -403,12 +403,12 @@ impl ProxyPoolManager {
         }
 
         if let Err(e) = self.persist() {
-            tracing::warn!("健康检查后持久化失败: {}", e);
+            tracing::warn!("Persistence failed after the health check.: {}", e);
         }
         summary
     }
 
-    /// 单个代理即时探测（供 UI「测试」按钮调用），回写结果并持久化。
+    /// Instant probe of a single proxy (for UIinvoked by the test button), writes back the result and persists.
     pub async fn check_one(&self, id: u64) -> anyhow::Result<ProxyEntry> {
         let url = self
             .entries
@@ -416,7 +416,7 @@ impl ProxyPoolManager {
             .iter()
             .find(|e| e.id == id)
             .map(|e| e.url.clone())
-            .ok_or_else(|| anyhow::anyhow!("代理不存在: {}", id))?;
+            .ok_or_else(|| anyhow::anyhow!("proxydoes not exist: {}", id))?;
 
         let result = self.probe_one(&url).await;
 
@@ -425,7 +425,7 @@ impl ProxyPoolManager {
             let entry = entries
                 .iter_mut()
                 .find(|e| e.id == id)
-                .ok_or_else(|| anyhow::anyhow!("代理不存在: {}", id))?;
+                .ok_or_else(|| anyhow::anyhow!("proxydoes not exist: {}", id))?;
             Self::apply_probe_result(entry, &result);
             entry.clone()
         };
@@ -455,7 +455,7 @@ mod tests {
 
     #[test]
     fn old_json_without_new_fields_deserializes() {
-        // 旧格式 JSON 只有 id/url/label/enabled，新字段应由 serde default 补全
+        // old format JSON only id/url/label/enabled, the new field should be by serde default complete
         let json = r#"[{"id":1,"url":"socks5://127.0.0.1:1080","enabled":true}]"#;
         let entries: Vec<ProxyEntry> = serde_json::from_str(json).unwrap();
         assert_eq!(entries.len(), 1);
@@ -472,7 +472,7 @@ mod tests {
         let err = ProbeResult::Err {
             error: "connection refused".to_string(),
         };
-        // 前两次失败：计数累加，仍启用
+        // First two failures: the count accumulates, still enabled.
         for n in 1..MAX_PROXY_PROBE_FAILURES {
             let (unhealthy, disabled) = ProxyPoolManager::apply_probe_result(&mut entry, &err);
             assert!(unhealthy);
@@ -481,7 +481,7 @@ mod tests {
             assert!(entry.enabled);
             assert!(!entry.auto_disabled);
         }
-        // 第 N 次失败：自动禁用
+        // number N failures: auto disable
         let (_, disabled) = ProxyPoolManager::apply_probe_result(&mut entry, &err);
         assert!(disabled);
         assert_eq!(entry.consecutive_failures, MAX_PROXY_PROBE_FAILURES);
@@ -507,7 +507,7 @@ mod tests {
     fn set_enabled_true_clears_auto_disable_state() {
         let mgr = ProxyPoolManager::new(None, TlsBackend::Rustls);
         let entry = mgr.add("socks5://127.0.0.1:1080".to_string(), None).unwrap();
-        // 模拟自动禁用状态
+        // simulate the auto disable state
         {
             let mut entries = mgr.entries.lock();
             let e = entries.iter_mut().find(|e| e.id == entry.id).unwrap();

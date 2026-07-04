@@ -1,4 +1,4 @@
-//! 公共认证工具函数
+//! common authentication utility function
 
 use axum::{
     body::Body,
@@ -6,13 +6,13 @@ use axum::{
 };
 use subtle::ConstantTimeEq;
 
-/// 从请求中提取 API Key
+/// fromrequestextract from API Key
 ///
-/// 支持两种认证方式：
+/// supports two authentication methods:
 /// - `x-api-key` header
 /// - `Authorization: Bearer <token>` header
 pub fn extract_api_key(request: &Request<Body>) -> Option<String> {
-    // 优先检查 x-api-key
+    // prioritycheck x-api-key
     if let Some(key) = request
         .headers()
         .get("x-api-key")
@@ -21,7 +21,7 @@ pub fn extract_api_key(request: &Request<Body>) -> Option<String> {
         return Some(key.to_string());
     }
 
-    // 其次检查 Authorization: Bearer
+    // then check Authorization: Bearer
     request
         .headers()
         .get(header::AUTHORIZATION)
@@ -30,12 +30,12 @@ pub fn extract_api_key(request: &Request<Body>) -> Option<String> {
         .map(|s| s.to_string())
 }
 
-/// 常量时间字符串比较，防止时序攻击
+/// Constant time string comparison to prevent timing attacks.
 ///
-/// 无论字符串内容如何，比较所需的时间都是恒定的，
-/// 这可以防止攻击者通过测量响应时间来猜测登录API密钥。
+/// Regardless of the string content, the time required for the comparison is constant,
+/// This prevents an attacker from guessing the login by measuring response time.APIkey.
 ///
-/// 使用经过安全审计的 `subtle` crate 实现
+/// use a security audited `subtle` crate implement
 pub fn constant_time_eq(a: &str, b: &str) -> bool {
     a.as_bytes().ct_eq(b.as_bytes()).into()
 }

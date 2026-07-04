@@ -1,4 +1,4 @@
-//! Admin API HTTP 处理器
+//! Admin API HTTP handler
 
 use std::collections::HashMap;
 
@@ -32,20 +32,20 @@ use super::{
     usage_stats::{Range, StatsGranularity, StatsQueryWindow},
 };
 
-// Path 元组提取：(credential_id, session_id)
+// Path tupleextract:(credential_id, session_id)
 type CredSessionPath = (u64, String);
 
 /// GET /api/admin/credentials
-/// 获取所有凭据状态
+/// get all credential statuses
 pub async fn get_all_credentials(State(state): State<AdminState>) -> impl IntoResponse {
     let response = state.service.get_all_credentials();
     Json(response)
 }
 
 /// GET /api/admin/credentials/export
-/// 导出凭据为兼容 JSON（含 refreshToken 等敏感字段）
+/// export the credential as compatible JSON(including refreshToken and other sensitive fields)
 ///
-/// 可选 query 参数 `ids`（逗号分隔）限定导出哪些凭据；省略则导出全部。
+/// optional query parameter `ids`(comma separated) limits which credentials to export; omit to export all.
 pub async fn export_credentials(
     State(state): State<AdminState>,
     Query(params): Query<std::collections::HashMap<String, String>>,
@@ -71,7 +71,7 @@ pub async fn export_credentials(
 }
 
 /// POST /api/admin/credentials/:id/disabled
-/// 设置凭据禁用状态
+/// set the credential disabled state
 pub async fn set_credential_disabled(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
@@ -79,15 +79,15 @@ pub async fn set_credential_disabled(
 ) -> impl IntoResponse {
     match state.service.set_disabled(id, payload.disabled) {
         Ok(_) => {
-            let action = if payload.disabled { "禁用" } else { "启用" };
-            Json(SuccessResponse::new(format!("凭据 #{} 已{}", id, action))).into_response()
+            let action = if payload.disabled { "disable" } else { "enable" };
+            Json(SuccessResponse::new(format!("credential #{} already{}", id, action))).into_response()
         }
         Err(e) => (e.status_code(), Json(e.into_response())).into_response(),
     }
 }
 
 /// POST /api/admin/credentials/:id/priority
-/// 设置凭据优先级
+/// set the credential priority
 pub async fn set_credential_priority(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
@@ -95,7 +95,7 @@ pub async fn set_credential_priority(
 ) -> impl IntoResponse {
     match state.service.set_priority(id, payload.priority) {
         Ok(_) => Json(SuccessResponse::new(format!(
-            "凭据 #{} 优先级已设置为 {}",
+            "credential #{} the priority has been set to {}",
             id, payload.priority
         )))
         .into_response(),
@@ -104,14 +104,14 @@ pub async fn set_credential_priority(
 }
 
 /// POST /api/admin/credentials/:id/reset
-/// 重置失败计数并重新启用
+/// Resets the failure count and re-enables.
 pub async fn reset_failure_count(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
 ) -> impl IntoResponse {
     match state.service.reset_and_enable(id) {
         Ok(_) => Json(SuccessResponse::new(format!(
-            "凭据 #{} 失败计数已重置并重新启用",
+            "credential #{} The failure count has been reset and re-enabled.",
             id
         )))
         .into_response(),
@@ -120,19 +120,19 @@ pub async fn reset_failure_count(
 }
 
 /// POST /api/admin/credentials/:id/clear-throttle
-/// 手动解除凭据的账号级风控冷却
+/// Manually clears the account level throttle cooldown of a credential.
 pub async fn clear_throttle(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
 ) -> impl IntoResponse {
     match state.service.clear_throttle(id) {
-        Ok(_) => Json(SuccessResponse::new(format!("凭据 #{} 风控冷却已解除", id))).into_response(),
+        Ok(_) => Json(SuccessResponse::new(format!("credential #{} the throttle cooldown has been lifted", id))).into_response(),
         Err(e) => (e.status_code(), Json(e.into_response())).into_response(),
     }
 }
 
 /// GET /api/admin/credentials/:id/balance
-/// 获取指定凭据的余额
+/// get the balance of the specified credential
 pub async fn get_credential_balance(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
@@ -144,7 +144,7 @@ pub async fn get_credential_balance(
 }
 
 /// GET /api/admin/credentials/:id/models
-/// 获取指定凭据当前可用的模型列表（按需实时查询上游）
+/// Gets the currently available model list for the given credential (queries upstream in real time on demand).
 pub async fn get_credential_models(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
@@ -156,14 +156,14 @@ pub async fn get_credential_models(
 }
 
 /// POST /api/admin/credentials/disable-quota-exceeded
-/// 一键禁用所有"已超额"凭据（remaining ≤ 0 或 usage_percentage ≥ 100）
+/// one click disable all"over quota"credential (remaining ≤ 0 or usage_percentage ≥ 100)
 pub async fn disable_quota_exceeded(State(state): State<AdminState>) -> impl IntoResponse {
     let result = state.service.disable_quota_exceeded();
     Json(result).into_response()
 }
 
 /// POST /api/admin/credentials/:id/overage
-/// 开启或关闭指定凭据的超额能力
+/// Enables or disables the overage capability of the given credential.
 pub async fn set_credential_overage(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
@@ -171,9 +171,9 @@ pub async fn set_credential_overage(
 ) -> impl IntoResponse {
     match state.service.set_overage(id, payload.enabled).await {
         Ok(_) => Json(SuccessResponse::new(format!(
-            "凭据 #{} 已{}超额",
+            "credential #{} already{}overage",
             id,
-            if payload.enabled { "开启" } else { "关闭" }
+            if payload.enabled { "open" } else { "close" }
         )))
         .into_response(),
         Err(e) => (e.status_code(), Json(e.into_response())).into_response(),
@@ -181,14 +181,14 @@ pub async fn set_credential_overage(
 }
 
 /// POST /api/admin/credentials/overage/enable-all
-/// 一键开启所有"可开启超额且当前未开启"凭据的超额（基于 balance_cache 判断）
+/// one click enable all"Overage can be enabled and is currently not enabled."credential overage (based on balance_cache decision)
 pub async fn enable_overage_all(State(state): State<AdminState>) -> impl IntoResponse {
     let result = state.service.enable_overage_for_all_capable().await;
     Json(result).into_response()
 }
 
 /// POST /api/admin/credentials
-/// 添加新凭据
+/// addnew credential
 pub async fn add_credential(
     State(state): State<AdminState>,
     Json(payload): Json<AddCredentialRequest>,
@@ -201,12 +201,12 @@ pub async fn add_credential(
 
 /// POST /api/admin/credentials/batch-import
 ///
-/// 批量导入凭据。服务端按 `concurrency`（缺省 8，夹取到 [1,16]）有界并发地逐条处理，
-/// 结果通过 SSE 流逐条推送（`index` 对应请求数组下标，乱序），末尾一条汇总事件后关闭流。
+/// Batch imports credentials. The server by `concurrency`(default 8,clamptaketo [1,16]) processes one by one with bounded concurrency,
+/// resultvia SSE the stream pushes one by one (`index` corresponds to the request array index, out of order); after one final summary event the stream closes.
 ///
-/// `verify = true`（缺省）：add 后取余额验活，失败回滚；`verify = false`：仅 add 落库。
-/// 客户端断开（前端 abort / 关闭连接）时，事件写回失败 → 立即停止处理剩余凭据
-/// （已在处理中的至多 concurrency 条会自然结束），从而支持"停止导入"。
+/// `verify = true`(default):add then fetches the balance for liveness, rolls back on failure;`verify = false`: only add persist to db.
+/// client disconnected (frontend abort / closes the connection), the event write back fails. → Immediately stops processing the remaining credentials.
+/// (at most those already in processing concurrency entries end naturally), thereby supporting"stop the import".
 pub async fn batch_import_credentials(
     State(state): State<AdminState>,
     Json(req): Json<BatchImportRequest>,
@@ -218,7 +218,7 @@ pub async fn batch_import_credentials(
     let (tx, rx) = futures::channel::mpsc::unbounded::<BatchImportEvent>();
     let service = state.service.clone();
 
-    // 单个 orchestrator 任务：buffer_unordered 提供有界并发，逐条把结果写回 SSE 流。
+    // single orchestrator task:buffer_unordered Provides bounded concurrency and writes results back one by one. SSE stream.
     tokio::spawn(async move {
         let mut work = futures::stream::iter(req.credentials.into_iter().enumerate())
             .map(|(index, cred_req)| {
@@ -251,12 +251,12 @@ pub async fn batch_import_credentials(
                 }
                 _ => {}
             }
-            // 客户端断开（abort / 关闭连接）→ 接收端随响应体被 drop，send 失败：
-            // 停止处理剩余凭据。break 会丢弃 buffer_unordered 内 in-flight 的 future。
+            // client disconnected (abort / closeconnection)→ the receiver along with the response body is drop,send failed:
+            // stop processing the remaining credentials.break will discard buffer_unordered inside in-flight of future.
             if tx.unbounded_send(event).is_err() {
                 let processed = imported + verified + duplicate + failed;
                 tracing::info!(
-                    "批量导入被客户端中断，停止剩余凭据（已完成 {}/{}）",
+                    "Batch import was aborted by the client; stops the remaining credentials (already completed {}/{})",
                     processed,
                     total
                 );
@@ -265,7 +265,7 @@ pub async fn batch_import_credentials(
             }
         }
 
-        // 仅在正常结束时发汇总；客户端中断则不发（流已被对端关闭）。
+        // Sends the summary only on normal completion; does not send if the client aborts (the stream was closed by the peer).
         if !cancelled {
             let summary = BatchImportEvent {
                 index: None,
@@ -287,7 +287,7 @@ pub async fn batch_import_credentials(
             };
             let _ = tx.unbounded_send(summary);
         }
-        // tx 在此 drop，SSE 流随之关闭
+        // tx here drop,SSE streamaccordinglyclose
     });
 
     let body = rx.map(|event| {
@@ -305,32 +305,32 @@ pub async fn batch_import_credentials(
 }
 
 /// DELETE /api/admin/credentials/:id
-/// 删除凭据
+/// deletecredential
 pub async fn delete_credential(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
 ) -> impl IntoResponse {
     match state.service.delete_credential(id) {
-        Ok(_) => Json(SuccessResponse::new(format!("凭据 #{} 已删除", id))).into_response(),
+        Ok(_) => Json(SuccessResponse::new(format!("credential #{} deleted", id))).into_response(),
         Err(e) => (e.status_code(), Json(e.into_response())).into_response(),
     }
 }
 
 /// PUT /api/admin/credentials/:id
-/// 更新凭据可编辑字段（email、proxy 等）
+/// Updates the editable fields of the credential (email,proxy etc.)
 pub async fn update_credential(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
     Json(payload): Json<UpdateCredentialRequest>,
 ) -> impl IntoResponse {
     match state.service.update_credential(id, payload) {
-        Ok(_) => Json(SuccessResponse::new(format!("凭据 #{} 已更新", id))).into_response(),
+        Ok(_) => Json(SuccessResponse::new(format!("credential #{} updated", id))).into_response(),
         Err(e) => (e.status_code(), Json(e.into_response())).into_response(),
     }
 }
 
 /// PUT /api/admin/credentials/:id/refresh-token
-/// 更新已禁用凭据的 refreshToken
+/// update the disabled credential refreshToken
 pub async fn update_refresh_token(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
@@ -338,7 +338,7 @@ pub async fn update_refresh_token(
 ) -> impl IntoResponse {
     match state.service.update_refresh_token(id, payload) {
         Ok(_) => Json(SuccessResponse::new(format!(
-            "凭据 #{} refreshToken 已更新（当前仍为禁用状态，请手动启用）",
+            "credential #{} refreshToken Updated (currently still disabled, please enable manually).",
             id
         )))
         .into_response(),
@@ -347,14 +347,14 @@ pub async fn update_refresh_token(
 }
 
 /// POST /api/admin/credentials/:id/refresh
-/// 强制刷新凭据 Token
+/// force refresh the credential Token
 pub async fn force_refresh_token(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
 ) -> impl IntoResponse {
     match state.service.force_refresh_token(id).await {
         Ok(_) => Json(SuccessResponse::new(format!(
-            "凭据 #{} Token 已强制刷新",
+            "credential #{} Token alreadyforcerefresh",
             id
         )))
         .into_response(),
@@ -363,11 +363,11 @@ pub async fn force_refresh_token(
 }
 
 /// POST /api/admin/credentials/reset-stats
-/// 重置所有凭据的 success_count
+/// reset all credentials success_count
 pub async fn reset_all_success_count(State(state): State<AdminState>) -> impl IntoResponse {
     match state.service.reset_success_count(None) {
         Ok(count) => Json(SuccessResponse::new(format!(
-            "已重置 {} 个凭据的 success_count",
+            "reset {} itemcredentialof success_count",
             count
         )))
         .into_response(),
@@ -376,14 +376,14 @@ pub async fn reset_all_success_count(State(state): State<AdminState>) -> impl In
 }
 
 /// POST /api/admin/credentials/:id/reset-stats
-/// 重置指定凭据的 success_count
+/// reset the specified credential success_count
 pub async fn reset_success_count(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
 ) -> impl IntoResponse {
     match state.service.reset_success_count(Some(id)) {
         Ok(_) => Json(SuccessResponse::new(format!(
-            "凭据 #{} success_count 已重置",
+            "credential #{} success_count reset",
             id
         )))
         .into_response(),
@@ -392,14 +392,14 @@ pub async fn reset_success_count(
 }
 
 /// GET /api/admin/proxy-pool
-/// 获取代理池列表
+/// get the proxy pool list
 pub async fn get_proxy_pool(State(state): State<AdminState>) -> impl IntoResponse {
     let response = state.service.get_proxy_pool();
     Json(response)
 }
 
 /// POST /api/admin/proxy-pool
-/// 添加代理到池中
+/// add a proxy to the pool
 pub async fn add_proxy(
     State(state): State<AdminState>,
     Json(payload): Json<AddProxyRequest>,
@@ -411,7 +411,7 @@ pub async fn add_proxy(
 }
 
 /// POST /api/admin/proxy-pool/batch
-/// 批量添加代理
+/// batch add proxies
 pub async fn batch_add_proxies(
     State(state): State<AdminState>,
     Json(payload): Json<BatchAddProxyRequest>,
@@ -426,19 +426,19 @@ pub async fn batch_add_proxies(
 }
 
 /// DELETE /api/admin/proxy-pool/:id
-/// 删除代理
+/// deleteproxy
 pub async fn delete_proxy(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
 ) -> impl IntoResponse {
     match state.service.delete_proxy(id) {
-        Ok(_) => Json(SuccessResponse::new(format!("代理 #{} 已删除", id))).into_response(),
+        Ok(_) => Json(SuccessResponse::new(format!("proxy #{} deleted", id))).into_response(),
         Err(e) => (e.status_code(), Json(e.into_response())).into_response(),
     }
 }
 
 /// POST /api/admin/proxy-pool/:id/enabled
-/// 设置代理启用/禁用
+/// set the proxy enabled/disable
 pub async fn set_proxy_enabled(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
@@ -450,9 +450,9 @@ pub async fn set_proxy_enabled(
         .unwrap_or(true);
     match state.service.set_proxy_enabled(id, enabled) {
         Ok(_) => Json(SuccessResponse::new(format!(
-            "代理 #{} 已{}",
+            "proxy #{} already{}",
             id,
-            if enabled { "启用" } else { "禁用" }
+            if enabled { "enable" } else { "disable" }
         )))
         .into_response(),
         Err(e) => (e.status_code(), Json(e.into_response())).into_response(),
@@ -460,20 +460,20 @@ pub async fn set_proxy_enabled(
 }
 
 /// POST /api/admin/credentials/:id/proxy
-/// 将代理池中的代理分配给凭据
+/// Allocates a proxy from the pool to a credential.
 pub async fn assign_proxy_to_credential(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
     Json(payload): Json<AssignProxyRequest>,
 ) -> impl IntoResponse {
     match state.service.assign_proxy_to_credential(id, payload) {
-        Ok(_) => Json(SuccessResponse::new(format!("凭据 #{} 代理已更新", id))).into_response(),
+        Ok(_) => Json(SuccessResponse::new(format!("credential #{} proxyupdated", id))).into_response(),
         Err(e) => (e.status_code(), Json(e.into_response())).into_response(),
     }
 }
 
 /// POST /api/admin/proxy-pool/:id/check
-/// 即时探测单个代理的连通性
+/// Instantly probes a single proxy connectivity.
 pub async fn check_proxy(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
@@ -485,13 +485,13 @@ pub async fn check_proxy(
 }
 
 /// POST /api/admin/proxy-pool/check-all
-/// 触发全部代理的健康检查
+/// Triggers the health check of all proxies.
 pub async fn check_all_proxies(State(state): State<AdminState>) -> impl IntoResponse {
     Json(state.service.check_all_proxies().await)
 }
 
 /// POST /api/admin/proxy-pool/assign-round-robin
-/// 将可用代理轮询批量分配给凭据
+/// Round robin batch allocates available proxies to credentials.
 pub async fn assign_proxies_round_robin(
     State(state): State<AdminState>,
     Json(payload): Json<AssignRoundRobinRequest>,
@@ -506,14 +506,14 @@ pub async fn assign_proxies_round_robin(
 }
 
 /// GET /api/admin/config/load-balancing
-/// 获取负载均衡模式
+/// get the load balancing mode
 pub async fn get_load_balancing_mode(State(state): State<AdminState>) -> impl IntoResponse {
     let response = state.service.get_load_balancing_mode();
     Json(response)
 }
 
 /// PUT /api/admin/config/load-balancing
-/// 设置负载均衡模式
+/// set the load balancing mode
 pub async fn set_load_balancing_mode(
     State(state): State<AdminState>,
     Json(payload): Json<SetLoadBalancingModeRequest>,
@@ -525,13 +525,13 @@ pub async fn set_load_balancing_mode(
 }
 
 /// GET /api/admin/config/account-throttle
-/// 获取账号级风控故障转移配置
+/// Gets the account level throttle failover config.
 pub async fn get_account_throttle_config(State(state): State<AdminState>) -> impl IntoResponse {
     Json(state.service.get_account_throttle_config())
 }
 
 /// PUT /api/admin/config/account-throttle
-/// 更新账号级风控故障转移配置
+/// Updates the account level throttle failover config.
 pub async fn set_account_throttle_config(
     State(state): State<AdminState>,
     Json(payload): Json<SetAccountThrottleConfigRequest>,
@@ -543,13 +543,13 @@ pub async fn set_account_throttle_config(
 }
 
 /// GET /api/admin/config/log-governance
-/// 获取日志治理配置（trace 开关 / trace 保留 / usage 保留）
+/// get the log governance configuration (trace switch / trace retain / usage retained)
 pub async fn get_log_governance_config(State(state): State<AdminState>) -> impl IntoResponse {
     Json(state.service.get_log_governance_config())
 }
 
 /// PUT /api/admin/config/log-governance
-/// 更新日志治理配置（运行时生效 + 持久化 config.json）
+/// Updates the log governance config (effective at runtime). + persist config.json)
 pub async fn set_log_governance_config(
     State(state): State<AdminState>,
     Json(payload): Json<SetLogGovernanceConfigRequest>,
@@ -561,7 +561,7 @@ pub async fn set_log_governance_config(
 }
 
 /// POST /api/admin/auth/idc/start
-/// 发起 IdC 设备授权登录
+/// initiate IdC device authorization login
 pub async fn start_idc_login(
     State(state): State<AdminState>,
     Json(payload): Json<StartIdcLoginRequest>,
@@ -573,7 +573,7 @@ pub async fn start_idc_login(
 }
 
 /// POST /api/admin/auth/idc/poll/:session_id
-/// 轮询 IdC 登录状态（由前端按 poll_interval 调用）
+/// poll IdC login state (by the frontend as poll_interval call)
 pub async fn poll_idc_login(
     State(state): State<AdminState>,
     Path(session_id): Path<String>,
@@ -585,7 +585,7 @@ pub async fn poll_idc_login(
 }
 
 /// POST /api/admin/auth/social/start
-/// 发起 Social 登录，返回 portal URL
+/// initiate Social login, return portal URL
 pub async fn start_social_login(
     State(state): State<AdminState>,
     Json(payload): Json<StartSocialLoginRequest>,
@@ -597,7 +597,7 @@ pub async fn start_social_login(
 }
 
 /// POST /api/admin/auth/social/poll/:session_id
-/// 轮询 Social 登录状态
+/// poll Social loginstate
 pub async fn poll_social_login(
     State(state): State<AdminState>,
     Path(session_id): Path<String>,
@@ -610,8 +610,8 @@ pub async fn poll_social_login(
 
 /// POST /api/admin/auth/social/complete/:session_id
 ///
-/// 远程访问场景下手动完成 Social 登录：
-/// 用户从浏览器地址栏复制 OAuth 回调 URL，前端提取 code/state/login_option 后调用此接口。
+/// Manually completed in the remote access case. Social login:
+/// The user copies from the browser address bar. OAuth callback URL,beforeendextract code/state/login_option call this interface after.
 pub async fn complete_social_login(
     State(state): State<AdminState>,
     Path(session_id): Path<String>,
@@ -635,12 +635,12 @@ pub async fn complete_social_login(
 
 /// GET /api/admin/auth/callback/{*tail}
 ///
-/// 远程部署模式下的 OAuth 公网回调入口（免鉴权，浏览器顶层导航到达）。
-/// Kiro portal 在 redirect_uri 末尾追加 `/oauth/callback` 或 `/signin/callback`，
-/// 故完整路径形如 `/api/admin/auth/callback/oauth/callback?code=...&state=...`。
+/// under remote deployment mode OAuth Public callback entry (no auth, reached by browser top level navigation).
+/// Kiro portal in redirect_uri endappend `/oauth/callback` or `/signin/callback`,
+/// so the full path looks like `/api/admin/auth/callback/oauth/callback?code=...&state=...`.
 ///
-/// 安全：依赖 OAuth `state`（每会话随机 UUID）定位会话，提供 CSRF 保护，与本地回调服务器同等信任级别。
-/// 本路由只把回调数据投递进会话 channel，真正的 token 兑换由 `poll_social_login` 统一完成。
+/// safe:dependency OAuth `state`(random per session UUID) locate the session, provide CSRF protection, at the same trust level as the local callback server.
+/// This route only delivers the callback data into the session. channel,real token redemption by `poll_social_login` unifydone.
 pub async fn social_oauth_callback(
     State(state): State<AdminState>,
     Path(tail): Path<String>,
@@ -649,22 +649,22 @@ pub async fn social_oauth_callback(
     use crate::kiro::auth::social::OAuthCallbackData;
     use super::service::RemoteCallbackOutcome;
 
-    // OAuth 错误回调（如用户拒绝授权）
+    // OAuth Error callback (such as the user denying authorization).
     if params.contains_key("error") {
         let msg = params
             .get("error_description")
             .or_else(|| params.get("error"))
             .cloned()
-            .unwrap_or_else(|| "未知错误".to_string());
-        return Html(render_callback_page(false, &format!("授权失败：{}", msg)));
+            .unwrap_or_else(|| "unknownerror".to_string());
+        return Html(render_callback_page(false, &format!("authorizationfailed:{}", msg)));
     }
 
     let Some(code) = params.get("code").cloned() else {
-        return Html(render_callback_page(false, "回调缺少 code 参数"));
+        return Html(render_callback_page(false, "callbackmissing code parameter"));
     };
     let oauth_state = params.get("state").cloned().unwrap_or_default();
     let login_option = params.get("login_option").cloned().unwrap_or_default();
-    // portal 追加的路径（oauth/callback 或 signin/callback），用于还原 token 兑换用的 redirect_uri
+    // portal the appended path (oauth/callback or signin/callback), used to restore token redeemuseof redirect_uri
     let path = {
         let trimmed = tail.trim_start_matches('/');
         if trimmed.is_empty() {
@@ -683,27 +683,27 @@ pub async fn social_oauth_callback(
 
     match state.service.deliver_remote_social_callback(&oauth_state, data) {
         RemoteCallbackOutcome::Delivered => {
-            Html(render_callback_page(true, "登录回调已收到，请返回 Kiro Admin 标签页查看结果"))
+            Html(render_callback_page(true, "The login callback was received; please go back. Kiro Admin the tab views the result"))
         }
         RemoteCallbackOutcome::AlreadyCompleted => {
-            Html(render_callback_page(true, "该登录回调已处理过，请返回 Kiro Admin 标签页"))
+            Html(render_callback_page(true, "This login callback has already been processed; please go back. Kiro Admin tab"))
         }
         RemoteCallbackOutcome::Expired => {
-            Html(render_callback_page(false, "登录会话已过期，请回到管理面板重新发起登录"))
+            Html(render_callback_page(false, "The login session has expired; please return to the admin panel and start login again."))
         }
         RemoteCallbackOutcome::NotFound => Html(render_callback_page(
             false,
-            "未找到对应的登录会话（可能未配置回调地址或会话已失效），请回到管理面板重新发起",
+            "The matching login session was not found (the callback address may not be configured or the session expired); please return to the admin panel and start again.",
         )),
     }
 }
 
-/// 渲染 OAuth 回调提示页（成功 / 失败两种样式）
+/// render OAuth callback prompt page (success / two styles for failure)
 fn render_callback_page(success: bool, message: &str) -> String {
     let (title, icon, color) = if success {
-        ("登录回调", "✓", "#34c759")
+        ("logincallback", "✓", "#34c759")
     } else {
-        ("登录失败", "✗", "#ff3b30")
+        ("loginfailed", "✗", "#ff3b30")
     };
     format!(
         "<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>{title}</title></head>\
@@ -712,13 +712,13 @@ fn render_callback_page(success: bool, message: &str) -> String {
          <div style='font-size:48px;line-height:1;color:{color};margin-bottom:16px'>{icon}</div>\
          <h2 style='margin:0 0 12px;font-size:20px;color:#1d1d1f'>{title}</h2>\
          <p style='margin:0;color:#6e6e73;font-size:15px;line-height:1.5'>{message}</p>\
-         <p style='margin:20px 0 0;color:#aeaeb2;font-size:13px'>此标签页可以关闭。</p>\
+         <p style='margin:20px 0 0;color:#aeaeb2;font-size:13px'>this tab can be closed.</p>\
          </div></body></html>"
     )
 }
 
 /// GET /api/admin/config/global-proxy
-/// 获取当前全局代理配置
+/// Gets the current global proxy config.
 pub async fn get_global_proxy(State(state): State<AdminState>) -> impl IntoResponse {
     Json(GlobalProxyResponse {
         proxy_url: state.service.get_global_proxy(),
@@ -726,25 +726,25 @@ pub async fn get_global_proxy(State(state): State<AdminState>) -> impl IntoRespo
 }
 
 /// PUT /api/admin/config/global-proxy
-/// 设置或清除全局代理配置
+/// Sets or clears the global proxy config.
 pub async fn set_global_proxy(
     State(state): State<AdminState>,
     Json(payload): Json<SetGlobalProxyRequest>,
 ) -> impl IntoResponse {
     match state.service.set_global_proxy(payload.proxy_url) {
-        Ok(_) => Json(SuccessResponse::new("全局代理已更新")).into_response(),
+        Ok(_) => Json(SuccessResponse::new("the global proxy has been updated")).into_response(),
         Err(e) => (e.status_code(), Json(e.into_response())).into_response(),
     }
 }
 
 /// GET /api/admin/config/update
-/// 获取在线更新配置（不回显 GitHub Token 明文）
+/// Gets the online update config (does not echo GitHub Token plaintext)
 pub async fn get_update_config(State(state): State<AdminState>) -> impl IntoResponse {
     Json(state.service.get_update_config())
 }
 
 /// PUT /api/admin/config/update
-/// 设置在线更新配置
+/// set the online update configuration
 pub async fn set_update_config(
     State(state): State<AdminState>,
     Json(payload): Json<SetUpdateConfigRequest>,
@@ -756,7 +756,7 @@ pub async fn set_update_config(
 }
 
 /// POST /api/admin/system/update/pull
-/// 下载新版二进制并校验（不替换当前进程）
+/// Downloads and verifies the new binary (does not replace the current process).
 pub async fn pull_update_image(State(state): State<AdminState>) -> impl IntoResponse {
     match state.service.pull_update_image().await {
         Ok(response) => Json(response).into_response(),
@@ -765,7 +765,7 @@ pub async fn pull_update_image(State(state): State<AdminState>) -> impl IntoResp
 }
 
 /// POST /api/admin/system/update/apply
-/// 下载新版二进制、替换 exe，进程退出由容器重启策略接管
+/// Downloads the new binary and replaces it. exe, the process exit is taken over by the container restart policy.
 pub async fn apply_image_update(State(state): State<AdminState>) -> impl IntoResponse {
     match state.service.apply_image_update().await {
         Ok(response) => Json(response).into_response(),
@@ -774,7 +774,7 @@ pub async fn apply_image_update(State(state): State<AdminState>) -> impl IntoRes
 }
 
 /// POST /api/admin/system/update/rollback
-/// 用 `<exe>.backup` 还原可执行文件并退出进程
+/// use `<exe>.backup` Restores the executable and exits the process.
 pub async fn rollback_image_update(State(state): State<AdminState>) -> impl IntoResponse {
     match state.service.rollback_image_update().await {
         Ok(response) => Json(response).into_response(),
@@ -783,7 +783,7 @@ pub async fn rollback_image_update(State(state): State<AdminState>) -> impl Into
 }
 
 /// GET /api/admin/system/update/check?force=true
-/// 查询 GitHub Releases 是否有新版本（带 30 分钟缓存）
+/// query GitHub Releases whether there is a new version (with 30 minutescache)
 pub async fn check_update(
     State(state): State<AdminState>,
     Query(params): Query<std::collections::HashMap<String, String>>,
@@ -794,7 +794,7 @@ pub async fn check_update(
 }
 
 /// POST /api/admin/system/update/rate-limit
-/// 查询 GitHub API 当前限流配额（可附带 token 用于"保存前先验证"）
+/// query GitHub API The current throttle quota (may carry token used for"validate before saving")
 pub async fn check_rate_limit(
     State(state): State<AdminState>,
     payload: Option<Json<super::types::CheckRateLimitRequest>>,
@@ -805,7 +805,7 @@ pub async fn check_rate_limit(
 }
 
 /// POST /api/admin/credentials/:id/relogin/social/start
-/// 发起 Social 重新登录（更新已有凭据的 Token 而非创建新凭据）
+/// initiate Social Re-login (updates the existing credential Token rather than creating a new credential)
 pub async fn start_social_relogin(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
@@ -818,7 +818,7 @@ pub async fn start_social_relogin(
 }
 
 /// POST /api/admin/credentials/:id/relogin/social/poll/:session_id
-/// 轮询 Social 重新登录状态
+/// poll Social re login state
 pub async fn poll_social_relogin(
     State(state): State<AdminState>,
     Path((_, session_id)): Path<CredSessionPath>,
@@ -830,7 +830,7 @@ pub async fn poll_social_relogin(
 }
 
 /// POST /api/admin/credentials/:id/relogin/social/complete/:session_id
-/// 远程模式下手动完成 Social 重新登录
+/// manually complete under remote mode Social heavynew login
 pub async fn complete_social_relogin(
     State(state): State<AdminState>,
     Path((_, session_id)): Path<CredSessionPath>,
@@ -853,7 +853,7 @@ pub async fn complete_social_relogin(
 }
 
 /// POST /api/admin/credentials/:id/relogin/idc/start
-/// 发起 IdC 重新登录（更新已有凭据的 Token 而非创建新凭据）
+/// initiate IdC Re-login (updates the existing credential Token rather than creating a new credential)
 pub async fn start_idc_relogin(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
@@ -866,7 +866,7 @@ pub async fn start_idc_relogin(
 }
 
 /// POST /api/admin/credentials/:id/relogin/idc/poll/:session_id
-/// 轮询 IdC 重新登录状态
+/// poll IdC re login state
 pub async fn poll_idc_relogin(
     State(state): State<AdminState>,
     Path((_, session_id)): Path<CredSessionPath>,
@@ -878,8 +878,8 @@ pub async fn poll_idc_relogin(
 }
 
 /// PUT /api/admin/config/admin-key
-/// 修改登录API密钥（adminApiKey）并持久化到配置文件。
-/// 该 key 用于管理面板登录，修改后立即生效。
+/// modifyloginAPIkey (adminApiKey) and persists to the config file.
+/// this key Used for admin panel login; takes effect immediately after change.
 pub async fn update_admin_key(
     State(state): State<AdminState>,
     Json(payload): Json<UpdateAdminKeyRequest>,
@@ -890,22 +890,22 @@ pub async fn update_admin_key(
         return (
             StatusCode::BAD_REQUEST,
             Json(super::types::AdminErrorResponse::invalid_request(
-                "新登录API密钥不能为空",
+                "new loginAPIthe key cannot be empty",
             )),
         )
             .into_response();
     }
 
-    // 更新内存中的登录API密钥
+    // update the in memory loginAPIkey
     *state.admin_api_key.write() = new_key.clone();
 
-    // 通过 service 持久化到 config.json（从磁盘加载最新后再写，避免覆盖其他字段）
+    // via service persistto config.json(load the latest from disk before writing, avoiding overwriting other fields)
     state.service.persist_admin_key(&new_key);
 
-    Json(SuccessResponse::new("登录API密钥已更新")).into_response()
+    Json(SuccessResponse::new("loginAPIkeyupdated")).into_response()
 }
 
-// ============ 客户端 API Key 分发 ============
+// ============ client API Key dispatch ============
 
 fn key_to_item(k: &super::client_keys::ClientKey) -> ClientKeyItem {
     ClientKeyItem {
@@ -947,7 +947,7 @@ pub async fn create_client_key(
         return (
             StatusCode::BAD_REQUEST,
             Json(super::types::AdminErrorResponse::invalid_request(
-                "name 不能为空",
+                "name notcanis empty",
             )),
         )
             .into_response();
@@ -982,18 +982,18 @@ pub async fn delete_client_key(
         return (
             StatusCode::CONFLICT,
             Json(super::types::AdminErrorResponse::invalid_request(
-                "系统密钥（config.json apiKey）不可删除",
+                "systemkey (config.json apiKey)notdeletable",
             )),
         )
             .into_response();
     }
     if state.client_keys.delete(id) {
-        Json(SuccessResponse::new(format!("Key #{} 已删除", id))).into_response()
+        Json(SuccessResponse::new(format!("Key #{} deleted", id))).into_response()
     } else {
         (
             StatusCode::NOT_FOUND,
             Json(super::types::AdminErrorResponse::not_found(format!(
-                "Key #{} 不存在",
+                "Key #{} does not exist",
                 id
             ))),
         )
@@ -1018,12 +1018,12 @@ pub async fn update_client_key(
             if t.is_empty() { None } else { Some(t.to_string()) }
         });
     if state.client_keys.update_meta(id, payload.name, description, group) {
-        Json(SuccessResponse::new(format!("Key #{} 已更新", id))).into_response()
+        Json(SuccessResponse::new(format!("Key #{} updated", id))).into_response()
     } else {
         (
             StatusCode::NOT_FOUND,
             Json(super::types::AdminErrorResponse::not_found(format!(
-                "Key #{} 不存在",
+                "Key #{} does not exist",
                 id
             ))),
         )
@@ -1039,13 +1039,13 @@ pub async fn set_client_key_disabled(
 ) -> impl IntoResponse {
     use axum::http::StatusCode;
     if state.client_keys.set_disabled(id, payload.disabled) {
-        let action = if payload.disabled { "禁用" } else { "启用" };
-        Json(SuccessResponse::new(format!("Key #{} 已{}", id, action))).into_response()
+        let action = if payload.disabled { "disable" } else { "enable" };
+        Json(SuccessResponse::new(format!("Key #{} already{}", id, action))).into_response()
     } else {
         (
             StatusCode::NOT_FOUND,
             Json(super::types::AdminErrorResponse::not_found(format!(
-                "Key #{} 不存在",
+                "Key #{} does not exist",
                 id
             ))),
         )
@@ -1060,12 +1060,12 @@ pub async fn reset_client_key_stats(
 ) -> impl IntoResponse {
     use axum::http::StatusCode;
     if state.client_keys.reset_stats(id) {
-        Json(SuccessResponse::new(format!("Key #{} 统计已重置", id))).into_response()
+        Json(SuccessResponse::new(format!("Key #{} statisticsreset", id))).into_response()
     } else {
         (
             StatusCode::NOT_FOUND,
             Json(super::types::AdminErrorResponse::not_found(format!(
-                "Key #{} 不存在",
+                "Key #{} does not exist",
                 id
             ))),
         )
@@ -1075,8 +1075,8 @@ pub async fn reset_client_key_stats(
 
 /// POST /api/admin/client-keys/:id/rotate
 ///
-/// 轮换 Key 值：旧明文立即失效，生成新明文返回（仅此一次可见）。
-/// 保留 id/name/description/group/统计/disabled 不变，无需重新分组绑定。
+/// rotate Key value: the old plaintext immediately becomes invalid, a new plaintext is generated and returned (visible only this once).
+/// retain id/name/description/group/statistics/disabled unchanged; no need to rebind the group.
 pub async fn rotate_client_key(
     State(state): State<AdminState>,
     Path(id): Path<u64>,
@@ -1084,8 +1084,8 @@ pub async fn rotate_client_key(
     use axum::http::StatusCode;
     match state.client_keys.rotate(id) {
         Some(entry) => {
-            // 系统密钥轮换后明文变了，需同步写回 config.json apiKey，
-            // 否则下次启动 ensure_system_key 会因旧 apiKey 不在列表而重复导入。
+            // After the system key rotates, the plaintext changed and must be written back in sync. config.json apiKey,
+            // otherwise the next startup ensure_system_key due to old apiKey Not in the list, causing a duplicate import.
             if entry.is_system {
                 state.service.persist_api_key(&entry.key);
             }
@@ -1100,7 +1100,7 @@ pub async fn rotate_client_key(
         None => (
             StatusCode::NOT_FOUND,
             Json(super::types::AdminErrorResponse::not_found(format!(
-                "Key #{} 不存在",
+                "Key #{} does not exist",
                 id
             ))),
         )
@@ -1108,13 +1108,13 @@ pub async fn rotate_client_key(
     }
 }
 
-// ============ 用量统计 ============
+// ============ usagestatistics ============
 
 fn parse_range(params: &std::collections::HashMap<String, String>) -> Result<Range, String> {
     let Some(range) = params.get("range") else {
-        return Err("range 必须是 24h、7d 或 30d".to_string());
+        return Err("range must be 24h,7d or 30d".to_string());
     };
-    Range::parse(range.as_str()).ok_or_else(|| "range 必须是 24h、7d 或 30d".to_string())
+    Range::parse(range.as_str()).ok_or_else(|| "range must be 24h,7d or 30d".to_string())
 }
 
 fn parse_key_id(params: &HashMap<String, String>) -> Result<Option<u64>, String> {
@@ -1122,12 +1122,12 @@ fn parse_key_id(params: &HashMap<String, String>) -> Result<Option<u64>, String>
         Some(s) => s
             .parse::<u64>()
             .map(Some)
-            .map_err(|_| "keyId 必须是数字".to_string()),
+            .map_err(|_| "keyId must becountcharacter".to_string()),
         None => Ok(None),
     }
 }
 
-/// 解析可选的分组筛选参数。空字符串视为不传。
+/// Parses the optional group filter parameter. An empty string is treated as not provided.
 fn parse_group_filter(params: &HashMap<String, String>) -> Option<String> {
     params
         .get("group")
@@ -1135,9 +1135,9 @@ fn parse_group_filter(params: &HashMap<String, String>) -> Option<String> {
         .filter(|s| !s.is_empty())
 }
 
-/// 把 group 名转换为该分组下所有凭据 id 的白名单，给 UsageAggregator 用。
-/// 返回 None 表示未指定分组（不过滤）；返回 Some(空集) 也是合法值——意味着该分组下没有凭据，
-/// 所有 query 都会自然返回空结果。
+/// take group the name into all credentials under that group. id the allow list, give UsageAggregator use.
+/// return None Indicates no group specified (no filter); returns Some(empty set) is alsovalidvalue——means there are no credentials under that group,
+/// all query will naturally return an empty result.
 fn group_to_cred_ids(
     state: &AdminState,
     group: Option<&str>,
@@ -1157,9 +1157,9 @@ fn group_to_cred_ids(
 fn parse_granularity(params: &HashMap<String, String>) -> Result<StatsGranularity, String> {
     match params.get("granularity") {
         Some(s) => {
-            StatsGranularity::parse(s).ok_or_else(|| "granularity 必须是 hour 或 day".to_string())
+            StatsGranularity::parse(s).ok_or_else(|| "granularity must be hour or day".to_string())
         }
-        None => Err("granularity 必须是 hour 或 day".to_string()),
+        None => Err("granularity must be hour or day".to_string()),
     }
 }
 
@@ -1168,7 +1168,7 @@ fn parse_stats_window(params: &HashMap<String, String>) -> Result<StatsQueryWind
     match (params.get("startDate"), params.get("endDate")) {
         (Some(start), Some(end)) => custom_stats_window(start, end, granularity),
         (None, None) => Ok(StatsQueryWindow::preset(parse_range(params)?, granularity)),
-        _ => Err("startDate 和 endDate 必须同时提供".to_string()),
+        _ => Err("startDate and endDate must be provided together".to_string()),
     }
 }
 
@@ -1180,7 +1180,7 @@ fn custom_stats_window(
     let start_date = parse_stats_date(start, "startDate")?;
     let end_date = parse_stats_date(end, "endDate")?;
     if end_date < start_date {
-        return Err("endDate 不能早于 startDate".to_string());
+        return Err("endDate notcanearlyat startDate".to_string());
     }
     let start_ts = local_midnight_ts(start_date)?;
     let end_ts = local_midnight_ts(end_date + Duration::days(1))?;
@@ -1193,7 +1193,7 @@ fn custom_stats_window(
 
 fn parse_stats_date(value: &str, name: &str) -> Result<NaiveDate, String> {
     NaiveDate::parse_from_str(value, "%Y-%m-%d")
-        .map_err(|_| format!("{} 必须使用 YYYY-MM-DD 格式", name))
+        .map_err(|_| format!("{} mustuse YYYY-MM-DD format", name))
 }
 
 fn local_midnight_ts(date: NaiveDate) -> Result<i64, String> {
@@ -1201,7 +1201,7 @@ fn local_midnight_ts(date: NaiveDate) -> Result<i64, String> {
         .with_ymd_and_hms(date.year(), date.month(), date.day(), 0, 0, 0)
         .single()
         .map(|d| d.timestamp())
-        .ok_or_else(|| format!("日期 {} 无法转换为本地时间", date))
+        .ok_or_else(|| format!("date {} cannot convert to local time", date))
 }
 
 fn stats_query_parts(
@@ -1221,7 +1221,7 @@ fn stats_bad_request(message: String) -> axum::response::Response {
 /// GET /api/admin/stats/overview
 pub async fn stats_overview(State(state): State<AdminState>) -> impl IntoResponse {
     let overview = state.usage_aggregator.overview();
-    // 附加：当前活跃 Key / 凭据数
+    // additional: currently active Key / credential count
     let active_keys = state.client_keys.active_count() as u64;
     let snapshot = state.service.get_all_credentials();
     let active_credentials = snapshot.credentials.iter().filter(|c| !c.disabled).count() as u64;
@@ -1279,8 +1279,8 @@ pub async fn stats_by_credential(
         Err(message) => return stats_bad_request(message),
     };
     let group = parse_group_filter(&params);
-    // 拉一份凭据快照（既给响应附加 email，也用来按 group 构建 cred_ids 白名单，
-    // 避免分别查两次）
+    // Pulls a credential snapshot (both to attach to the response email,alsousecomeby group build cred_ids whitelist,
+    // avoid querying twice separately)
     let snapshot = state.service.get_all_credentials();
     let email_map: std::collections::HashMap<u64, Option<String>> = snapshot
         .credentials
@@ -1314,14 +1314,14 @@ pub async fn stats_by_credential(
 }
 
 /// GET /api/admin/traces
-/// 查询请求链路追踪记录（含每跳明细）。
-/// query 参数：status / errorType / credentialId / keyId / group / model / onlyFailed / limit / offset
-/// 返回：{ records: [...], total: N }
+/// Queries the request trace records (including per hop detail).
+/// query parameter:status / errorType / credentialId / keyId / group / model / onlyFailed / limit / offset
+/// returns:{ records: [...], total: N }
 pub async fn list_traces(
     State(state): State<AdminState>,
     Query(params): Query<std::collections::HashMap<String, String>>,
 ) -> impl IntoResponse {
-    // 解析分组筛选：把 group 名转为凭据 id 白名单（先于查询执行，避免分页错位）
+    // parse the group filter: take group name conversionascredential id Allowlist (executed before the query, avoiding pagination misalignment).
     let group = params.get("group").map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
     let credential_ids: Option<Vec<u64>> = group.as_ref().map(|g| {
         state
@@ -1362,7 +1362,7 @@ pub async fn list_traces(
     };
     let (records, total) = state.trace_store.query_paged(&query);
 
-    // 附加 credential email 方便前端展示（与 stats_by_credential 一致）
+    // append credential email convenient for frontend display (with stats_by_credential consistent)
     let snapshot = state.service.get_all_credentials();
     let email_map: HashMap<u64, Option<String>> = snapshot
         .credentials
@@ -1375,8 +1375,8 @@ pub async fn list_traces(
         .into_iter()
         .map(|k| (k.id, k.name))
         .collect();
-    // 入口 Key 名称解析：命中客户端 Key 名称表则取名称，否则回退 #id
-    // （master apiKey 已下线，历史 key_id=0 记录会显示为 #0）
+    // entry Key Name resolution: matches a client Key the name table takes the name, otherwise falls back. #id
+    // (master apiKey taken offline, history key_id=0 the record will be shown as #0)
     let key_label = |key_id: u64| -> String {
         client_key_name_map
             .get(&key_id)
@@ -1389,7 +1389,7 @@ pub async fn list_traces(
         .map(|r| {
             let final_email = email_map.get(&r.final_credential_id).cloned().flatten();
             let key_name = key_label(r.key_id);
-            // attempts 里每跳也附 email
+            // attempts ineach hop also attaches email
             let attempts: Vec<serde_json::Value> = r
                 .attempts
                 .iter()
@@ -1438,8 +1438,8 @@ pub async fn list_traces(
 }
 
 /// GET /api/admin/traces/failure-stats
-/// 按凭据聚合失败次数（鉴权 / 账号风控 / 其他三类），用于卡片分色展示。
-/// 返回 { "<credentialId>": { auth, throttle, other }, ... }
+/// Aggregates failure counts by credential (auth, / accountthrottle / the other three types), used for color coded card display.
+/// return { "<credentialId>": { auth, throttle, other }, ... }
 pub async fn trace_failure_stats(State(state): State<AdminState>) -> impl IntoResponse {
     let stats = state.trace_store.failure_stats();
     let map: std::collections::HashMap<String, serde_json::Value> = stats
@@ -1458,7 +1458,7 @@ pub async fn trace_failure_stats(State(state): State<AdminState>) -> impl IntoRe
     Json(map)
 }
 
-// ============ 账号分组（独立实体）============
+// ============ Account group (independent entity).============
 
 fn group_to_item(
     g: &super::groups::Group,
@@ -1499,8 +1499,8 @@ pub async fn create_group(
         Ok(g) => Json(group_to_item(&g, &state)).into_response(),
         Err(e) => {
             let msg = e.to_string();
-            // "已存在" → 409；其他校验失败 → 400
-            let (code, resp) = if msg.contains("已存在") {
+            // "already exists" → 409; other validation failures → 400
+            let (code, resp) = if msg.contains("already exists") {
                 (
                     StatusCode::CONFLICT,
                     super::types::AdminErrorResponse::invalid_request(msg),
@@ -1518,7 +1518,7 @@ pub async fn create_group(
 
 /// PATCH /api/admin/groups/:name
 ///
-/// 改名 / 改备注。改名时级联更新所有引用该分组的凭据 / 客户端 Key。
+/// rename / Changes the note. On rename, cascade updates all credentials that reference the group. / client Key.
 pub async fn update_group(
     State(state): State<AdminState>,
     Path(name): Path<String>,
@@ -1528,24 +1528,24 @@ pub async fn update_group(
         return (
             StatusCode::NOT_FOUND,
             Json(super::types::AdminErrorResponse::not_found(format!(
-                "分组 {} 不存在",
+                "group {} does not exist",
                 name
             ))),
         )
             .into_response();
     }
 
-    // 1. 改名（先校验目标名再级联）
+    // 1. Rename (validate the target name first, then cascade).
     let mut current_name = name.clone();
     if let Some(new_name) = payload.new_name.as_deref() {
         let trimmed = new_name.trim();
         if !trimmed.is_empty() && trimmed != name {
-            // GroupManager 内做唯一性 / 长度 / 空校验
+            // GroupManager insidedouniqueproperty / length / empty check
             match state.groups.rename(&name, trimmed) {
                 Ok(_) => {}
                 Err(e) => {
                     let msg = e.to_string();
-                    let code = if msg.contains("已存在") {
+                    let code = if msg.contains("already exists") {
                         StatusCode::CONFLICT
                     } else {
                         StatusCode::BAD_REQUEST
@@ -1557,7 +1557,7 @@ pub async fn update_group(
                         .into_response();
                 }
             }
-            // 级联：失败时尝试回滚分组改名（避免注册表与凭据 / Key 不一致）
+            // Cascade: on failure, tries to roll back the group rename (avoiding registry and credential / Key notconsistent)
             let cred_res = state
                 .service
                 .token_manager()
@@ -1567,7 +1567,7 @@ pub async fn update_group(
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(super::types::AdminErrorResponse::internal_error(format!(
-                        "级联更新凭据失败: {}",
+                        "cascade update credentials failed: {}",
                         e
                     ))),
                 )
@@ -1578,7 +1578,7 @@ pub async fn update_group(
         }
     }
 
-    // 2. 改备注
+    // 2. edit note
     if let Some(desc) = payload.description {
         let desc_opt = if desc.trim().is_empty() {
             None
@@ -1600,7 +1600,7 @@ pub async fn update_group(
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(super::types::AdminErrorResponse::internal_error(
-                    "分组在更新过程中消失，状态异常",
+                    "The group disappeared during the update; abnormal state.",
                 )),
             )
                 .into_response();
@@ -1611,7 +1611,7 @@ pub async fn update_group(
 
 /// DELETE /api/admin/groups/:name?force=true
 ///
-/// 默认拒绝删除仍被引用的分组；带 `force=true` 时级联清理所有引用并删除。
+/// By default refuses to delete a group still referenced; with `force=true` cascade cleans all references and deletes.
 pub async fn delete_group(
     State(state): State<AdminState>,
     Path(name): Path<String>,
@@ -1621,7 +1621,7 @@ pub async fn delete_group(
         return (
             StatusCode::NOT_FOUND,
             Json(super::types::AdminErrorResponse::not_found(format!(
-                "分组 {} 不存在",
+                "group {} does not exist",
                 name
             ))),
         )
@@ -1638,7 +1638,7 @@ pub async fn delete_group(
         return (
             StatusCode::CONFLICT,
             Json(super::types::AdminErrorResponse::invalid_request(format!(
-                "分组仍被引用（凭据 {} / 客户端 Key {}），传 ?force=true 级联清理",
+                "the group is still referenced (credential {} / client Key {}), pass ?force=true cascade cleanup",
                 cred_count, key_count
             ))),
         )
@@ -1654,7 +1654,7 @@ pub async fn delete_group(
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(super::types::AdminErrorResponse::internal_error(format!(
-                    "级联清理凭据失败: {}",
+                    "cascade cleanup credentials failed: {}",
                     e
                 ))),
             )
@@ -1665,7 +1665,7 @@ pub async fn delete_group(
 
     state.groups.delete(&name);
     Json(super::types::SuccessResponse::new(format!(
-        "分组 {} 已删除",
+        "group {} deleted",
         name
     )))
     .into_response()

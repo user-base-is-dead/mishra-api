@@ -1,12 +1,12 @@
-//! 账号分组管理（独立实体版）
+//! Account group management (independent entity version).
 //!
-//! 此模块把"分组"从依附于凭据 / 客户端 Key 的字符串标签，提升为一等实体：
-//! - 分组在 `groups.json` 中独立持久化（与 `credentials.json` 同目录）
-//! - 凭据 / 客户端 Key 的 `groups`/`group` 字段引用分组**名字**（保持 schema 兼容）
-//! - 增删改凭据 / Key 时，校验所引用的每个分组名都已注册（防 typo 漂移）
-//! - 改名走级联：自动同步所有引用的凭据与 Key
+//! thismoduletake"group"from being attached to the credential / client Key the string tag, promoted to a first class entity:
+//! - group in `groups.json` persisted independently in (with `credentials.json` samedirectory)
+//! - credential / client Key of `groups`/`group` the field references the group**name**(keep schema compatible)
+//! - add update deletecredential / Key validates that each referenced group name is already registered (to prevent typo drift)
+//! - Rename goes through cascade: automatically syncs all referencing credentials and Key
 //!
-//! 设计参考 `client_keys.rs` 的 RwLock + JSON 持久化模式。
+//! designreference `client_keys.rs` of RwLock + JSON persistence mode.
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -15,27 +15,27 @@ use chrono::Utc;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 
-/// 单个分组（持久化实体）
+/// A single group (persisted entity).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Group {
-    /// 分组名（主键，区分大小写、不允许重名、不允许首尾空白）
+    /// Group name (primary key, case sensitive, no duplicates, no leading or trailing whitespace).
     pub name: String,
-    /// 备注（可选）
+    /// note (optional)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    /// 创建时间（ISO8601）
+    /// createtime(ISO8601)
     pub created_at: String,
 }
 
-/// 分组管理器（线程安全 + 自动持久化）
+/// Group manager (thread safe + auto persist)
 pub struct GroupManager {
     inner: RwLock<Inner>,
     path: Option<PathBuf>,
 }
 
 struct Inner {
-    /// 按 name 索引；HashMap 保证 O(1) 存在性查询
+    /// by name index;HashMap guarantee O(1) existspropertyquery
     entries: std::collections::HashMap<String, Group>,
 }
 
@@ -49,7 +49,7 @@ impl GroupManager {
         }
     }
 
-    /// 从 `groups.json` 加载（不存在时返回空管理器）
+    /// from `groups.json` Loads (returns an empty manager when it does not exist).
     pub fn load<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
         let path = path.as_ref().to_path_buf();
         let list: Vec<Group> = if path.exists() {
@@ -84,14 +84,14 @@ impl GroupManager {
         match serde_json::to_string_pretty(&list) {
             Ok(json) => {
                 if let Err(e) = std::fs::write(path, json) {
-                    tracing::warn!("写入分组文件失败: {}", e);
+                    tracing::warn!("failed to write the group file: {}", e);
                 }
             }
-            Err(e) => tracing::warn!("序列化分组失败: {}", e),
+            Err(e) => tracing::warn!("failed to serialize the group: {}", e),
         }
     }
 
-    /// 列出所有分组（按 name 字典序）
+    /// list all groups (by name dictionary order)
     pub fn list(&self) -> Vec<Group> {
         let inner = self.inner.read();
         let mut list: Vec<Group> = inner.entries.values().cloned().collect();
@@ -99,17 +99,17 @@ impl GroupManager {
         list
     }
 
-    /// 单个查询
+    /// singlequery
     pub fn get(&self, name: &str) -> Option<Group> {
         self.inner.read().entries.get(name).cloned()
     }
 
-    /// 是否存在指定分组（用于凭据 / Key 写入前校验）
+    /// Whether the given group exists (used by credential / Key validate before writing)
     pub fn exists(&self, name: &str) -> bool {
         self.inner.read().entries.contains_key(name)
     }
 
-    /// 校验一组名字是否全部已注册；返回未注册的名字列表（调用方据此决定是否拒绝写入）
+    /// Validates whether a set of names are all registered; returns the list of unregistered names (the caller decides whether to reject the write accordingly).
     #[allow(dead_code)]
     pub fn missing<'a>(&self, names: impl IntoIterator<Item = &'a str>) -> Vec<String> {
         let inner = self.inner.read();
@@ -120,18 +120,18 @@ impl GroupManager {
             .collect()
     }
 
-    /// 创建分组。重名直接报错，不会静默覆盖（避免误创建丢备注）
+    /// Creates a group. A duplicate name errors directly and does not silently overwrite (avoids accidental creation losing the note).
     pub fn create(&self, name: String, description: Option<String>) -> anyhow::Result<Group> {
         let trimmed = name.trim();
         if trimmed.is_empty() {
-            anyhow::bail!("分组名不能为空");
+            anyhow::bail!("the group name cannot be empty");
         }
         if trimmed.chars().count() > 64 {
-            anyhow::bail!("分组名过长（最多 64 字符）");
+            anyhow::bail!("group name too long (at most 64 characters)");
         }
         let mut inner = self.inner.write();
         if inner.entries.contains_key(trimmed) {
-            anyhow::bail!("分组已存在: {}", trimmed);
+            anyhow::bail!("groupalready exists: {}", trimmed);
         }
         let group = Group {
             name: trimmed.to_string(),
@@ -143,7 +143,7 @@ impl GroupManager {
         Ok(group)
     }
 
-    /// 更新备注（不改名字）
+    /// Updates the note (does not change the name).
     pub fn update_description(
         &self,
         name: &str,
@@ -153,33 +153,33 @@ impl GroupManager {
         let entry = inner
             .entries
             .get_mut(name)
-            .ok_or_else(|| anyhow::anyhow!("分组不存在: {}", name))?;
+            .ok_or_else(|| anyhow::anyhow!("groupdoes not exist: {}", name))?;
         entry.description = description.map(|d| d.trim().to_string()).filter(|d| !d.is_empty());
         let cloned = entry.clone();
         self.save_locked(&inner);
         Ok(cloned)
     }
 
-    /// 改名。返回 `Ok(new_name)`；调用方负责级联更新凭据 / Key 中的引用。
-    /// `new_name` 必须未被占用；若与 `old_name` 完全一致则视为 no-op 直接返回成功。
+    /// rename. returns `Ok(new_name)`; the caller is responsible for cascade updating credentials. / Key inreference.
+    /// `new_name` must not be occupied; if with `old_name` if fully identical treat as no-op return success directly.
     pub fn rename(&self, old_name: &str, new_name: &str) -> anyhow::Result<Group> {
         let trimmed = new_name.trim();
         if trimmed.is_empty() {
-            anyhow::bail!("新分组名不能为空");
+            anyhow::bail!("the new group name cannot be empty");
         }
         if trimmed.chars().count() > 64 {
-            anyhow::bail!("分组名过长（最多 64 字符）");
+            anyhow::bail!("group name too long (at most 64 characters)");
         }
 
         let mut inner = self.inner.write();
         if !inner.entries.contains_key(old_name) {
-            anyhow::bail!("分组不存在: {}", old_name);
+            anyhow::bail!("groupdoes not exist: {}", old_name);
         }
         if trimmed == old_name {
             return Ok(inner.entries.get(old_name).cloned().unwrap());
         }
         if inner.entries.contains_key(trimmed) {
-            anyhow::bail!("目标分组名已存在: {}", trimmed);
+            anyhow::bail!("the target group name already exists: {}", trimmed);
         }
         let mut group = inner.entries.remove(old_name).unwrap();
         group.name = trimmed.to_string();
@@ -188,8 +188,8 @@ impl GroupManager {
         Ok(group)
     }
 
-    /// 删除分组。调用方应先确认无引用（或显式接受级联清理）。
-    /// 返回 `true` 表示真的删了；返回 `false` 表示原本就不存在。
+    /// Deletes a group. The caller should first confirm there are no references (or explicitly accept cascade cleanup).
+    /// return `true` means it was actually deleted; return `false` means it did not exist in the first place.
     pub fn delete(&self, name: &str) -> bool {
         let mut inner = self.inner.write();
         let removed = inner.entries.remove(name).is_some();
@@ -199,8 +199,8 @@ impl GroupManager {
         removed
     }
 
-    /// 启动迁移：从已有名字集合（凭据 groups + Key.group 聚合）反向写入注册表。
-    /// 已存在的名字保持原备注 / 创建时间不变；只补缺。返回新增数量。
+    /// Startup migration: from the existing name set (credential groups + Key.group aggregation) writes back into the registry.
+    /// An already existing name keeps its original note. / The creation time stays unchanged; only fills gaps. Returns the number added.
     pub fn bootstrap_from_existing<I: IntoIterator<Item = String>>(&self, names: I) -> usize {
         let mut inner = self.inner.write();
         let now = Utc::now().to_rfc3339();
@@ -235,12 +235,12 @@ impl Default for GroupManager {
     }
 }
 
-/// 默认管理器路径（相对凭据目录）
+/// Default manager path (relative to the credential directory).
 pub fn default_path_in(dir: &Path) -> PathBuf {
     dir.join("groups.json")
 }
 
-/// Arc 包装，便于注入 axum State
+/// Arc wrap, to facilitate injection axum State
 pub type SharedGroupManager = Arc<GroupManager>;
 
 #[cfg(test)]
@@ -264,7 +264,7 @@ mod tests {
         let mgr = GroupManager::new();
         mgr.create("dup".into(), None).unwrap();
         assert!(mgr.create("dup".into(), None).is_err());
-        assert!(mgr.create("  dup  ".into(), None).is_err()); // trim 后等价
+        assert!(mgr.create("  dup  ".into(), None).is_err()); // trim equivalent after
     }
 
     #[test]
@@ -302,7 +302,7 @@ mod tests {
         mgr.create("a".into(), None).unwrap();
         mgr.create("b".into(), None).unwrap();
         assert!(mgr.rename("a", "b").is_err());
-        // 原数据不变
+        // originaldatanotchange
         assert!(mgr.exists("a"));
         assert!(mgr.exists("b"));
     }
@@ -329,16 +329,16 @@ mod tests {
         let mgr = GroupManager::new();
         mgr.create("existing".into(), Some("kept".into())).unwrap();
         let added = mgr.bootstrap_from_existing(vec![
-            "existing".into(), // 已存在 → 跳过，备注保留
+            "existing".into(), // already exists → skip, keep the note
             "new1".into(),
-            "new1".into(), // 重复 → 第二次跳过
+            "new1".into(), // duplicate → numbertwotimesskip
             "  new2  ".into(),
-            "".into(), // 空 → 跳过
+            "".into(), // empty → skip
         ]);
         assert_eq!(added, 2); // new1 + new2
         let list = mgr.list();
         assert_eq!(list.len(), 3);
-        // existing 的备注没被覆盖
+        // existing the note was not overwritten
         let existing = mgr.get("existing").unwrap();
         assert_eq!(existing.description.as_deref(), Some("kept"));
     }
@@ -363,7 +363,7 @@ mod tests {
         mgr.create("alpha".into(), Some("a-desc".into())).unwrap();
         mgr.create("beta".into(), None).unwrap();
 
-        // 重新加载
+        // heavynewload
         let mgr2 = GroupManager::load(&path).unwrap();
         let list = mgr2.list();
         assert_eq!(list.len(), 2);

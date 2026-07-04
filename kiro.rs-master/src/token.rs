@@ -1,11 +1,11 @@
-//! Token 计算模块
+//! Token compute module
 //!
-//! 提供文本 token 数量计算功能。
+//! provide text token the count computation feature.
 //!
-//! # 计算规则
-//! - 非西文字符：每个计 4.5 个字符单位
-//! - 西文字符：每个计 1 个字符单位
-//! - 4 个字符单位 = 1 token（四舍五入）
+//! # compute rule
+//! - non western characters: each counts 4.5 itemcharactersinglebit
+//! - western characters: each counts 1 itemcharactersinglebit
+//! - 4 itemcharactersinglebit = 1 token(round to nearest)
 
 use crate::anthropic::types::{
     CountTokensRequest, CountTokensResponse, Message, SystemMessage, Tool,
@@ -14,67 +14,67 @@ use crate::http_client::{ProxyConfig, build_client};
 use crate::model::config::TlsBackend;
 use std::sync::OnceLock;
 
-/// Count Tokens API 配置
+/// Count Tokens API config
 #[derive(Clone, Default)]
 pub struct CountTokensConfig {
-    /// 外部 count_tokens API 地址
+    /// external count_tokens API address
     pub api_url: Option<String>,
-    /// count_tokens API 密钥
+    /// count_tokens API key
     pub api_key: Option<String>,
-    /// count_tokens API 认证类型（"x-api-key" 或 "bearer"）
+    /// count_tokens API authtype("x-api-key" or "bearer")
     pub auth_type: String,
-    /// 代理配置
+    /// proxy config
     pub proxy: Option<ProxyConfig>,
 
     pub tls_backend: TlsBackend,
 }
 
-/// 全局配置存储
+/// global configstore
 static COUNT_TOKENS_CONFIG: OnceLock<CountTokensConfig> = OnceLock::new();
 
-/// 初始化 count_tokens 配置
+/// initialize count_tokens config
 ///
-/// 应在应用启动时调用一次
+/// Should be called once at application startup.
 pub fn init_config(config: CountTokensConfig) {
     let _ = COUNT_TOKENS_CONFIG.set(config);
 }
 
-/// 获取配置
+/// get config
 fn get_config() -> Option<&'static CountTokensConfig> {
     COUNT_TOKENS_CONFIG.get()
 }
 
-/// 判断字符是否为非西文字符
+/// Determines whether the character is non Western.
 ///
-/// 西文字符包括：
-/// - ASCII 字符 (U+0000..U+007F)
-/// - 拉丁字母扩展 (U+0080..U+024F)
-/// - 拉丁字母扩展附加 (U+1E00..U+1EFF)
+/// western characters include:
+/// - ASCII character (U+0000..U+007F)
+/// - Latin letter extension (U+0080..U+024F)
+/// - Latin extended additional (U+1E00..U+1EFF)
 ///
-/// 返回 true 表示该字符是非西文字符（如中文、日文、韩文、阿拉伯文等）
+/// return true Indicates the character is non Western (such as Chinese, Japanese, Korean, Arabic, and so on).
 fn is_non_western_char(c: char) -> bool {
     !matches!(c,
-        // 基本 ASCII
+        // basic ASCII
         '\u{0000}'..='\u{007F}' |
-        // 拉丁字母扩展-A (Latin Extended-A)
+        // Latin letter extension-A (Latin Extended-A)
         '\u{0080}'..='\u{00FF}' |
-        // 拉丁字母扩展-B (Latin Extended-B)
+        // Latin letter extension-B (Latin Extended-B)
         '\u{0100}'..='\u{024F}' |
-        // 拉丁字母扩展附加 (Latin Extended Additional)
+        // Latin extended additional (Latin Extended Additional)
         '\u{1E00}'..='\u{1EFF}' |
-        // 拉丁字母扩展-C/D/E
+        // Latin letter extension-C/D/E
         '\u{2C60}'..='\u{2C7F}' |
         '\u{A720}'..='\u{A7FF}' |
         '\u{AB30}'..='\u{AB6F}'
     )
 }
 
-/// 计算文本的 token 数量
+/// computetextof token count
 ///
-/// # 计算规则
-/// - 非西文字符：每个计 4.5 个字符单位
-/// - 西文字符：每个计 1 个字符单位
-/// - 4 个字符单位 = 1 token（四舍五入）
+/// # compute rule
+/// - non western characters: each counts 4.5 itemcharactersinglebit
+/// - western characters: each counts 1 itemcharactersinglebit
+/// - 4 itemcharactersinglebit = 1 token(round to nearest)
 /// ```
 pub fn count_tokens(text: &str) -> u64 {
     // println!("text: {}", text);
@@ -102,19 +102,19 @@ pub fn count_tokens(text: &str) -> u64 {
     acc_token
 }
 
-/// 估算请求的输入 tokens
+/// estimate the request input tokens
 ///
-/// 优先调用远程 API，失败时回退到本地计算
+/// prioritycall remote API, falls back to local computation on failure.
 pub(crate) fn count_all_tokens(
     model: String,
     system: Option<Vec<SystemMessage>>,
     messages: Vec<Message>,
     tools: Option<Vec<Tool>>,
 ) -> u64 {
-    // 检查是否配置了远程 API
+    // check whether remote is configured API
     if let Some(config) = get_config() {
         if let Some(api_url) = &config.api_url {
-            // 尝试调用远程 API
+            // attemptcall remote API
             let result = tokio::task::block_in_place(|| {
                 tokio::runtime::Handle::current().block_on(call_remote_count_tokens(
                     api_url, config, model, &system, &messages, &tools,
@@ -123,21 +123,21 @@ pub(crate) fn count_all_tokens(
 
             match result {
                 Ok(tokens) => {
-                    tracing::debug!("远程 count_tokens API 返回: {}", tokens);
+                    tracing::debug!("remote count_tokens API return: {}", tokens);
                     return tokens;
                 }
                 Err(e) => {
-                    tracing::warn!("远程 count_tokens API 调用失败，回退到本地计算: {}", e);
+                    tracing::warn!("remote count_tokens API The call failed; falls back to local computation.: {}", e);
                 }
             }
         }
     }
 
-    // 本地计算
+    // local compute
     count_all_tokens_local(system, messages, tools)
 }
 
-/// 调用远程 count_tokens API
+/// call remote count_tokens API
 async fn call_remote_count_tokens(
     api_url: &str,
     config: &CountTokensConfig,
@@ -148,18 +148,18 @@ async fn call_remote_count_tokens(
 ) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
     let client = build_client(config.proxy.as_ref(), 300, config.tls_backend)?;
 
-    // 构建请求体
+    // build requestbody
     let request = CountTokensRequest {
-        model: model, // 模型名称用于 token 计算
+        model: model, // model namenameused for token compute
         messages: messages.clone(),
         system: system.clone(),
         tools: tools.clone(),
     };
 
-    // 构建请求
+    // build request
     let mut req_builder = client.post(api_url);
 
-    // 设置认证头
+    // setauthhead
     if let Some(api_key) = &config.api_key {
         if config.auth_type == "bearer" {
             req_builder = req_builder.header("Authorization", format!("Bearer {}", api_key));
@@ -168,7 +168,7 @@ async fn call_remote_count_tokens(
         }
     }
 
-    // 发送请求
+    // send request
     let response = req_builder
         .header("Content-Type", "application/json")
         .json(&request)
@@ -176,14 +176,14 @@ async fn call_remote_count_tokens(
         .await?;
 
     if !response.status().is_success() {
-        return Err(format!("API 返回错误状态: {}", response.status()).into());
+        return Err(format!("API returnerrorstate: {}", response.status()).into());
     }
 
     let result: CountTokensResponse = response.json().await?;
     Ok(result.input_tokens as u64)
 }
 
-/// 本地计算请求的输入 tokens
+/// locally compute the request input tokens
 fn count_all_tokens_local(
     system: Option<Vec<SystemMessage>>,
     messages: Vec<Message>,
@@ -191,14 +191,14 @@ fn count_all_tokens_local(
 ) -> u64 {
     let mut total = 0;
 
-    // 系统消息
+    // system message
     if let Some(ref system) = system {
         for msg in system {
             total += count_tokens(&msg.text);
         }
     }
 
-    // 用户消息
+    // user message
     for msg in &messages {
         if let serde_json::Value::String(s) = &msg.content {
             total += count_tokens(s);
@@ -211,7 +211,7 @@ fn count_all_tokens_local(
         }
     }
 
-    // 工具定义
+    // tool definition
     if let Some(ref tools) = tools {
         for tool in tools {
             total += count_tokens(&tool.name);
@@ -224,7 +224,7 @@ fn count_all_tokens_local(
     total.max(1)
 }
 
-/// 估算输出 tokens
+/// estimateoutput tokens
 pub(crate) fn estimate_output_tokens(content: &[serde_json::Value]) -> i32 {
     let mut total = 0;
 
@@ -239,7 +239,7 @@ pub(crate) fn estimate_output_tokens(content: &[serde_json::Value]) -> i32 {
             total += 8;
         }
         if block.get("type").and_then(|v| v.as_str()) == Some("tool_use") {
-            // 工具调用开销
+            // tool calloverhead
             if let Some(input) = block.get("input") {
                 let input_str = serde_json::to_string(input).unwrap_or_default();
                 total += count_tokens(&input_str) as i32;
@@ -259,7 +259,7 @@ mod tests {
     fn estimate_output_tokens_counts_thinking_blocks() {
         let with_thinking = estimate_output_tokens(&[json!({
             "type": "thinking",
-            "thinking": "需要计入输出 token"
+            "thinking": "needcount inoutput token"
         })]);
         let text_only = estimate_output_tokens(&[json!({
             "type": "text",

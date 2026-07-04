@@ -1,12 +1,12 @@
-//! Kiro CLI 端点（Amazon Q for CLI）
+//! Kiro CLI endpoint (Amazon Q for CLI)
 //!
-//! 对应 Kiro CLI / Amazon Q for CLI 使用的 AWS JSON 协议端点：
-//! - URL: `https://q.{api_region}.amazonaws.com/`（根路径 + x-amz-target 头）
+//! correspond Kiro CLI / Amazon Q for CLI used AWS JSON protocolendpoint:
+//! - URL: `https://q.{api_region}.amazonaws.com/`(root path + x-amz-target header)
 //! - Content-Type: `application/x-amz-json-1.0`
-//! - User-Agent: aws-sdk-rust 格式
-//! - 请求体 origin: `KIRO_CLI`
+//! - User-Agent: aws-sdk-rust format
+//! - request body origin: `KIRO_CLI`
 //!
-//! 适用于使用 `ksk_` 前缀 API Key 的凭据。
+//! suitableused foruse `ksk_` prefix API Key credential.
 
 use reqwest::RequestBuilder;
 use uuid::Uuid;
@@ -112,10 +112,10 @@ impl KiroEndpoint for CliEndpoint {
     }
 }
 
-/// 将请求体转换为 KIRO_CLI 格式：
-/// 1. 所有 "AI_EDITOR" origin 替换为 "KIRO_CLI"
-/// 2. 移除 conversationState.agentContinuationId（Kiro CLI 不发送此字段）
-/// 3. 移除 history 中用户消息的 modelId（Kiro CLI 不在历史消息里发送此字段）
+/// convert the request body into KIRO_CLI format:
+/// 1. all "AI_EDITOR" origin replace with "KIRO_CLI"
+/// 2. remove conversationState.agentContinuationId(Kiro CLI do not send this field)
+/// 3. remove history inuser messageof modelId(Kiro CLI does not send this field in history messages)
 fn set_origin_kiro_cli(body: &str) -> String {
     let body = body.replace("\"origin\":\"AI_EDITOR\"", "\"origin\":\"KIRO_CLI\"");
 

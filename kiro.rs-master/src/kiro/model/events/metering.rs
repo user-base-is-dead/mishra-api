@@ -1,10 +1,10 @@
-//! 计费事件
+//! billing event
 //!
-//! Kiro 上游 meteringEvent payload 形如 `{"unit":"credit","unitPlural":"credits","usage":<f64>}`，
-//! `usage` 是本次请求消耗的 credit 数。中转层据此累计每个时间窗的 credit 总量。
+//! Kiro upstream meteringEvent payload like `{"unit":"credit","unitPlural":"credits","usage":<f64>}`,
+//! `usage` is what this request consumed credit count. The relay layer accumulates each time window accordingly. credit total.
 //!
-//! 上游 **不下发** token / cache 字段（实测确认），所以这里**只**解析 `usage`，
-//! 不做任何字段名候选兼容；解析失败直接由 ParseError 上抛。
+//! upstream **do not dispatch** token / cache field (measured and confirmed), so here**only**parse `usage`,
+//! Does not do any field name candidate compatibility; a parse failure is handled directly by ParseError throw up.
 
 use serde::Deserialize;
 
@@ -13,11 +13,11 @@ use crate::kiro::parser::frame::Frame;
 
 use super::base::EventPayload;
 
-/// 计费事件 payload
+/// billing event payload
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MeteringEvent {
-    /// 本次请求消耗的 credit 数（与计费单位一致，浮点）
+    /// what this request consumed credit count (consistent with the billing unit, floating point).
     #[serde(default)]
     pub usage: f64,
 }
@@ -34,7 +34,7 @@ mod tests {
 
     #[test]
     fn parse_real_payload_shape() {
-        // 来自真实抓包：仅含 unit / unitPlural / usage
+        // from real packet capture: only contains unit / unitPlural / usage
         let v: MeteringEvent = serde_json::from_str(
             r#"{"unit":"credit","unitPlural":"credits","usage":0.0169543708291874}"#,
         )

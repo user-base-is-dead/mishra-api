@@ -1,4 +1,4 @@
-//! Admin API 中间件
+//! Admin API middleware
 
 use std::sync::Arc;
 
@@ -20,20 +20,20 @@ use super::usage_stats::SharedAggregator;
 use super::trace_db::SharedTraceStore;
 use crate::common::auth;
 
-/// Admin API 共享状态
+/// Admin API sharestate
 #[derive(Clone)]
 pub struct AdminState {
-    /// 登录API密钥（管理面板登录用，运行时可修改）
+    /// loginAPIKey (used for admin panel login, changeable at runtime).
     pub admin_api_key: Arc<RwLock<String>>,
-    /// Admin 服务
+    /// Admin service
     pub service: Arc<AdminService>,
-    /// 客户端 Key 管理器（与 anthropic 路由共享）
+    /// client Key manager(with anthropic routeshare)
     pub client_keys: SharedClientKeyManager,
-    /// 用量聚合器（与 anthropic 路由共享）
+    /// usage aggregator (with anthropic routeshare)
     pub usage_aggregator: SharedAggregator,
-    /// 请求链路追踪存储（与 anthropic 路由共享）
+    /// Request trace storage (with anthropic routeshare)
     pub trace_store: SharedTraceStore,
-    /// 账号分组注册表（持久化到 groups.json）
+    /// The account group registry (persisted to groups.json)
     pub groups: SharedGroupManager,
 }
 
@@ -57,7 +57,7 @@ impl AdminState {
     }
 }
 
-/// Admin API 认证中间件 — 校验登录API密钥（adminApiKey）
+/// Admin API authmiddleware — validateloginAPIkey (adminApiKey)
 pub async fn admin_auth_middleware(
     State(state): State<AdminState>,
     request: Request<Body>,

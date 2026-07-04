@@ -1,3 +1,3 @@
-//! 公共工具模块
+//! commontotaltoolmodule
 
 pub mod auth;

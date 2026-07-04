@@ -1,17 +1,17 @@
-//! Anthropic API 类型定义
+//! Anthropic API typedefine
 
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-// === 错误响应 ===
+// === errorresponse ===
 
-/// API 错误响应
+/// API errorresponse
 #[derive(Debug, Serialize)]
 pub struct ErrorResponse {
     pub error: ErrorDetail,
 }
 
-/// 错误详情
+/// error detail
 #[derive(Debug, Serialize)]
 pub struct ErrorDetail {
     #[serde(rename = "type")]
@@ -20,7 +20,7 @@ pub struct ErrorDetail {
 }
 
 impl ErrorResponse {
-    /// 创建新的错误响应
+    /// create a new error response
     pub fn new(error_type: impl Into<String>, message: impl Into<String>) -> Self {
         Self {
             error: ErrorDetail {
@@ -30,15 +30,15 @@ impl ErrorResponse {
         }
     }
 
-    /// 创建认证错误响应
+    /// create an authentication error response
     pub fn authentication_error() -> Self {
         Self::new("authentication_error", "Invalid API key")
     }
 }
 
-// === Models 端点类型 ===
+// === Models endpoint type ===
 
-/// 模型信息
+/// model info
 #[derive(Debug, Serialize)]
 pub struct Model {
     pub id: String,
@@ -51,19 +51,19 @@ pub struct Model {
     pub max_tokens: i32,
 }
 
-/// 模型列表响应
+/// modellistresponse
 #[derive(Debug, Serialize)]
 pub struct ModelsResponse {
     pub object: String,
     pub data: Vec<Model>,
 }
 
-// === Messages 端点类型 ===
+// === Messages endpoint type ===
 
-/// 最大思考预算 tokens
+/// maximumthinking budget tokens
 const MAX_BUDGET_TOKENS: i32 = 24576;
 
-/// Thinking 配置
+/// Thinking config
 #[derive(Debug, Deserialize, Clone)]
 pub struct Thinking {
     #[serde(rename = "type")]
@@ -76,7 +76,7 @@ pub struct Thinking {
 }
 
 impl Thinking {
-    /// 是否启用了 thinking（enabled 或 adaptive）
+    /// iswhetherenabledone thinking(enabled or adaptive)
     pub fn is_enabled(&self) -> bool {
         self.thinking_type == "enabled" || self.thinking_type == "adaptive"
     }
@@ -93,7 +93,7 @@ where
     Ok(value.min(MAX_BUDGET_TOKENS))
 }
 
-/// OutputConfig 配置
+/// OutputConfig config
 #[derive(Debug, Deserialize, Clone)]
 pub struct OutputConfig {
     #[serde(default = "default_effort")]
@@ -104,14 +104,14 @@ fn default_effort() -> String {
     "high".to_string()
 }
 
-/// Claude Code 请求中的 metadata
+/// Claude Code in request metadata
 #[derive(Debug, Clone, Deserialize)]
 pub struct Metadata {
-    /// 用户 ID，格式如: user_xxx_account__session_0b4445e1-f5be-49e1-87ce-62bbc28ad705
+    /// user ID, format like: user_xxx_account__session_0b4445e1-f5be-49e1-87ce-62bbc28ad705
     pub user_id: Option<String>,
 }
 
-/// Messages 请求体
+/// Messages request body
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
 pub struct MessagesRequest {
@@ -126,16 +126,16 @@ pub struct MessagesRequest {
     pub tool_choice: Option<serde_json::Value>,
     pub thinking: Option<Thinking>,
     pub output_config: Option<OutputConfig>,
-    /// Claude Code 请求中的 metadata，包含 session 信息
+    /// Claude Code in request metadata, contains session info
     pub metadata: Option<Metadata>,
 }
 
-/// 反序列化 system 字段，支持字符串或数组格式
+/// deserialize system field, supports string or array format.
 fn deserialize_system<'de, D>(deserializer: D) -> Result<Option<Vec<SystemMessage>>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    // 创建一个 visitor 来处理 string 或 array
+    // create a visitor to handle string or array
     struct SystemVisitor;
 
     impl<'de> serde::de::Visitor<'de> for SystemVisitor {
@@ -188,15 +188,15 @@ where
     deserializer.deserialize_any(SystemVisitor)
 }
 
-/// 消息
+/// message
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Message {
     pub role: String,
-    /// 可以是 string 或 ContentBlock 数组
+    /// can be string or ContentBlock array
     pub content: serde_json::Value,
 }
 
-/// 系统消息
+/// system message
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SystemMessage {
     pub text: String,
@@ -205,7 +205,7 @@ pub struct SystemMessage {
     pub cache_control: Option<CacheControl>,
 }
 
-/// cache_control 配置
+/// cache_control config
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CacheControl {
     #[serde(rename = "type")]
@@ -215,38 +215,38 @@ pub struct CacheControl {
     pub ttl: Option<String>,
 }
 
-/// 工具定义
+/// tool definition
 ///
-/// 支持两种格式：
-/// 1. 普通工具：{ name, description, input_schema }
-/// 2. WebSearch 工具：{ type: "web_search_20250305", name: "web_search", max_uses: 8 }
+/// supports two formats:
+/// 1. normaltool:{ name, description, input_schema }
+/// 2. WebSearch tool:{ type: "web_search_20250305", name: "web_search", max_uses: 8 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Tool {
-    /// 工具类型，如 "web_search_20250305"（可选，仅 WebSearch 工具）
+    /// tooltype,if "web_search_20250305"(optional,only WebSearch tool)
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub tool_type: Option<String>,
-    /// 工具名称
+    /// tool name
     #[serde(default)]
     pub name: String,
-    /// 工具描述（普通工具必需，WebSearch 工具可选）
+    /// Tool description (required for ordinary tools,WebSearch tooloptional)
     #[serde(default)]
     pub description: String,
-    /// 输入参数 schema（普通工具必需，WebSearch 工具无此字段）
+    /// input parameter schema(required for an ordinary tool,WebSearch the tool has no such field)
     ///
-    /// 使用 `BTreeMap` 而非 `HashMap`：key 按字典序稳定迭代，保证序列化
-    /// 输出可复现。这对 prompt cache 至关重要——tool 签名参与缓存前缀
-    /// 指纹，若顶层 key 顺序抖动会导致后续 system/messages 断点连锁失效。
+    /// use `BTreeMap` rather than `HashMap`:key Iterates stably in lexicographic order to ensure serialization.
+    /// the output is reproducible. this is for prompt cache critical——tool the signature participates in the cache prefix
+    /// fingerprint,iftop level key order jitter will cause subsequent system/messages the breakpoint chain fails.
     #[serde(default)]
     pub input_schema: BTreeMap<String, serde_json::Value>,
-    /// 最大使用次数（仅 WebSearch 工具）
+    /// maximum usage count (only WebSearch tool)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_uses: Option<i32>,
-    /// 缓存控制
+    /// cache control
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cache_control: Option<CacheControl>,
 }
 
-/// 内容块
+/// content block
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ContentBlock {
     #[serde(rename = "type")]
@@ -273,7 +273,7 @@ pub struct ContentBlock {
     pub cache_control: Option<CacheControl>,
 }
 
-/// 图片数据源
+/// imagedatasource
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ImageSource {
     #[serde(rename = "type")]
@@ -282,9 +282,9 @@ pub struct ImageSource {
     pub data: String,
 }
 
-// === Count Tokens 端点类型 ===
+// === Count Tokens endpoint type ===
 
-/// Token 计数请求
+/// Token count request
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CountTokensRequest {
     pub model: String,
@@ -299,7 +299,7 @@ pub struct CountTokensRequest {
     pub tools: Option<Vec<Tool>>,
 }
 
-/// Token 计数响应
+/// Token count response
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CountTokensResponse {
     pub input_tokens: i32,

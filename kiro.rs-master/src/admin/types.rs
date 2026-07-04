@@ -1,185 +1,185 @@
-//! Admin API 类型定义
+//! Admin API typedefine
 
 use crate::admin::proxy_pool::ProxyHealth;
 use serde::{Deserialize, Serialize};
 
-// ============ 凭据状态 ============
+// ============ credentialstate ============
 
-/// 所有凭据状态响应
+/// all credential status response
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CredentialsStatusResponse {
-    /// 凭据总数
+    /// credentialtotalcount
     pub total: usize,
-    /// 可用凭据数量（未禁用）
+    /// Number of available credentials (not disabled).
     pub available: usize,
-    /// 当前活跃凭据 ID
+    /// currentactivecredential ID
     pub current_id: u64,
-    /// 各凭据状态列表
+    /// list of each credential status
     pub credentials: Vec<CredentialStatusItem>,
 }
 
-/// 单个凭据的状态信息
+/// status information of a single credential
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CredentialStatusItem {
-    /// 凭据唯一 ID
+    /// credentialunique ID
     pub id: u64,
-    /// 优先级（数字越小优先级越高）
+    /// Priority (a smaller number means higher priority).
     pub priority: u32,
-    /// 是否被禁用
+    /// iswhetherbydisable
     pub disabled: bool,
-    /// 连续失败次数
+    /// consecutivefailedtimescount
     pub failure_count: u32,
-    /// 累计失败次数（所有失败类型，只增不减，仅手动重置归零）
+    /// Cumulative failure count (all failure types, only increases, zeroed only by a manual reset).
     pub total_failure_count: u64,
-    /// 是否为当前活跃凭据
+    /// whether it is the currently active credential
     pub is_current: bool,
-    /// Token 过期时间（RFC3339 格式）
+    /// Token expiry time(RFC3339 format)
     pub expires_at: Option<String>,
-    /// 认证方式
+    /// authmethod
     pub auth_method: Option<String>,
-    /// 身份提供商（BuilderId / Enterprise / Github / Google / IAM_SSO）
+    /// identityprovidevendor(BuilderId / Enterprise / Github / Google / IAM_SSO)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
-    /// 是否有 Profile ARN
+    /// whether has Profile ARN
     pub has_profile_arn: bool,
-    /// refreshToken 的 SHA-256 哈希（仅 OAuth 凭据，用于前端去重）
+    /// refreshToken of SHA-256 hash(only OAuth credential, used for frontend deduplication)
     pub refresh_token_hash: Option<String>,
-    /// kiroApiKey 的 SHA-256 哈希（仅 API Key 凭据，用于前端去重）
+    /// kiroApiKey of SHA-256 hash(only API Key credential, used for frontend deduplication)
     pub api_key_hash: Option<String>,
-    /// kiroApiKey 的脱敏展示（仅 API Key 凭据，用于前端显示）
+    /// kiroApiKey the redacted display (only API Key credential, used for frontend display)
     pub masked_api_key: Option<String>,
-    /// 用户邮箱（用于前端显示）
+    /// User email (for frontend display).
     pub email: Option<String>,
-    /// API 调用成功次数
+    /// API call successtimescount
     pub success_count: u64,
-    /// 最后一次 API 调用时间（RFC3339 格式）
+    /// mostafteronce API calltime(RFC3339 format)
     pub last_used_at: Option<String>,
-    /// 是否配置了凭据级代理
+    /// whether a credential level proxy is configured
     pub has_proxy: bool,
-    /// 代理 URL（用于前端展示）
+    /// proxy URL(used for frontend display)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proxy_url: Option<String>,
-    /// Token 刷新连续失败次数
+    /// Token consecutive refresh failure count
     pub refresh_failure_count: u32,
-    /// 禁用原因
+    /// disableoriginalbecause
     #[serde(skip_serializing_if = "Option::is_none")]
     pub disabled_reason: Option<String>,
-    /// 端点名称（决定该凭据走哪套 Kiro API，已回退到默认端点）
+    /// Endpoint name (determines which set the credential uses Kiro API, has fallen back to the default endpoint)
     pub endpoint: String,
-    /// 账号所属分组（可属于多个分组）
+    /// The groups the account belongs to (may belong to multiple).
     #[serde(default)]
     pub groups: Vec<String>,
-    /// 账号来源渠道（纯备注）
+    /// Account source channel (a plain note).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source_channel: Option<String>,
-    /// 凭据余额（从缓存中读取的最近一次结果，可能为 None）
+    /// Credential balance (the most recent result read from cache, may be None)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub balance: Option<BalanceResponse>,
-    /// 余额缓存的更新时间（Unix 秒，仅在 balance 有值时返回）
+    /// update time of the balance cache (Unix seconds,only in balance hasvaluereturn when)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub balance_updated_at: Option<f64>,
 }
 
-// ============ 操作请求 ============
+// ============ operationrequest ============
 
-/// 启用/禁用凭据请求
+/// enable/disablecredentialrequest
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetDisabledRequest {
-    /// 是否禁用
+    /// iswhetherdisable
     pub disabled: bool,
 }
 
-/// 修改优先级请求
+/// modify priority request
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetPriorityRequest {
-    /// 新优先级值
+    /// newpriorityvalue
     pub priority: u32,
 }
 
-/// 添加凭据请求
+/// addcredentialrequest
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AddCredentialRequest {
-    /// 刷新令牌（OAuth 凭据必填，API Key 凭据不需要）
+    /// refresh token(OAuth credentialrequired,API Key credentialnotneed)
     pub refresh_token: Option<String>,
 
-    /// 访问令牌（可选，导入/导出时保留）
+    /// access token (optional, import/exportwhenretained)
     #[serde(default)]
     pub access_token: Option<String>,
 
-    /// Profile ARN（可选，缺失时部分上游接口会拒绝请求）
+    /// Profile ARN(optional; when missing, some upstream interfaces reject the request)
     #[serde(default)]
     pub profile_arn: Option<String>,
 
-    /// Token 过期时间（可选，RFC3339 格式）
+    /// Token expiry time (optional,RFC3339 format)
     #[serde(default)]
     pub expires_at: Option<String>,
 
-    /// 认证方式（可选，默认 social）
+    /// authentication method (optional, default social)
     #[serde(default = "default_auth_method")]
     pub auth_method: String,
 
-    /// 身份提供商
+    /// identityprovidevendor
     #[serde(default)]
     pub provider: Option<String>,
 
-    /// OIDC Client ID（IdC 认证需要）
+    /// OIDC Client ID(IdC auth needs)
     pub client_id: Option<String>,
 
-    /// OIDC Client Secret（IdC 认证需要）
+    /// OIDC Client Secret(IdC auth needs)
     pub client_secret: Option<String>,
 
-    /// SSO Start URL（Enterprise / IAM Identity Center 账号专用）
+    /// SSO Start URL(Enterprise / IAM Identity Center account dedicateduse)
     #[serde(default)]
     pub start_url: Option<String>,
 
-    /// 优先级（可选，默认 0）
+    /// priority (optional, default 0)
     #[serde(default)]
     pub priority: u32,
 
-    /// 凭据级 Region 配置（用于 OIDC token 刷新）
-    /// 未配置时回退到 config.json 的全局 region
+    /// credential level Region config(used for OIDC token refresh)
+    /// fall back when not configured to config.json global region
     pub region: Option<String>,
 
-    /// 凭据级 Auth Region（用于 Token 刷新）
+    /// credential level Auth Region(used for Token refresh)
     pub auth_region: Option<String>,
 
-    /// 凭据级 API Region（用于 API 请求）
+    /// credential level API Region(used for API request)
     pub api_region: Option<String>,
 
-    /// 凭据级 Machine ID（可选，64 位字符串）
-    /// 未配置时回退到 config.json 的 machineId
+    /// credential level Machine ID(optional,64 bitstring)
+    /// fall back when not configured to config.json of machineId
     pub machine_id: Option<String>,
 
-    /// 用户邮箱（可选，用于前端显示）
+    /// User email (optional, for frontend display).
     pub email: Option<String>,
 
-    /// 凭据级代理 URL（可选，特殊值 "direct" 表示不使用代理）
+    /// credential levelproxy URL(optional, special value "direct" means do not use a proxy)
     pub proxy_url: Option<String>,
 
-    /// 凭据级代理认证用户名（可选）
+    /// Credential level proxy auth username (optional).
     pub proxy_username: Option<String>,
 
-    /// 凭据级代理认证密码（可选）
+    /// Credential level proxy auth password (optional).
     pub proxy_password: Option<String>,
 
-    /// Kiro API Key（API Key 凭据必填，格式: ksk_xxxxxxxx）
-    /// 设置后直接作为 Bearer Token 使用，无需 refreshToken
+    /// Kiro API Key(API Key credential required, format: ksk_xxxxxxxx)
+    /// after setting directly as Bearer Token use, no need refreshToken
     #[serde(skip_serializing_if = "Option::is_none")]
     pub kiro_api_key: Option<String>,
 
-    /// 端点名称（可选，未配置时使用 config.defaultEndpoint）
+    /// Endpoint name (optional, used when not configured config.defaultEndpoint)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
 
-    /// 账号所属分组（可属于多个分组，可选）
+    /// The groups the account belongs to (may belong to multiple, optional).
     #[serde(default)]
     pub groups: Vec<String>,
-    /// 账号来源渠道（纯备注，可选）
+    /// Account source channel (a plain note, optional).
     #[serde(default)]
     pub source_channel: Option<String>,
 }
@@ -188,67 +188,67 @@ fn default_auth_method() -> String {
     "social".to_string()
 }
 
-/// 更新 refreshToken 请求
+/// update refreshToken request
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateRefreshTokenRequest {
-    /// 新的刷新令牌
+    /// newofrefresh token
     pub refresh_token: String,
-    /// 可选：同时更新 accessToken（避免强制清空后立即需要刷新）
+    /// optional: update at the same time accessToken(avoids needing a refresh immediately after a forced clear)
     #[serde(default)]
     pub access_token: Option<String>,
-    /// 可选：同时更新 expiresAt（与 accessToken 配套）
+    /// optional: update at the same time expiresAt(with accessToken matching)
     #[serde(default)]
     pub expires_at: Option<String>,
 }
 
-/// 更新凭据请求（仅可编辑字段，None 表示不修改，Some("") 表示清除）
+/// Update credential request (editable fields only,None meansdo not modify,Some("") meansclear)
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateCredentialRequest {
-    /// 用户邮箱（用于前端显示）
+    /// User email (for frontend display).
     pub email: Option<String>,
-    /// 凭据级代理 URL（空字符串表示清除）
+    /// credential levelproxy URL(an empty string means clear)
     pub proxy_url: Option<String>,
-    /// 凭据级代理认证用户名
+    /// credential level proxy authentication username
     pub proxy_username: Option<String>,
-    /// 凭据级代理认证密码
+    /// credential level proxy authentication password
     pub proxy_password: Option<String>,
-    /// 账号所属分组（None 表示不修改，Some 表示整体替换）
+    /// the group the account belongs to (None meansdo not modify,Some means a full replacement)
     #[serde(default)]
     pub groups: Option<Vec<String>>,
-    /// 账号来源渠道（None 表示不修改，空串表示清除）
+    /// account source channel (None means no change, an empty string means clear)
     #[serde(default)]
     pub source_channel: Option<String>,
 }
 
-/// 添加凭据成功响应
+/// add credential success response
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AddCredentialResponse {
     pub success: bool,
     pub message: String,
-    /// 新添加的凭据 ID
+    /// newaddofcredential ID
     pub credential_id: u64,
-    /// 用户邮箱（如果获取成功）
+    /// User email (if fetched successfully).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
 }
 
-// ============ 批量导入（SSE） ============
+// ============ batch import(SSE) ============
 
-/// 批量导入请求。服务端按 `concurrency`（缺省 8，夹取到 [1,16]）有界并发地
-/// 逐条处理，结果通过 SSE 流逐条推送。
+/// Batch import request. The server by `concurrency`(default 8,clamptaketo [1,16])hasboundary concurrently
+/// process one by one, results via SSE streamperentrypush.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BatchImportRequest {
-    /// 待导入凭据（复用单条添加的富类型）
+    /// Credential pending import (reuses the rich type of single add).
     pub credentials: Vec<AddCredentialRequest>,
-    /// 并发度，缺省 8，服务端 clamp 到 [1, 16]
+    /// concurrency level,default 8,serviceend clamp to [1, 16]
     #[serde(default)]
     pub concurrency: Option<u8>,
-    /// 是否验活。`true`（缺省）：add 后取余额校验，失败回滚；
-    /// `false`：仅 add 落库（"直接导入"），不取余额、不回滚。
+    /// iswhethervalidate.`true`(default):add then fetches the balance for validation, rolls back on failure;
+    /// `false`: only add persist to db ("directlyimport"), does not fetch the balance and does not roll back.
     #[serde(default = "default_batch_verify")]
     pub verify: bool,
 }
@@ -257,12 +257,12 @@ fn default_batch_verify() -> bool {
     true
 }
 
-/// 批量导入 SSE 事件。每条凭据完成时发一条 `index` 事件；全部完成后发一条
-/// `status == "summary"` 的汇总事件（此时 `index` 为 None）。
+/// batch import SSE event. Sends one when each credential completes. `index` events; sends one after all complete.
+/// `status == "summary"` the summary event (at this point `index` as None).
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BatchImportEvent {
-    /// 对应请求数组下标；summary 事件为 None
+    /// corresponds to the request array index;summary event is None
     #[serde(skip_serializing_if = "Option::is_none")]
     pub index: Option<usize>,
     /// "verified" | "duplicate" | "failed" | "summary"
@@ -271,27 +271,27 @@ pub struct BatchImportEvent {
     pub credential_id: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
-    /// "current/limit" 用量字符串，verified 时填
+    /// "current/limit" usagestring,verified fill when
     #[serde(skip_serializing_if = "Option::is_none")]
     pub usage: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub subscription: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
-    /// failed 且已回滚（删除）时为 true
+    /// failed and when rolled back (deleted) it is true
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rolled_back: Option<bool>,
-    /// 仅 summary 事件填充
+    /// only summary eventfill
     #[serde(skip_serializing_if = "Option::is_none")]
     pub summary: Option<BatchImportSummary>,
 }
 
-/// 批量导入汇总（末尾事件）
+/// Batch import summary (the final event).
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BatchImportSummary {
     pub total: usize,
-    /// 直接导入（未验活）成功数
+    /// Direct import (no liveness check) success count.
     pub imported: usize,
     pub verified: usize,
     pub duplicate: usize,
@@ -299,198 +299,198 @@ pub struct BatchImportSummary {
     pub rolled_back: usize,
 }
 
-// ============ 余额查询 ============
+// ============ balancequery ============
 
-/// 余额查询响应
+/// balancequeryresponse
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BalanceResponse {
-    /// 凭据 ID
+    /// credential ID
     pub id: u64,
-    /// 订阅类型
+    /// subscriptiontype
     pub subscription_title: Option<String>,
-    /// 当前使用量
+    /// currentusage
     pub current_usage: f64,
-    /// 使用限额
+    /// usequota limit
     pub usage_limit: f64,
-    /// 剩余额度
+    /// remainingquota
     pub remaining: f64,
-    /// 使用百分比
+    /// usepercentage
     pub usage_percentage: f64,
-    /// 下次重置时间（Unix 时间戳）
+    /// next reset time (Unix timestamp)
     pub next_reset_at: Option<f64>,
-    /// 用户当前是否开启了超额
+    /// Whether the user currently enabled overage.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub overage_enabled: Option<bool>,
-    /// 账号是否能开启超额（FREE 等订阅通常为 false）
+    /// whether the account can enable overage (FREE etc.subscription usuallyas false)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub overage_capable: Option<bool>,
-    /// 上游 `overageCapability` 原始字符串（用于排查"未知"状态）
+    /// upstream `overageCapability` raw string (used for troubleshooting"unknown"state)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub overage_capability_raw: Option<String>,
 }
 
-// ============ 可用模型查询 ============
+// ============ availablemodelquery ============
 
-/// 某个凭据当前可用的模型列表响应
+/// Response of the model list currently available for a credential.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AvailableModelsResponse {
-    /// 凭据 ID
+    /// credential ID
     pub id: u64,
-    /// 该凭据（按订阅等级）当前可用的模型
+    /// The model currently available for the credential (by subscription tier).
     pub models: Vec<AvailableModelItem>,
 }
 
-/// 单个可用模型
+/// single availablemodel
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AvailableModelItem {
-    /// 模型 ID
+    /// model ID
     pub model_id: String,
-    /// 模型展示名
+    /// modeldisplay name
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model_name: Option<String>,
-    /// 模型描述
+    /// modeldescription
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    /// 最大输入 Token 数
+    /// maximuminput Token count
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_input_tokens: Option<i64>,
 }
 
-// ============ 一键超额 ============
+// ============ one clickoverage ============
 
-/// 一键超额禁用结果
+/// one click overage disable result
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QuotaExceededResult {
-    /// 已被禁用的凭据 ID 列表
+    /// the disabled credential ID list
     pub disabled_ids: Vec<u64>,
-    /// 跳过的凭据 ID 列表（如禁用失败、缓存缺失等）
+    /// skipofcredential ID list (such as disable failure, cache miss, and so on).
     pub skipped_ids: Vec<u64>,
 }
 
-/// 设置单个凭据的超额开关
+/// Sets the overage switch of a single credential.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetOverageRequest {
-    /// true 开启超额；false 关闭
+    /// true openoverage;false close
     pub enabled: bool,
 }
 
-/// 一键开启超额结果
+/// one click enable overage result
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EnableOverageAllResult {
-    /// 成功开启的凭据 ID 列表
+    /// the successfully enabled credential ID list
     pub enabled_ids: Vec<u64>,
-    /// 跳过（不可开启 / 已开启 / 缓存缺失）
+    /// skip (cannot enable / enabled / cachemissing)
     pub skipped_ids: Vec<u64>,
-    /// 调用失败的凭据 ID 列表
+    /// the credential whose call failed ID list
     pub failed_ids: Vec<u64>,
-    /// 失败原因（与 failed_ids 一一对应）
+    /// failedoriginalbecause(with failed_ids one by onecorresponds)
     pub failure_messages: Vec<String>,
 }
 
-// ============ 负载均衡配置 ============
+// ============ load balancingconfig ============
 
-/// 负载均衡模式响应
+/// load balancing mode response
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LoadBalancingModeResponse {
-    /// 当前模式（"priority" 或 "balanced"）
+    /// currentmode ("priority" or "balanced")
     pub mode: String,
 }
 
-/// 设置负载均衡模式请求
+/// set load balancing mode request
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetLoadBalancingModeRequest {
-    /// 模式（"priority" 或 "balanced"）
+    /// mode ("priority" or "balanced")
     pub mode: String,
 }
 
-/// 账号级风控故障转移配置响应
+/// Account level throttle failover config response.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountThrottleConfigResponse {
-    /// 是否启用账号级 429 故障转移
+    /// whether to enable account level 429 failover
     pub failover: bool,
-    /// 冷却时长（秒）
+    /// cooldown duration (seconds)
     pub cooldown_secs: u64,
 }
 
-/// 更新账号级风控故障转移配置
+/// Updates the account level throttle failover config.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetAccountThrottleConfigRequest {
-    /// 是否启用故障转移；缺省表示不修改
+    /// Whether to enable failover; omitted means no change.
     #[serde(default)]
     pub failover: Option<bool>,
-    /// 冷却时长（秒）；缺省表示不修改，1..=86400
+    /// Cooldown duration (seconds); omitted means no change,1..=86400
     #[serde(default)]
     pub cooldown_secs: Option<u64>,
 }
 
-/// 日志治理配置响应
+/// log governance configuration response
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LogGovernanceConfigResponse {
-    /// 是否启用请求链路追踪写入
+    /// Whether to enable request trace writing.
     pub trace_enabled: bool,
-    /// trace 记录保留天数
+    /// trace recordretaindaycount
     pub trace_retention_days: u32,
-    /// 用量日志保留天数
+    /// usage log retention days
     pub usage_log_retention_days: u32,
 }
 
-/// 更新日志治理配置（字段缺省表示不修改）
+/// Updates the log governance config (an omitted field means no change).
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetLogGovernanceConfigRequest {
     #[serde(default)]
     pub trace_enabled: Option<bool>,
-    /// trace 保留天数，1..=365
+    /// trace retaindaycount,1..=365
     #[serde(default)]
     pub trace_retention_days: Option<u32>,
-    /// 用量日志保留天数，1..=365
+    /// usage log retention days,1..=365
     #[serde(default)]
     pub usage_log_retention_days: Option<u32>,
 }
 
-// ============ 代理池 ============
+// ============ proxy pool ============
 
-/// 代理池条目
+/// proxy poolentryentry
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProxyPoolEntry {
-    /// 唯一 ID（自增）
+    /// unique ID(auto increment)
     pub id: u64,
-    /// 代理 URL（如 socks5://user:pass@host:port）
+    /// proxy URL(such as socks5://user:pass@host:port)
     pub url: String,
-    /// 备注标签（可选）
+    /// note label (optional)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
-    /// 是否启用
+    /// iswhetherenable
     pub enabled: bool,
-    /// 使用此代理的凭据数量
+    /// number of credentials using this proxy
     pub credential_count: u32,
-    /// 健康状态
+    /// healthstate
     pub health: ProxyHealth,
-    /// 最近一次成功探测的延迟（毫秒）
+    /// The latency of the most recent successful probe (milliseconds).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub latency_ms: Option<u32>,
-    /// 最近一次探测时间（RFC3339）
+    /// the most recent probe time (RFC3339)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_checked_at: Option<String>,
-    /// 连续探测失败计数
+    /// consecutive probe failure count
     pub consecutive_failures: u32,
-    /// 是否由健康检查自动禁用
+    /// Whether it was auto disabled by the health check.
     pub auto_disabled: bool,
 }
 
-/// 代理池列表响应
+/// proxy pool list response
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProxyPoolResponse {
@@ -498,7 +498,7 @@ pub struct ProxyPoolResponse {
     pub proxies: Vec<ProxyPoolEntry>,
 }
 
-/// 单个代理健康检查响应
+/// single proxy health check response
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProxyCheckResponse {
@@ -512,7 +512,7 @@ pub struct ProxyCheckResponse {
     pub auto_disabled: bool,
 }
 
-/// 全量健康检查响应
+/// full health check response
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProxyCheckAllResponse {
@@ -521,26 +521,26 @@ pub struct ProxyCheckAllResponse {
     pub auto_disabled: usize,
 }
 
-/// 轮询批量分配请求
+/// load balancing batch assignment request
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AssignRoundRobinRequest {
-    /// 目标凭据 ID 列表；为空或缺省表示对全部凭据分配
+    /// targetcredential ID list; empty or omitted means allocate to all credentials.
     #[serde(default)]
     pub credential_ids: Option<Vec<u64>>,
 }
 
-/// 轮询批量分配响应
+/// load balancing batch assignment response
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AssignRoundRobinResponse {
-    /// 成功分配的凭据数
+    /// number of successfully assigned credentials
     pub assigned: usize,
-    /// 参与轮询的可用代理数
+    /// number of available proxies participating in load balancing
     pub proxy_count: usize,
 }
 
-/// 添加代理请求
+/// addproxyrequest
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AddProxyRequest {
@@ -549,77 +549,77 @@ pub struct AddProxyRequest {
     pub label: Option<String>,
 }
 
-/// 批量导入代理请求
+/// batch import proxy request
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BatchAddProxyRequest {
-    /// 代理 URL 列表（每行一个）
+    /// proxy URL list (one per line)
     pub urls: Vec<String>,
 }
 
-/// 分配代理给凭据请求
+/// assign proxy to credential request
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AssignProxyRequest {
-    /// 代理池中的代理 ID；null 表示清除代理
+    /// the proxy in the proxy pool ID;null meansclearproxy
     #[serde(default)]
     pub proxy_id: Option<u64>,
 }
 
-// ============ 全局代理配置 ============
+// ============ globalproxy config ============
 
-/// 全局代理配置响应
+/// global proxy configuration response
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GlobalProxyResponse {
-    /// 当前全局代理 URL（null 表示未配置）
+    /// currentglobal proxy URL(null meansnot configured)
     pub proxy_url: Option<String>,
 }
 
-/// 设置全局代理请求
+/// set global proxy request
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetGlobalProxyRequest {
-    /// 代理 URL，null 表示清除全局代理
+    /// proxy URL,null means clear the global proxy
     pub proxy_url: Option<String>,
 }
 
-// ============ 在线更新配置 ============
+// ============ inlineupdateconfig ============
 
-/// 在线更新配置响应
+/// online update configuration response
 ///
-/// 在线更新走"下载 GitHub Releases 二进制 + 进程退出由 docker restart policy 接管"
-/// 的方案，只暴露与版本相关的元信息。
+/// inlineupdatego"download GitHub Releases binary + enterprocess exitby docker restart policy take over"
+/// approach, exposing only version related metadata.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateConfigResponse {
-    /// 上一次成功更新前正在运行的版本号（带 `v` 前缀），存在时前端可显示「回退」按钮。
+    /// The version running before the last successful update (with `v` prefix); when present the frontend can show the rollback button.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub previous_version: Option<String>,
-    /// 上一次成功完成在线更新的时间（RFC3339）；用于前端显示「上次更新于 …」。
+    /// The time the last online update successfully completed (RFC3339); used by the frontend to show last updated at. ….
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_applied_at: Option<String>,
-    /// 是否已配置 GitHub Token（仅返回布尔，不回明文，避免前端泄露）。
+    /// iswhetherconfigured GitHub Token(returns only a boolean, not the plaintext, to avoid frontend leakage).
     pub github_token_set: bool,
-    /// 是否开启无人值守自动更新
+    /// Whether to enable unattended auto update.
     pub auto_apply: bool,
-    /// 自动更新触发时间（本地时区，HH:MM 24 小时制）
+    /// Auto update trigger time (local time zone,HH:MM 24 hourmechanism)
     pub auto_apply_time: String,
 }
 
-/// 更新在线更新配置
+/// update the online update configuration
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetUpdateConfigRequest {
-    /// GitHub Personal Access Token；空字符串表示清除，未传则保持原值。
+    /// GitHub Personal Access Token; an empty string means clear, omit to keep the original value.
     pub github_token: Option<String>,
-    /// 是否开启无人值守自动更新；不传则保持原值
+    /// Whether to enable unattended auto update; omit to keep the original value.
     pub auto_apply: Option<bool>,
-    /// 自动更新触发时间（HH:MM）；不传则保持原值
+    /// auto update trigger time (HH:MM); if not passed keep the original value
     pub auto_apply_time: Option<String>,
 }
 
-/// 在线更新操作结果
+/// online update operation result
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ImageUpdateResponse {
@@ -631,95 +631,95 @@ pub struct ImageUpdateResponse {
     pub need_restart: bool,
 }
 
-/// GitHub API 限流状态（含 token 验证结果）
+/// GitHub API limitstreamstate(including token verifyresult)
 ///
-/// 调用 `GET https://api.github.com/rate_limit`：该端点本身不消耗限流配额，
-/// 用来给前端展示「当前 token 是否有效 / 剩余次数 / 重置时间」。
+/// call `GET https://api.github.com/rate_limit`: this endpoint itself does not consume throttle quota,
+/// used to display for the frontend the current token whether haseffect / remainingtimescount / resettime.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GitHubRateLimitInfo {
-    /// 提供的 token 是否有效（无 token 时为 false 但仍能查到匿名限额）
+    /// provided token whether haseffect(no token is when false but the anonymous limit can still be queried)
     pub valid: bool,
-    /// 是否带 token 调用（false = 匿名查询）
+    /// whether carries token call (false = anonymousquery)
     pub authenticated: bool,
-    /// 限流上限（匿名 60，认证 5000）
+    /// throttle upper limit (anonymous 60, auth 5000)
     pub limit: u64,
-    /// 剩余可用次数
+    /// remainingavailabletimescount
     pub remaining: u64,
-    /// 已用次数
+    /// alreadyusetimescount
     pub used: u64,
-    /// 限流窗口重置时间（Unix 秒）
+    /// throttle window reset time (Unix seconds)
     pub reset: u64,
-    /// token 对应的用户名（仅 token 有效且属于个人时返回）
+    /// token the corresponding username (only token returned when valid and belonging to an individual)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub login: Option<String>,
-    /// 失败时的提示信息
+    /// the prompt message on failure
     #[serde(skip_serializing_if = "Option::is_none")]
     pub warning: Option<String>,
 }
 
-/// 测试 GitHub Token 有效性的请求体；空字段或缺失视为"使用已保存的 token"
+/// test GitHub Token the request body for validity; an empty or missing field is treated as"usealreadysaveof token"
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CheckRateLimitRequest {
-    /// 待测试的 token；缺省或空时使用 `config.github_token`，再缺省则匿名查询
+    /// pendingtestof token; use when default or empty `config.github_token`, if still default then anonymous query
     #[serde(default)]
     pub github_token: Option<String>,
 }
 
-/// "检查更新"接口返回结果
+/// "checkupdate"interfacereturnresult
 ///
-/// 当 has_update=true 时，前端可在工具栏图标上显示红点提醒。
+/// when has_update=true the frontend can show a red dot reminder on the toolbar icon.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateCheckInfo {
-    /// 当前运行版本（取自 Cargo.toml）
+    /// current running version (taken from Cargo.toml)
     pub current_version: String,
-    /// GitHub Release 上的最新版本号（去除前缀 v）；查询失败时为空字符串
+    /// GitHub Release The latest version number on it (with the prefix removed v); an empty string when the query fails.
     pub latest_version: String,
-    /// 是否存在新版本
+    /// whether a new version exists
     pub has_update: bool,
-    /// 构建类型；目前固定为 "binary"，前端展示用
+    /// build type; currently fixed as "binary",beforeenddisplayuse
     pub build_type: String,
-    /// Release 标题（如有）
+    /// Release title(such ashas)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub release_name: Option<String>,
-    /// Release 说明
+    /// Release note
     #[serde(skip_serializing_if = "Option::is_none")]
     pub release_notes: Option<String>,
-    /// Release 页面 URL
+    /// Release page URL
     #[serde(skip_serializing_if = "Option::is_none")]
     pub release_url: Option<String>,
-    /// Release 发布时间（RFC 3339）
+    /// Release publishtime(RFC 3339)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub published_at: Option<String>,
-    /// 检查时间（RFC 3339）
+    /// checktime(RFC 3339)
     pub checked_at: String,
-    /// 是否来自缓存
+    /// iswhetherfromcache
     pub cached: bool,
-    /// 查询失败时的告警信息（仍会带上缓存的旧结果）
+    /// Warning info when the query fails (still carries the cached old result).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub warning: Option<String>,
 }
 
-// ============ 登录API密钥修改 ============
+// ============ loginAPIkeymodify ============
 
-/// 修改登录API密钥（管理面板登录用 adminApiKey）请求
+/// modifyloginAPIkey (used for admin panel login adminApiKey) request
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateAdminKeyRequest {
-    /// 新的登录API密钥
+    /// newofloginAPIkey
     pub new_key: String,
 }
 
-// ============ 客户端 API Key 分发 ============
+// ============ client API Key dispatch ============
 
-/// 客户端 Key 列表项（脱敏展示）
+/// client Key list item (redacted display)
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ClientKeyItem {
     pub id: u64,
-    /// 脱敏后的 Key 展示（如 csk_abcd...mnop）
+    /// redactafterof Key display(such as csk_abcd...mnop)
     pub masked_key: String,
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -735,12 +735,12 @@ pub struct ClientKeyItem {
     pub total_cache_read_tokens: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub group: Option<String>,
-    /// 是否系统密钥（config.json apiKey 导入，不可删除 / 不可轮换）
+    /// whether it is a system key (config.json apiKey imported, cannot be deleted / notcanrotate)
     #[serde(default)]
     pub is_system: bool,
 }
 
-/// 客户端 Key 列表响应
+/// client Key listresponse
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ClientKeysResponse {
@@ -748,7 +748,7 @@ pub struct ClientKeysResponse {
     pub keys: Vec<ClientKeyItem>,
 }
 
-/// 创建客户端 Key 请求
+/// createclient Key request
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateClientKeyRequest {
@@ -759,7 +759,7 @@ pub struct CreateClientKeyRequest {
     pub group: Option<String>,
 }
 
-/// 创建客户端 Key 响应（明文 Key 仅在此处返回一次）
+/// createclient Key response(plaintext Key returned only once here)
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateClientKeyResponse {
@@ -769,7 +769,7 @@ pub struct CreateClientKeyResponse {
     pub created_at: String,
 }
 
-/// 更新客户端 Key 元数据
+/// updateclient Key metadata
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateClientKeyRequest {
@@ -779,9 +779,9 @@ pub struct UpdateClientKeyRequest {
     pub group: Option<String>,
 }
 
-// ============ IdC 设备授权登录 ============
+// ============ IdC device authorization login ============
 
-/// 发起 IdC 设备授权请求
+/// initiate IdC device authorizationrequest
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StartIdcLoginRequest {
@@ -796,7 +796,7 @@ pub struct StartIdcLoginRequest {
     pub proxy_url: Option<String>,
 }
 
-/// 发起 IdC 设备授权响应
+/// initiate IdC device authorizationresponse
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StartIdcLoginResponse {
@@ -809,7 +809,7 @@ pub struct StartIdcLoginResponse {
     pub poll_interval: i64,
 }
 
-/// 轮询 IdC 登录状态响应
+/// poll IdC loginstateresponse
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase", tag = "status")]
 pub enum PollIdcLoginResponse {
@@ -821,57 +821,57 @@ pub enum PollIdcLoginResponse {
     Expired,
 }
 
-// ============ Social 登录（Portal PKCE OAuth） ============
+// ============ Social login (Portal PKCE OAuth) ============
 
-/// 发起 Social 登录请求
+/// initiate Social loginrequest
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StartSocialLoginRequest {
-    /// 优先级（默认 0）
+    /// priority(default 0)
     #[serde(default)]
     pub priority: u32,
-    /// 用户邮箱（可选）
+    /// user email (optional)
     #[serde(default)]
     pub email: Option<String>,
-    /// 代理 URL（可选）
+    /// proxy URL(optional)
     #[serde(default)]
     pub proxy_url: Option<String>,
-    /// Kiro auth endpoint（留空用默认）
+    /// Kiro auth endpoint(leave empty to use the default)
     #[serde(default)]
     pub auth_endpoint: Option<String>,
-    /// OAuth 回调公网地址（远程模式）。通常由前端按当前访问地址自动派生：
-    /// `${location.origin}/api/admin/auth/callback`。若 `config.callbackBaseUrl` 已配置则以其为准（覆盖）。
+    /// OAuth Public callback address (remote mode). Usually derived automatically by the frontend from the current access address:
+    /// `${location.origin}/api/admin/auth/callback`. if `config.callbackBaseUrl` If configured, it takes precedence (overrides).
     #[serde(default)]
     pub callback_base_url: Option<String>,
 }
 
-/// 发起 Social 登录响应
+/// initiate Social loginresponse
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StartSocialLoginResponse {
-    /// 会话 ID
+    /// session ID
     pub session_id: String,
-    /// 在浏览器打开的 portal URL
+    /// the one opened in the browser portal URL
     pub portal_url: String,
-    /// 会话过期时间（RFC3339）
+    /// session expiry time (RFC3339)
     pub expires_at: String,
-    /// 是否处于远程回调模式（已配置 callbackBaseUrl）。
-    /// true 时 OAuth 回调指向公网路由，前端可自动轮询完成；false 时走本地端口。
+    /// Whether it is in remote callback mode (configured). callbackBaseUrl).
+    /// true when OAuth The callback points to a public route; the frontend can auto poll to completion;false goes through the local port.
     pub remote: bool,
 }
 
-/// 手动完成 Social 登录请求（远程访问场景：从浏览器地址栏复制回调 URL）
+/// manually finishedinto Social Login request (remote access case: copy the callback from the browser address bar). URL)
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CompleteSocialLoginRequest {
-    /// OAuth 授权码（从回调 URL 的 code 参数提取）
+    /// OAuth authorization code (from the callback URL of code parameterextract)
     pub code: String,
-    /// OAuth state（从回调 URL 的 state 参数提取，用于 CSRF 校验）
+    /// OAuth state(fromcallback URL of state parameter extraction, used for CSRF validation)
     pub state: String,
-    /// 登录选项（从回调 URL 的 login_option 参数提取，可为空）
+    /// login option (from the callback URL of login_option parameter extraction, may be empty)
     #[serde(default)]
     pub login_option: String,
-    /// 回调 URL 的路径（如 /oauth/callback）
+    /// callback URL path(such as /oauth/callback)
     #[serde(default = "default_oauth_path")]
     pub path: String,
 }
@@ -880,14 +880,14 @@ fn default_oauth_path() -> String {
     "/oauth/callback".to_string()
 }
 
-// ============ 通用响应 ============
+// ============ throughuseresponse ============
 
-// ============ 账号导出 ============
+// ============ account export ============
 
-/// 账号导出文件中单个账号的认证凭证（嵌套 `credentials` 对象）
+/// The auth credential of a single account in the account export file (nested). `credentials` object)
 ///
-/// `expiresAt` 为毫秒时间戳，`authMethod` 取 `"IdC"` / `"social"`，
-/// `accessToken` / `csrfToken` 为必填字段（无值时输出空串）。
+/// `expiresAt` as a millisecond timestamp,`authMethod` take `"IdC"` / `"social"`,
+/// `accessToken` / `csrfToken` A required field (outputs an empty string when there is no value).
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ExportedCredentials {
@@ -910,9 +910,9 @@ pub struct ExportedCredentials {
     pub provider: Option<String>,
 }
 
-/// 账号导出文件中的单个账号（嵌套 `Account` 结构）
+/// A single account in the account export file (nested). `Account` struct)
 ///
-/// 账号字段位于顶层，凭据收进嵌套 `credentials` 对象，便于第三方账号管理工具直接导入。
+/// The account fields are at the top level, credentials collected into a nested `credentials` object, convenient for third party account management tools to import directly.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ExportedAccount {
@@ -928,9 +928,9 @@ pub struct ExportedAccount {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub profile_arn: Option<String>,
     pub credentials: ExportedCredentials,
-    /// 订阅信息（最小可用结构：type + title）
+    /// Subscription info (minimal usable structure:type + title)
     pub subscription: serde_json::Value,
-    /// 使用量信息（最小可用结构：归零）
+    /// Usage information (minimal usable structure: zeroed).
     pub usage: serde_json::Value,
     pub tags: Vec<String>,
     pub status: String,
@@ -938,23 +938,23 @@ pub struct ExportedAccount {
     pub last_used_at: i64,
 }
 
-/// 账号导出响应（含顶层 `groups` / `tags` 数组，便于第三方导入器直接消费）
+/// account export response (including top level `groups` / `tags` array, convenient for a third party importer to consume directly.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CredentialsExportResponse {
-    /// 导出格式版本号
+    /// export format version number
     pub version: String,
-    /// 导出时间（毫秒时间戳）
+    /// Export time (millisecond timestamp).
     pub exported_at: i64,
-    /// 账号列表（嵌套 Account 格式）
+    /// account list (nested Account format)
     pub accounts: Vec<ExportedAccount>,
-    /// 分组（导出不含分组，固定空数组）
+    /// Groups (export does not include groups, fixed empty array).
     pub groups: Vec<serde_json::Value>,
-    /// 标签（导出不含标签，固定空数组）
+    /// Tags (export does not include tags, fixed empty array).
     pub tags: Vec<serde_json::Value>,
 }
 
-/// 操作成功响应
+/// operationsuccess response
 #[derive(Debug, Serialize)]
 pub struct SuccessResponse {
     pub success: bool,
@@ -970,7 +970,7 @@ impl SuccessResponse {
     }
 }
 
-/// 错误响应
+/// errorresponse
 #[derive(Debug, Serialize)]
 pub struct AdminErrorResponse {
     pub error: AdminError,
@@ -1014,9 +1014,9 @@ impl AdminErrorResponse {
     }
 }
 
-// ============ 账号分组（独立实体）============
+// ============ Account group (independent entity).============
 
-/// 单条分组（列表项）
+/// single group (list item)
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GroupItem {
@@ -1024,13 +1024,13 @@ pub struct GroupItem {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     pub created_at: String,
-    /// 引用计数：有多少个凭据带这个分组（前端展示 / 删除前提醒）
+    /// Reference count: how many credentials carry this group (shown by the frontend). / deletebeforeremind)
     pub credential_count: usize,
-    /// 引用计数：有多少把客户端 Key 绑定这个分组
+    /// Reference count: how many client keys Key bind thisitemgroup
     pub client_key_count: usize,
 }
 
-/// 分组列表响应
+/// grouplistresponse
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GroupsResponse {
@@ -1038,7 +1038,7 @@ pub struct GroupsResponse {
     pub groups: Vec<GroupItem>,
 }
 
-/// 创建分组请求
+/// creategrouprequest
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateGroupRequest {
@@ -1047,23 +1047,23 @@ pub struct CreateGroupRequest {
     pub description: Option<String>,
 }
 
-/// 更新分组请求（改名 / 改备注；两者都可选）
+/// update group request (rename / change note; both are optional)
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateGroupRequest {
-    /// 新名字；不传或与原名一致则不改名
+    /// New name; omit or match the original name means no rename.
     #[serde(default)]
     pub new_name: Option<String>,
-    /// 新备注；传空字符串清除备注；不传字段则保留
+    /// New note; pass an empty string to clear the note; omit the field to keep it.
     #[serde(default)]
     pub description: Option<String>,
 }
 
-/// 删除分组的可选查询参数
+/// Optional query parameters for deleting a group.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DeleteGroupQuery {
-    /// 强制删除：即使仍有引用也删；同时级联清理凭据 / Key 的引用
+    /// Force delete: deletes even if references remain; also cascade cleans credentials. / Key reference
     #[serde(default)]
     pub force: bool,
 }

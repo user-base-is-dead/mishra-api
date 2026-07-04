@@ -1,4 +1,4 @@
-//! 共享类型模块
+//! sharetypemodule
 //!
-//! 此模块已简化，移除了未使用的类型定义。
-//! 如果将来需要扩展，可以在此添加新的共享类型。
+//! This module has been simplified, removing unused type definitions.
+//! If extension is needed in the future, new shared types can be added here.

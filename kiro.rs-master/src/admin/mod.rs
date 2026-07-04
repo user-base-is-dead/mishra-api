@@ -1,15 +1,15 @@
-//! Admin API 模块
+//! Admin API module
 //!
-//! 提供凭据管理和监控功能的 HTTP API
+//! Provides credential management and monitoring features. HTTP API
 //!
-//! # 功能
-//! - 查询所有凭据状态
-//! - 启用/禁用凭据
-//! - 修改凭据优先级
-//! - 重置失败计数
-//! - 查询凭据余额
+//! # feature
+//! - query all credential statuses
+//! - enable/disablecredential
+//! - modify the credential priority
+//! - reset the failure count
+//! - query the credential balance
 //!
-//! # 使用
+//! # use
 //! ```ignore
 //! let admin_service = AdminService::new(token_manager.clone(), endpoint_names);
 //! let admin_state = AdminState::new(admin_api_key, admin_service);

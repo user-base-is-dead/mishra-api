@@ -1,46 +1,46 @@
-//! 可用模型查询数据模型
+//! available model query data model
 //!
-//! 包含 ListAvailableModels API 的响应类型定义。
+//! contains ListAvailableModels API the response type definition.
 //!
-//! 上游接口：`GET https://q.{api_region}.amazonaws.com/ListAvailableModels?origin=AI_EDITOR`
-//! 返回该凭据（按订阅等级）当前真实可用的模型列表。
+//! upstreaminterface:`GET https://q.{api_region}.amazonaws.com/ListAvailableModels?origin=AI_EDITOR`
+//! Returns the truly available model list for the credential right now (by subscription tier).
 
 use serde::Deserialize;
 
-/// ListAvailableModels API 响应
+/// ListAvailableModels API response
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ListAvailableModelsResponse {
-    /// 可用模型列表
+    /// availablemodellist
     #[serde(default)]
     pub models: Vec<UpstreamModel>,
 }
 
-/// 单个上游模型
+/// singleupstreammodel
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpstreamModel {
-    /// 模型 ID（如 "claude-sonnet-4.5"）
+    /// model ID(such as "claude-sonnet-4.5")
     pub model_id: String,
 
-    /// 模型展示名（可能不存在）
+    /// Model display name (may not exist).
     #[serde(default)]
     pub model_name: Option<String>,
 
-    /// 模型描述（可能不存在）
+    /// Model description (may not exist).
     #[serde(default)]
     pub description: Option<String>,
 
-    /// Token 限额信息（可能不存在）
+    /// Token Limit information (may not exist).
     #[serde(default)]
     pub token_limits: Option<TokenLimits>,
 }
 
-/// 模型 Token 限额
+/// model Token quota limit
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TokenLimits {
-    /// 最大输入 Token 数
+    /// maximuminput Token count
     #[serde(default)]
     pub max_input_tokens: Option<i64>,
 }
@@ -75,7 +75,7 @@ mod tests {
             Some(200000)
         );
 
-        // 仅 modelId 的最小对象：其余字段缺省为 None
+        // only modelId the minimal object: the remaining fields default to None
         let second = &resp.models[1];
         assert_eq!(second.model_id, "claude-opus-4.6");
         assert!(second.model_name.is_none());
@@ -91,7 +91,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_missing_models_field() {
-        // 缺少 models 字段时回退为空数组
+        // missing models fall back to an empty array for the field
         let resp: ListAvailableModelsResponse = serde_json::from_str(r#"{}"#).unwrap();
         assert!(resp.models.is_empty());
     }

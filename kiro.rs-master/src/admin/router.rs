@@ -1,4 +1,4 @@
-//! Admin API 路由配置
+//! Admin API routeconfig
 
 use axum::{
     Router, middleware,
@@ -31,27 +31,27 @@ use super::{
     middleware::{AdminState, admin_auth_middleware},
 };
 
-/// 创建 Admin API 路由
+/// create Admin API route
 ///
-/// # 端点
-/// - `GET /credentials` - 获取所有凭据状态
-/// - `POST /credentials` - 添加新凭据
-/// - `DELETE /credentials/:id` - 删除凭据
-/// - `PUT /credentials/:id` - 更新凭据可编辑字段（email、proxy 等）
-/// - `POST /credentials/:id/disabled` - 设置凭据禁用状态
-/// - `POST /credentials/:id/priority` - 设置凭据优先级
-/// - `POST /credentials/:id/reset` - 重置失败计数
-/// - `POST /credentials/:id/refresh` - 强制刷新 Token
-/// - `GET /credentials/:id/balance` - 获取凭据余额
-/// - `GET /config/load-balancing` - 获取负载均衡模式
-/// - `PUT /config/load-balancing` - 设置负载均衡模式
+/// # endpoint
+/// - `GET /credentials` - get all credential statuses
+/// - `POST /credentials` - addnew credential
+/// - `DELETE /credentials/:id` - deletecredential
+/// - `PUT /credentials/:id` - Updates the editable fields of the credential (email,proxy etc.)
+/// - `POST /credentials/:id/disabled` - set the credential disabled state
+/// - `POST /credentials/:id/priority` - set the credential priority
+/// - `POST /credentials/:id/reset` - reset the failure count
+/// - `POST /credentials/:id/refresh` - forcerefresh Token
+/// - `GET /credentials/:id/balance` - get the credential balance
+/// - `GET /config/load-balancing` - get the load balancing mode
+/// - `PUT /config/load-balancing` - set the load balancing mode
 ///
-/// # 认证
-/// 需要登录API密钥认证，支持：
+/// # auth
+/// needloginAPIkey authentication, supports:
 /// - `x-api-key` header
 /// - `Authorization: Bearer <token>` header
 pub fn create_admin_router(state: AdminState) -> Router {
-    // 需要登录API密钥认证的路由
+    // needloginAPIthe route for key authentication
     let authenticated = Router::new()
         .route(
             "/credentials",
@@ -168,8 +168,8 @@ pub fn create_admin_router(state: AdminState) -> Router {
             admin_auth_middleware,
         ));
 
-    // 免鉴权路由：远程部署模式下 OAuth 公网回调（浏览器顶层导航到达，不带 admin API Key）。
-    // 由 OAuth state 定位会话，CSRF 保护与本地回调服务器同等。
+    // Auth free route: in remote deployment mode OAuth Public callback (reached by browser top level navigation, without admin API Key).
+    // by OAuth state fixedbitsession,CSRF protection equal to the local callback server.
     let public = Router::new().route("/auth/callback/{*tail}", get(social_oauth_callback));
 
     Router::new()

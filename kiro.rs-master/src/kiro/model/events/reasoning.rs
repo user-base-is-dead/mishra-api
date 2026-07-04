@@ -1,6 +1,6 @@
-//! 推理内容事件
+//! reasoning contentevent
 //!
-//! 处理 reasoningContentEvent 类型的事件。
+//! handle reasoningContentEvent typeofevent.
 
 use serde::Deserialize;
 
@@ -9,17 +9,17 @@ use crate::kiro::parser::frame::Frame;
 
 use super::base::EventPayload;
 
-/// Kiro 原生 thinking / reasoning 事件。
+/// Kiro native thinking / reasoning event.
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ReasoningContentEvent {
-    /// 明文思考内容片段。
+    /// plaintext thinking content fragment.
     #[serde(default)]
     pub text: Option<String>,
-    /// 思考块签名，Anthropic 客户端下一轮会原样回传。
+    /// thinkingblocksignature,Anthropic The client returns it as is on the next round.
     #[serde(default)]
     pub signature: Option<String>,
-    /// 上游返回的加密思考内容。
+    /// The encrypted thinking content returned by upstream.
     #[serde(default)]
     pub redacted_content: Option<String>,
 }

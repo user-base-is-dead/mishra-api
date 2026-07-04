@@ -1,11 +1,11 @@
-//! Kiro IDE Social 登录流程（Portal PKCE OAuth）
+//! Kiro IDE Social login flow(Portal PKCE OAuth)
 //!
-//! 复现 Kiro IDE 的 portal-auth-provider 流程：
-//! 1. 生成 PKCE code_verifier + code_challenge
-//! 2. 启本地 HTTP 回调服务器
-//! 3. 返回 portal URL 供用户在浏览器完成登录
-//! 4. 捕获回调中的 authorization code
-//! 5. 用 code + code_verifier 换取 access_token + refresh_token
+//! reproduce Kiro IDE of portal-auth-provider flow:
+//! 1. generate PKCE code_verifier + code_challenge
+//! 2. start local HTTP callbackservicecomponent
+//! 3. return portal URL For the user to complete login in the browser.
+//! 4. capturecallbackin authorization code
+//! 5. use code + code_verifier exchange for access_token + refresh_token
 
 use std::net::TcpListener;
 
@@ -16,41 +16,41 @@ use crate::http_client::{ProxyConfig, build_client};
 use crate::kiro::model::token_refresh::{SocialCreateTokenRequest, SocialCreateTokenResponse};
 use crate::model::config::Config;
 
-/// Portal 认证 URL（Kiro 网页版入口）
+/// Portal auth URL(Kiro web versionentry)
 pub const KIRO_PORTAL_URL: &str = "https://app.kiro.dev";
 
-/// Kiro auth service 默认端点
+/// Kiro auth service default endpoint
 pub const KIRO_AUTH_ENDPOINT: &str = "https://prod.us-east-1.auth.desktop.kiro.dev";
 
-/// 与 IDE 一致的本地回调端口候选列表
+/// and IDE A consistent list of local callback port candidates.
 const CALLBACK_PORTS: &[u16] = &[
     3128, 4649, 6588, 8008, 9091, 49153, 50153, 51153, 52153, 53153,
 ];
 
-/// OAuth 回调数据
+/// OAuth callback data
 #[derive(Debug, Clone)]
 pub struct OAuthCallbackData {
     pub code: String,
     pub login_option: String,
     pub path: String,
-    /// OAuth state 参数（用于 CSRF 验证）
+    /// OAuth state parameter(used for CSRF verify)
     pub state: String,
 }
 
-/// 回调服务器关闭句柄
+/// callback server shutdown handle
 ///
-/// Drop 时自动向服务器发送关闭信号，服务器退出监听循环并释放端口。
+/// Drop automatically sends a shutdown signal to the server; the server exits the listen loop and releases the port.
 pub struct ServerHandle {
     _shutdown_tx: oneshot::Sender<()>,
 }
 
-/// 启动本地回调服务器，返回端口号和关闭句柄
+/// Starts the local callback server, returning the port number and shutdown handle.
 ///
-/// 关闭句柄 drop 时服务器自动停止。当收到有效的 OAuth 回调时，通过 channel 发送回调数据。
+/// close handle drop the server auto stops. When a valid one is received OAuth callbackwhen,via channel send the callback data.
 pub fn start_callback_server(
     tx: oneshot::Sender<OAuthCallbackData>,
 ) -> anyhow::Result<(u16, ServerHandle)> {
-    // 直接持有已绑定的 socket，避免 probe-and-bind 的 TOCTOU 竞态
+    // directly hold the already bound socket, avoid probe-and-bind of TOCTOU race
     let (port, std_listener) = bind_available_port()?;
 
     let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
@@ -78,7 +78,7 @@ fn bind_available_port() -> anyhow::Result<(u16, std::net::TcpListener)> {
         }
     }
     anyhow::bail!(
-        "所有回调端口均被占用，请确保没有其他程序占用 {:?}",
+        "All callback ports are occupied; please ensure no other program is occupying them. {:?}",
         CALLBACK_PORTS
     )
 }
@@ -95,14 +95,14 @@ async fn run_callback_server(
     let listener = match TcpListener::from_std(std_listener) {
         Ok(l) => l,
         Err(e) => {
-            tracing::error!("Social 回调服务器初始化失败 (port {}): {}", port, e);
+            tracing::error!("Social callback server initialization failed (port {}): {}", port, e);
             return;
         }
     };
 
-    tracing::info!("Social 回调服务器已启动: http://127.0.0.1:{}", port);
+    tracing::info!("Social callback server started: http://127.0.0.1:{}", port);
 
-    // 只等待一次成功的回调，或关闭信号
+    // Waits for only one successful callback, or the shutdown signal.
     let mut tx = Some(tx);
     loop {
         let (mut stream, _addr) = tokio::select! {
@@ -111,7 +111,7 @@ async fn run_callback_server(
                 Err(_) => break,
             },
             _ = &mut shutdown_rx => {
-                tracing::info!("Social 回调服务器收到关闭信号，端口 {} 已释放", port);
+                tracing::info!("Social The callback server received the shutdown signal; the port {} released", port);
                 break;
             }
         };
@@ -131,7 +131,7 @@ async fn run_callback_server(
                 .or_else(|| s.strip_suffix(" HTTP/1.0"))
         }) {
             if let Some(callback) = parse_callback(path_and_query) {
-                let body = "<html><head><meta charset='utf-8'><title>登录成功</title></head><body style='font-family:sans-serif;text-align:center;padding:60px'><h2>&#10003; 登录成功</h2><p>Token 已更新，请返回 Kiro Admin UI。</p><p style='color:#888;font-size:13px'>此标签页可以关闭。</p></body></html>";
+                let body = "<html><head><meta charset='utf-8'><title>login success</title></head><body style='font-family:sans-serif;text-align:center;padding:60px'><h2>&#10003; login success</h2><p>Token updated, please return Kiro Admin UI.</p><p style='color:#888;font-size:13px'>this tab can be closed.</p></body></html>";
                 let response = format!(
                     "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
                     body.len(),
@@ -147,7 +147,7 @@ async fn run_callback_server(
             } else if path_and_query.starts_with("/oauth/callback")
                 || path_and_query.starts_with("/signin/callback")
             {
-                // 有 error 参数的回调
+                // has error parameterofcallback
                 let error_msg = path_and_query
                     .split('?')
                     .nth(1)
@@ -157,10 +157,10 @@ async fn run_callback_server(
                             .or_else(|| p.get("error"))
                             .cloned()
                     })
-                    .unwrap_or_else(|| "未知错误".to_string());
+                    .unwrap_or_else(|| "unknownerror".to_string());
 
                 let body = format!(
-                    "<html><head><meta charset='utf-8'><title>登录失败</title></head><body style='font-family:sans-serif;text-align:center;padding:60px'><h2>&#10007; 登录失败</h2><p>{}</p><p style='color:#888;font-size:13px'>请关闭此标签页并重试。</p></body></html>",
+                    "<html><head><meta charset='utf-8'><title>loginfailed</title></head><body style='font-family:sans-serif;text-align:center;padding:60px'><h2>&#10007; loginfailed</h2><p>{}</p><p style='color:#888;font-size:13px'>Please close this tab and try again.</p></body></html>",
                     error_msg
                 );
                 let response = format!(
@@ -174,7 +174,7 @@ async fn run_callback_server(
             }
         }
 
-        // 其他请求返回 404
+        // otherrequestreturn 404
         let _ = stream
             .write_all(b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n")
             .await;
@@ -194,7 +194,7 @@ fn parse_callback(path_and_query: &str) -> Option<OAuthCallbackData> {
 
     let params = parse_query_string(query);
 
-    // 必须有 code 且没有 error
+    // must have code and none error
     if params.contains_key("error") {
         return None;
     }
@@ -211,14 +211,14 @@ fn parse_callback(path_and_query: &str) -> Option<OAuthCallbackData> {
     })
 }
 
-/// base64url 编码（无填充），与 Kiro IDE 行为一致
+/// base64url encoding (no padding), with Kiro IDE consistent behavior
 fn base64url_encode(data: &[u8]) -> String {
-    // 标准 base64 → 替换 +/= 为 base64url 规范
+    // standard base64 → replace +/= as base64url normalize
     let b64 = base64_encode_standard(data);
     b64.replace('+', "-").replace('/', "_").replace('=', "")
 }
 
-/// 标准 base64 编码（用于内部转换）
+/// standard base64 encoding (used for internal conversion)
 fn base64_encode_standard(data: &[u8]) -> String {
     const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut out = String::with_capacity((data.len() + 2) / 3 * 4);
@@ -250,14 +250,14 @@ fn base64_encode_standard(data: &[u8]) -> String {
     out
 }
 
-/// 生成 PKCE code_verifier 和 code_challenge
+/// generate PKCE code_verifier and code_challenge
 pub fn generate_pkce() -> (String, String) {
-    // 32 字节随机数作为 verifier（与 IDE crypto.randomBytes(32).toString("base64url") 等价）
+    // 32 byte random number as verifier(with IDE crypto.randomBytes(32).toString("base64url") equivalent)
     let mut bytes = [0u8; 32];
     for (i, b) in bytes.iter_mut().enumerate() {
         *b = fastrand::u8(..).wrapping_add(i as u8);
     }
-    // 使用 uuid v4 的随机性来增强
+    // use uuid v4 the randomness to enhance
     let uuid_bytes = uuid::Uuid::new_v4().as_bytes().to_owned();
     for (i, b) in bytes.iter_mut().enumerate() {
         *b ^= uuid_bytes[i % 16];
@@ -273,7 +273,7 @@ pub fn generate_pkce() -> (String, String) {
     (verifier, challenge)
 }
 
-/// 构建供用户在浏览器中访问的 portal URL
+/// Builds the one for the user to access in the browser. portal URL
 pub fn build_portal_url(state: &str, code_challenge: &str, redirect_uri: &str) -> String {
     let params = format!(
         "state={}&code_challenge={}&code_challenge_method=S256&redirect_uri={}&redirect_from=KiroIDE",
@@ -284,7 +284,7 @@ pub fn build_portal_url(state: &str, code_challenge: &str, redirect_uri: &str) -
     format!("{}/signin?{}", KIRO_PORTAL_URL, params)
 }
 
-/// 简易 query string 解析（不依赖 url crate）
+/// simple query string parse(does not depend on url crate)
 fn parse_query_string(query: &str) -> std::collections::HashMap<String, String> {
     query
         .split('&')
@@ -294,7 +294,7 @@ fn parse_query_string(query: &str) -> std::collections::HashMap<String, String> 
             let val = iter
                 .next()
                 .map(|v| {
-                    // 简单的 percent-decode（处理 %XX 和 + 号）
+                    // simple percent-decode(handle %XX and + number)
                     let with_space = v.replace('+', " ");
                     urlencoding::decode(&with_space)
                         .map(|s| s.into_owned())
@@ -306,7 +306,7 @@ fn parse_query_string(query: &str) -> std::collections::HashMap<String, String> 
         .collect()
 }
 
-/// 用 authorization code 换取 access_token + refresh_token
+/// use authorization code exchange for access_token + refresh_token
 pub async fn exchange_code_for_token(
     auth_endpoint: &str,
     code: &str,
@@ -340,10 +340,10 @@ pub async fn exchange_code_for_token(
     let status = resp.status();
     if !status.is_success() {
         let body_text = resp.text().await.unwrap_or_default();
-        anyhow::bail!("Social token 交换失败 {}: {}", status, body_text);
+        anyhow::bail!("Social token exchange failed {}: {}", status, body_text);
     }
 
     resp.json::<SocialCreateTokenResponse>()
         .await
-        .map_err(|e| anyhow::anyhow!("解析 Social token 响应失败: {}", e))
+        .map_err(|e| anyhow::anyhow!("parse Social token responsefailed: {}", e))
 }

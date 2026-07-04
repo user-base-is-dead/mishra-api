@@ -17,7 +17,7 @@ impl Default for TlsBackend {
     }
 }
 
-/// KNA 应用配置
+/// KNA app config
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Config {
@@ -27,13 +27,13 @@ pub struct Config {
     #[serde(default = "default_port")]
     pub port: u16,
 
-    /// OAuth 回调公网地址（远程部署时配置）。
+    /// OAuth Public callback address (configured for remote deployment).
     ///
-    /// 留空：Social 登录在服务端本机启动临时回调端口（`http://127.0.0.1:{port}`），
-    /// 仅本机浏览器可达。
-    /// 配置后（如 `https://example.com/api/admin/auth/callback`）：OAuth `redirect_uri`
-    /// 改用此地址，浏览器授权后落到 `{callbackBaseUrl}/oauth/callback`，
-    /// 由本服务的公网回调路由接收 `code` 并自动完成登录，适配 Docker / VPS / Render 等远程部署。
+    /// leave empty:Social Login starts a temporary callback port on the server local machine (`http://127.0.0.1:{port}`),
+    /// reachable only by the local browser.
+    /// configafter(such as `https://example.com/api/admin/auth/callback`):OAuth `redirect_uri`
+    /// Uses this address instead; after browser authorization it lands on `{callbackBaseUrl}/oauth/callback`,
+    /// Received by this service public callback route. `code` and automatically complete login, adapt Docker / VPS / Render etc.remotedeploy.
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub callback_base_url: Option<String>,
@@ -41,12 +41,12 @@ pub struct Config {
     #[serde(default = "default_region")]
     pub region: String,
 
-    /// Auth Region（用于 Token 刷新），未配置时回退到 region
+    /// Auth Region(used for Token refresh); falls back when not configured to region
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub auth_region: Option<String>,
 
-    /// API Region（用于 API 请求），未配置时回退到 region
+    /// API Region(used for API request); falls back when not configured to region
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub api_region: Option<String>,
@@ -69,110 +69,110 @@ pub struct Config {
     #[serde(default = "default_tls_backend")]
     pub tls_backend: TlsBackend,
 
-    /// 外部 count_tokens API 地址（可选）
+    /// external count_tokens API address(optional)
     #[serde(default)]
     pub count_tokens_api_url: Option<String>,
 
-    /// count_tokens API 密钥（可选）
+    /// count_tokens API key (optional)
     #[serde(default)]
     pub count_tokens_api_key: Option<String>,
 
-    /// count_tokens API 认证类型（可选，"x-api-key" 或 "bearer"，默认 "x-api-key"）
+    /// count_tokens API authentication type (optional,"x-api-key" or "bearer", default "x-api-key")
     #[serde(default = "default_count_tokens_auth_type")]
     pub count_tokens_auth_type: String,
 
-    /// HTTP 代理地址（可选）
-    /// 支持格式: http://host:port, https://host:port, socks5://host:port
+    /// HTTP proxy address (optional)
+    /// supported format: http://host:port, https://host:port, socks5://host:port
     #[serde(default)]
     pub proxy_url: Option<String>,
 
-    /// 代理认证用户名（可选）
+    /// Proxy auth username (optional).
     #[serde(default)]
     pub proxy_username: Option<String>,
 
-    /// 代理认证密码（可选）
+    /// proxy authentication password (optional)
     #[serde(default)]
     pub proxy_password: Option<String>,
 
-    /// Admin API 密钥（可选，启用 Admin API 功能）
+    /// Admin API key (optional, enable Admin API feature)
     #[serde(default)]
     pub admin_api_key: Option<String>,
 
-    /// 上一次成功更新前正在运行的版本号，用于在前端展示「回退到 vX.Y.Z」按钮。
-    /// 实际回退动作通过 `<exe>.backup` 文件完成，无需访问网络。
+    /// The version that was running before the last successful update, used to show in the frontend as rollback to vX.Y.Zbutton.
+    /// the actual rollback action via `<exe>.backup` the file completes, without accessing the network.
     #[serde(default)]
     pub update_previous_version: Option<String>,
 
-    /// GitHub Personal Access Token（可选）。设置后 GitHub Releases 接口会带上
-    /// `Authorization: Bearer <token>`，把限流从匿名 60/h 提到认证 5000/h。
-    /// 仅需 `public_repo` 读取权限即可。
+    /// GitHub Personal Access Token(optional). after setting GitHub Releases the interface will carry
+    /// `Authorization: Bearer <token>`, move the throttle from anonymous 60/h mention auth 5000/h.
+    /// only need `public_repo` read permission suffices.
     #[serde(default)]
     pub github_token: Option<String>,
 
-    /// 上一次成功完成在线更新的时间（RFC3339）。前端用于显示「上次更新于 …」。
+    /// The time the last online update successfully completed (RFC3339). Used by the frontend to show last updated at. ….
     #[serde(default)]
     pub update_last_applied_at: Option<String>,
 
-    /// 是否启用无人值守自动更新。开启后服务会在每天的 `update_auto_apply_time`
-    /// 时刻检查 GitHub Releases，发现新版本即自动下载二进制并替换重启。
+    /// Whether to enable unattended auto update. When on, the service will each day `update_auto_apply_time`
+    /// check at each moment GitHub Releases, on finding a new version, automatically downloads the binary and replaces and restarts.
     #[serde(default)]
     pub update_auto_apply: bool,
 
-    /// 自动更新的每日触发时间（本地时区，`HH:MM` 24 小时制）。
-    /// 默认 03:00 凌晨执行，对在线服务影响最小。
+    /// The daily trigger time for auto update (local time zone,`HH:MM` 24 hourmechanism).
+    /// default 03:00 Runs in the early morning to minimize impact on the online service.
     #[serde(default = "default_update_auto_apply_time")]
     pub update_auto_apply_time: String,
 
-    /// 负载均衡模式（"priority" 或 "balanced"）
+    /// load balancing mode ("priority" or "balanced")
     #[serde(default = "default_load_balancing_mode")]
     pub load_balancing_mode: String,
 
-    /// 账号级 429 风控触发时是否对当前凭据进入冷却并故障转移（默认 true）。
+    /// account level 429 Whether, when throttle triggers, the current credential enters cooldown and fails over (default true).
     ///
-    /// 关闭后：429 + suspicious activity 仍按普通瞬态错误重试，不切换凭据。
-    /// 开启后：识别到 suspicious activity 字符串时，把当前凭据冷却 `account_throttle_cooldown_secs` 秒，
-    /// 立即切换到下一个可用凭据。
+    /// after close:429 + suspicious activity Still retries as an ordinary transient error, does not switch the credential.
+    /// after enabling: recognized suspicious activity string, cools down the current credential. `account_throttle_cooldown_secs` seconds,
+    /// Immediately switches to the next available credential.
     #[serde(default = "default_account_throttle_failover")]
     pub account_throttle_failover: bool,
 
-    /// 账号级风控冷却时长（秒，默认 1800 = 30 分钟）。
+    /// Account level throttle cooldown duration (seconds, default 1800 = 30 minutes).
     #[serde(default = "default_account_throttle_cooldown_secs")]
     pub account_throttle_cooldown_secs: u64,
 
-    /// 是否开启非流式响应的 thinking 块提取（默认 true）
+    /// whether to enable the non streaming response thinking block extract(default true)
     ///
-    /// 启用后，非流式响应中的 `<thinking>...</thinking>` 标签会被解析为
-    /// 独立的 `{"type": "thinking", ...}` 内容块,与流式响应行为一致。
+    /// When enabled, in a non streaming response the `<thinking>...</thinking>` the tag will be parsed as
+    /// independent `{"type": "thinking", ...}` content block,consistent with the streaming response behavior.
     #[serde(default = "default_extract_thinking")]
     pub extract_thinking: bool,
 
-    /// 默认端点名称（凭据未显式指定 endpoint 时使用，默认 "ide"）
+    /// Default endpoint name (when the credential does not explicitly specify endpoint whenuse, default "ide")
     #[serde(default = "default_endpoint")]
     pub default_endpoint: String,
 
-    /// 是否启用请求链路追踪（写 traces.db）。默认 true。
+    /// Whether to enable request tracing (write traces.db). default true.
     ///
-    /// 关闭后：不再写入 trace 记录、不走 TraceSink，但 `GET /api/admin/traces`
-    /// 仍可查询历史已存记录。适合隐私敏感或磁盘紧张的场景。
+    /// after closing: no longer write trace record, notgo TraceSink, but `GET /api/admin/traces`
+    /// Can still query historically stored records. Suitable for privacy sensitive or disk constrained scenarios.
     #[serde(default = "default_trace_enabled")]
     pub trace_enabled: bool,
 
-    /// 请求链路追踪记录保留天数（默认 7）。后台任务每天清理超期记录。
+    /// Retention days for request trace records (default 7). A background task cleans expired records daily.
     #[serde(default = "default_trace_retention_days")]
     pub trace_retention_days: u32,
 
-    /// 请求用量日志（usage_log.*.jsonl + 聚合桶）保留天数（默认 31）。
+    /// request usage log (usage_log.*.jsonl + aggregation bucket) retention days (default 31).
     #[serde(default = "default_usage_log_retention_days")]
     pub usage_log_retention_days: u32,
 
-    /// 端点特定的配置
+    /// endpoint specific configuration
     ///
-    /// 键为端点名（如 "ide" / "cli"），值为该端点自由定义的参数对象。
-    /// 未在此表出现的端点沿用实现内置默认值。
+    /// the key is the endpoint name (such as "ide" / "cli"), the value is a parameter object freely defined by the endpoint.
+    /// Endpoints not present in this table use the implementation built in defaults.
     #[serde(default)]
     pub endpoints: HashMap<String, serde_json::Value>,
 
-    /// 配置文件路径（运行时元数据，不写入 JSON）
+    /// The config file path (runtime metadata, not written into JSON)
     #[serde(skip)]
     config_path: Option<PathBuf>,
 }
@@ -287,28 +287,28 @@ impl Default for Config {
 }
 
 impl Config {
-    /// 获取默认配置文件路径
+    /// get the default configuration file path
     pub fn default_config_path() -> &'static str {
         "config.json"
     }
 
-    /// 获取有效的 Auth Region（用于 Token 刷新）
-    /// 优先使用 auth_region，未配置时回退到 region
+    /// fetchvalid Auth Region(used for Token refresh)
+    /// prefer use auth_region, fall back when not configured to region
     pub fn effective_auth_region(&self) -> &str {
         self.auth_region.as_deref().unwrap_or(&self.region)
     }
 
-    /// 获取有效的 API Region（用于 API 请求）
-    /// 优先使用 api_region，未配置时回退到 region
+    /// fetchvalid API Region(used for API request)
+    /// prefer use api_region, fall back when not configured to region
     pub fn effective_api_region(&self) -> &str {
         self.api_region.as_deref().unwrap_or(&self.region)
     }
 
-    /// 从文件加载配置
+    /// load the configuration from the file
     pub fn load<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
         let path = path.as_ref();
         if !path.exists() {
-            // 配置文件不存在，返回默认配置
+            // The config file does not exist; returns the default config.
             let mut config = Self::default();
             config.config_path = Some(path.to_path_buf());
             return Ok(config);
@@ -318,9 +318,9 @@ impl Config {
         let mut config: Config = serde_json::from_str(&content)?;
         config.config_path = Some(path.to_path_buf());
 
-        // 用户手工把字符串字段清空（如 `"updateAutoApplyTime": ""`）时，serde 默认值不会
-        // 介入；这里把"看起来像空"的关键字段回退到默认值，避免后续业务用到
-        // 空字符串导致难以诊断的错误。
+        // The user manually cleared a string field (such as `"updateAutoApplyTime": ""`) when,serde defaultvaluenotwill
+        // intervene;heretake"looks likeempty"key fields fall back to defaults, avoiding later business logic using
+        // An empty string causes hard to diagnose errors.
         if config.update_auto_apply_time.trim().is_empty() {
             config.update_auto_apply_time = default_update_auto_apply_time();
         }
@@ -328,21 +328,21 @@ impl Config {
         Ok(config)
     }
 
-    /// 获取配置文件路径（如果有）
+    /// Gets the config file path (if any).
     pub fn config_path(&self) -> Option<&Path> {
         self.config_path.as_deref()
     }
 
-    /// 将当前配置写回原始配置文件
+    /// Writes the current config back to the original config file.
     pub fn save(&self) -> anyhow::Result<()> {
         let path = self
             .config_path
             .as_deref()
-            .ok_or_else(|| anyhow::anyhow!("配置文件路径未知，无法保存配置"))?;
+            .ok_or_else(|| anyhow::anyhow!("The config file path is unknown; cannot save the config."))?;
 
-        let content = serde_json::to_string_pretty(self).context("序列化配置失败")?;
+        let content = serde_json::to_string_pretty(self).context("failed to serialize the configuration")?;
         fs::write(path, content)
-            .with_context(|| format!("写入配置文件失败: {}", path.display()))?;
+            .with_context(|| format!("failed to write the configuration file: {}", path.display()))?;
         Ok(())
     }
 }

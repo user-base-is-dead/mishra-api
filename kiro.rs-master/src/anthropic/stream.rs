@@ -1,6 +1,6 @@
-//! 流式响应处理模块
+//! streaming response processing module
 //!
-//! 实现 Kiro → Anthropic 流式响应转换和 SSE 状态管理
+//! implement Kiro → Anthropic streaming response conversion and SSE statemanage
 
 use std::collections::HashMap;
 
@@ -9,23 +9,23 @@ use uuid::Uuid;
 
 use crate::kiro::model::events::Event;
 
-/// thinking 块的 signature 占位字符串
+/// thinking block signature occupybitstring
 ///
-/// Anthropic Messages API 协议规定 thinking 模式下，assistant 消息的
-/// `{type:"thinking", ...}` 块必须带 `signature` 字段并在下一轮原样回传，
-/// 否则 SDK / 服务端会拒绝请求并报：
-/// `The content[].thinking in the thinking mode must be passed back to the API`。
+/// Anthropic Messages API protocolspecify thinking under the mode,assistant message
+/// `{type:"thinking", ...}` blockmust carry `signature` field and returns it as is on the next round,
+/// otherwise SDK / The server rejects the request and reports:
+/// `The content[].thinking in the thinking mode must be passed back to the API`.
 ///
-/// 上游 Kiro 不下发真实签名（它本身不是 Anthropic 服务端），因此 kiro.rs 在
-/// thinking 块结束时插入一个非空占位字符串以满足客户端本地校验。
-/// converter 在解析 assistant 消息回传 Kiro 时只读 `block.thinking`，不读
-/// signature，因此该占位字符串只在客户端 ↔ kiro.rs 之间存在，不会影响转发。
+/// upstream Kiro Does not deliver a real signature (it itself is not Anthropic server side), therefore kiro.rs in
+/// thinking Inserts a non empty placeholder string at block end to satisfy client local validation.
+/// converter during parse assistant messagebackpass Kiro read only when `block.thinking`, do not read
+/// signature, so this placeholder string is only on the client. ↔ kiro.rs exists between, does not affect forwarding.
 pub(super) const THINKING_SIGNATURE_PLACEHOLDER: &str = "kiro-rs-thinking-signature";
 
-/// 找到小于等于目标位置的最近有效UTF-8字符边界
+/// Finds the nearest valid one less than or equal to the target position.UTF-8characterboundary
 ///
-/// UTF-8字符可能占用1-4个字节，直接按字节位置切片可能会切在多字节字符中间导致panic。
-/// 这个函数从目标位置向前搜索，找到最近的有效字符边界。
+/// UTF-8charactercancanoccupyuse1-4bytes; slicing directly by byte position may cut in the middle of a multi byte character and causepanic.
+/// This function searches backward from the target position to find the nearest valid character boundary.
 fn find_char_boundary(s: &str, target: usize) -> usize {
     if target >= s.len() {
         return s.len();
@@ -33,7 +33,7 @@ fn find_char_boundary(s: &str, target: usize) -> usize {
     if target == 0 {
         return 0;
     }
-    // 从目标位置向前搜索有效的字符边界
+    // Searches backward from the target position for a valid character boundary.
     let mut pos = target;
     while pos > 0 && !s.is_char_boundary(pos) {
         pos -= 1;
@@ -41,18 +41,18 @@ fn find_char_boundary(s: &str, target: usize) -> usize {
     pos
 }
 
-/// 需要跳过的包裹字符
+/// wrapping characters that need to be skipped
 ///
-/// 当 thinking 标签被这些字符包裹时，认为是在引用标签而非真正的标签：
-/// - 反引号 (`)：行内代码
-/// - 双引号 (")：字符串
-/// - 单引号 (')：字符串
+/// when thinking When a tag is wrapped by these characters, it is considered a quoted tag rather than a real tag:
+/// - backtick (`):lineinsidecode
+/// - double quote ("):string
+/// - single quote ('):string
 const QUOTE_CHARS: &[u8] = &[
     b'`', b'"', b'\'', b'\\', b'#', b'!', b'@', b'$', b'%', b'^', b'&', b'*', b'(', b')', b'-',
     b'_', b'=', b'+', b'[', b']', b'{', b'}', b';', b':', b'<', b'>', b',', b'.', b'?', b'/',
 ];
 
-/// 检查指定位置的字符是否是引用字符
+/// Checks whether the character at the given position is a quote character.
 fn is_quote_char(buffer: &str, pos: usize) -> bool {
     buffer
         .as_bytes()
@@ -61,23 +61,23 @@ fn is_quote_char(buffer: &str, pos: usize) -> bool {
         .unwrap_or(false)
 }
 
-/// 查找真正的 thinking 结束标签（不被引用字符包裹，且后面有双换行符）
+/// findreal thinking End tag (not wrapped by quote characters and followed by a double newline).
 ///
-/// 当模型在思考过程中提到 `</thinking>` 时，通常会用反引号、引号等包裹，
-/// 或者在同一行有其他内容（如"关于 </thinking> 标签"）。
-/// 这个函数会跳过这些情况，只返回真正的结束标签位置。
+/// When the model mentions during thinking `</thinking>` usually wrapped with backticks, quotes, and so on,
+/// or there is other content on the same line (such as"about </thinking> tag").
+/// This function skips these cases and returns only the position of the real end tag.
 ///
-/// 跳过的情况：
-/// - 被引用字符包裹（反引号、引号等）
-/// - 后面没有双换行符（真正的结束标签后面会有 `\n\n`）
-/// - 标签在缓冲区末尾（流式处理时需要等待更多内容）
+/// skipofsituation:
+/// - Wrapped by quote characters (backticks, quotes, and so on).
+/// - There is no double newline after it (a real end tag would be followed by one). `\n\n`)
+/// - The tag is at the end of the buffer (streaming needs to wait for more content).
 ///
-/// # 参数
-/// - `buffer`: 要搜索的字符串
+/// # parameter
+/// - `buffer`: the string to search for
 ///
-/// # 返回值
-/// - `Some(pos)`: 真正的结束标签的起始位置
-/// - `None`: 没有找到真正的结束标签
+/// # return value
+/// - `Some(pos)`: The start position of the real end tag.
+/// - `None`: No real end tag was found.
 fn find_real_thinking_end_tag(buffer: &str) -> Option<usize> {
     const TAG: &str = "</thinking>";
     let mut search_start = 0;
@@ -85,46 +85,46 @@ fn find_real_thinking_end_tag(buffer: &str) -> Option<usize> {
     while let Some(pos) = buffer[search_start..].find(TAG) {
         let absolute_pos = search_start + pos;
 
-        // 检查前面是否有引用字符
+        // Checks whether there is a quote character before.
         let has_quote_before = absolute_pos > 0 && is_quote_char(buffer, absolute_pos - 1);
 
-        // 检查后面是否有引用字符
+        // Checks whether there is a quote character after.
         let after_pos = absolute_pos + TAG.len();
         let has_quote_after = is_quote_char(buffer, after_pos);
 
-        // 如果被引用字符包裹，跳过
+        // If wrapped by quote characters, skips.
         if has_quote_before || has_quote_after {
             search_start = absolute_pos + 1;
             continue;
         }
 
-        // 检查后面的内容
+        // check the following content
         let after_content = &buffer[after_pos..];
 
-        // 如果标签后面内容不足以判断是否有双换行符，等待更多内容
+        // If the content after the tag is not enough to decide whether there is a double newline, wait for more content.
         if after_content.len() < 2 {
             return None;
         }
 
-        // 真正的 thinking 结束标签后面会有双换行符 `\n\n`
+        // real thinking A real end tag is followed by a double newline. `\n\n`
         if after_content.starts_with("\n\n") {
             return Some(absolute_pos);
         }
 
-        // 不是双换行符，跳过继续搜索
+        // Not a double newline; skips and keeps searching.
         search_start = absolute_pos + 1;
     }
 
     None
 }
 
-/// 查找缓冲区末尾的 thinking 结束标签（允许末尾只有空白字符）
+/// find at the end of the buffer thinking End tag (allows only whitespace at the end).
 ///
-/// 用于“边界事件”场景：例如 thinking 结束后立刻进入 tool_use，或流结束，
-/// 此时 `</thinking>` 后面可能没有 `\n\n`，但结束标签依然应被识别并过滤。
+/// used for“boundaryevent”scenario:for example thinking immediately enter after ending tool_use,orstreamend,
+/// at this point `</thinking>` afterside cancannone `\n\n`, but the end tag should still be recognized and filtered.
 ///
-/// 约束：只有当 `</thinking>` 之后全部都是空白字符时才认为是结束标签，
-/// 以避免在 thinking 内容中提到 `</thinking>`（非结束标签）时误判。
+/// constraint:onlywhen `</thinking>` Only when everything after is whitespace is it considered an end tag,
+/// toavoid in thinking contentinmention `</thinking>`(not an end tag) case misjudgment.
 fn find_real_thinking_end_tag_at_buffer_end(buffer: &str) -> Option<usize> {
     const TAG: &str = "</thinking>";
     let mut search_start = 0;
@@ -132,10 +132,10 @@ fn find_real_thinking_end_tag_at_buffer_end(buffer: &str) -> Option<usize> {
     while let Some(pos) = buffer[search_start..].find(TAG) {
         let absolute_pos = search_start + pos;
 
-        // 检查前面是否有引用字符
+        // Checks whether there is a quote character before.
         let has_quote_before = absolute_pos > 0 && is_quote_char(buffer, absolute_pos - 1);
 
-        // 检查后面是否有引用字符
+        // Checks whether there is a quote character after.
         let after_pos = absolute_pos + TAG.len();
         let has_quote_after = is_quote_char(buffer, after_pos);
 
@@ -144,7 +144,7 @@ fn find_real_thinking_end_tag_at_buffer_end(buffer: &str) -> Option<usize> {
             continue;
         }
 
-        // 只有当标签后面全部是空白字符时才认定为结束标签
+        // Only when everything after the tag is whitespace is it recognized as an end tag.
         if buffer[after_pos..].trim().is_empty() {
             return Some(absolute_pos);
         }
@@ -155,9 +155,9 @@ fn find_real_thinking_end_tag_at_buffer_end(buffer: &str) -> Option<usize> {
     None
 }
 
-/// 查找真正的 thinking 开始标签（不被引用字符包裹）
+/// findreal thinking Start tag (not wrapped by quote characters).
 ///
-/// 与 `find_real_thinking_end_tag` 类似，跳过被引用字符包裹的开始标签。
+/// and `find_real_thinking_end_tag` Similar, skips a start tag wrapped by quote characters.
 fn find_real_thinking_start_tag(buffer: &str) -> Option<usize> {
     const TAG: &str = "<thinking>";
     let mut search_start = 0;
@@ -165,29 +165,29 @@ fn find_real_thinking_start_tag(buffer: &str) -> Option<usize> {
     while let Some(pos) = buffer[search_start..].find(TAG) {
         let absolute_pos = search_start + pos;
 
-        // 检查前面是否有引用字符
+        // Checks whether there is a quote character before.
         let has_quote_before = absolute_pos > 0 && is_quote_char(buffer, absolute_pos - 1);
 
-        // 检查后面是否有引用字符
+        // Checks whether there is a quote character after.
         let after_pos = absolute_pos + TAG.len();
         let has_quote_after = is_quote_char(buffer, after_pos);
 
-        // 如果不被引用字符包裹，则是真正的开始标签
+        // If not wrapped by quote characters, it is a real start tag.
         if !has_quote_before && !has_quote_after {
             return Some(absolute_pos);
         }
 
-        // 继续搜索下一个匹配
+        // continue searching for the next match
         search_start = absolute_pos + 1;
     }
 
     None
 }
 
-/// 检查 `name_pos`（指向标签名首字母）的前面是否构成合法的开标签起始，
-/// 兼容裸写法 `<tag` 和带命名空间前缀的写法 `<prefix:tag`。
+/// check `name_pos`whether what precedes it (pointing at the first letter of the tag name) forms a valid open tag start,
+/// compat bareway of writing `<tag` and the form with a namespace prefix. `<prefix:tag`.
 ///
-/// 返回 `Some(lt_pos)`（指向 `<` 的字节位置）表示合法；`None` 表示不是标签。
+/// return `Some(lt_pos)`(points to `<` byte position) indicates valid;`None` means it is not a tag.
 fn open_tag_lt_pos(buffer: &str, name_pos: usize) -> Option<usize> {
     let bytes = buffer.as_bytes();
     if name_pos == 0 {
@@ -197,17 +197,17 @@ fn open_tag_lt_pos(buffer: &str, name_pos: usize) -> Option<usize> {
     if prev == b'<' {
         return Some(name_pos - 1);
     }
-    // 形如 `<prefix:tag`：name 前面是 ':'，再往前是一段标识符，再往前是 '<'
+    // like `<prefix:tag`:name preceding is ':', further back is an identifier, further back is '<'
     if prev == b':' {
-        let i = name_pos - 1; // 指向 ':'
-        let mut j = i; // 标识符左边界扫描
+        let i = name_pos - 1; // point to ':'
+        let mut j = i; // identifier left boundary scan
         while j > 0 && {
             let c = bytes[j - 1];
             c.is_ascii_alphanumeric() || c == b'_'
         } {
             j -= 1;
         }
-        // 标识符非空，且其左边是 '<'
+        // The identifier is non empty and to its left is '<'
         if j < i && j > 0 && bytes[j - 1] == b'<' {
             return Some(j - 1);
         }
@@ -215,16 +215,16 @@ fn open_tag_lt_pos(buffer: &str, name_pos: usize) -> Option<usize> {
     None
 }
 
-/// 查找未被引用字符包裹的 invoke 开标签，返回指向 `<` 的字节位置
+/// Finds the one not wrapped by quote characters. invoke opening tag, return pointing to `<` ofbytesbitset
 ///
-/// 兼容裸 `<invoke ...>` 与带命名空间前缀 `<prefix:invoke ...>` 两种写法。
-/// 复用 `is_quote_char`：若 `<` 前紧贴反引号/引号等包裹字符，视为引用，跳过。
+/// compat bare `<invoke ...>` with a namespace prefix `<prefix:invoke ...>` two ways of writing.
+/// reuse `is_quote_char`: if `<` beforeclosely attachedbacktick/Wrapping characters such as quotes are treated as quoting and skipped.
 fn find_invoke_start(buffer: &str) -> Option<usize> {
     let mut search = 0;
     while let Some(rel) = buffer[search..].find("invoke") {
         let name_pos = search + rel;
         if let Some(lt) = open_tag_lt_pos(buffer, name_pos) {
-            // 标签名后必须是边界字符（空白或 '>'），避免误匹配 invoked 之类
+            // After the tag name must be a boundary character (whitespace or '>'), to avoid a false match invoked such as
             let after = name_pos + "invoke".len();
             let next_ok = buffer.as_bytes().get(after).map_or(true, |c| {
                 c.is_ascii_whitespace() || *c == b'>' || *c == b'/'
@@ -239,33 +239,33 @@ fn find_invoke_start(buffer: &str) -> Option<usize> {
     None
 }
 
-/// 从 `start` 之后查找第一个 invoke 闭标签，返回结束位置（exclusive，含闭标签）
+/// from `start` after that find the first invoke close tag, returns the end position (exclusive,containsclosetag)
 ///
-/// 兼容裸 `</invoke>` 与带前缀 `</prefix:invoke>`。找不到返回 `None`（块还没到齐）。
+/// compat bare `</invoke>` andcarryprefix `</prefix:invoke>`.findnottoreturn `None`(the block has not fully arrived).
 fn find_invoke_block_end(buffer: &str, start: usize) -> Option<usize> {
-    // 块 A 的边界 = 下一个 `<invoke` 开标签（即下一个块 B 的起点），没有则到 buffer 结尾。
-    // 这样连发 burst（A 紧跟 B）时，A 的搜索区间被 B 的开标签卡住，绝不会吃进 B。
+    // block A boundary = next `<invoke` opening tag (that is the next block B the start point), if none then to buffer end.
+    // so that consecutive sends burst(A immediately follow B) when,A ofsearch intervalby B blocked by the open tag, never eats into B.
     let boundary = match find_next_invoke_open(buffer, start) {
         Some(p) => p,
         None => buffer.len(),
     };
-    // 在 [start, boundary) 区间里取【最后一个】 `</invoke>` 作为真闭合。
-    // 贪婪取最后一个 → patch 正文里出现的字面 `</invoke>` 不会导致提前截断；
-    // 区间被下一个块开标签卡住 → 不会跨块误合并。
+    // in [start, boundary) take the last one in the interval `</invoke>` astrueclosed.
+    // greedily take the last one → patch the literal appearing in the body `</invoke>` will not cause early truncation;
+    // The interval is blocked by the next block open tag. → will not be wrongly merged across blocks.
     find_last_invoke_close(buffer, start, boundary)
 }
 
-/// 从 `start` 之后查找下一个真正的 `<invoke`（或 `<prefix:invoke`）开标签的字节位置。
-/// 跳过 `start` 处当前块自身的开标签。
+/// from `start` after that find the next real `<invoke`(or `<prefix:invoke`) the byte position of the opening tag.
+/// skip `start` the current block own open tag.
 fn find_next_invoke_open(buffer: &str, start: usize) -> Option<usize> {
-    // 先跳过当前块的开标签：从 start 之后第一个 '>' 之后开始找。
+    // First skips the current block open tag: from start afternumbera '>' afterstart searching.
     let after_open = match buffer[start..].find('>') {
         Some(rel) => start + rel + 1,
         None => return None,
     };
-    // 注意：不能复用 find_invoke_start——它对 `<` 前是 `>`（引用字符）的情况会拒绝，
-    // 而连发 burst 里 B 的 `<invoke` 恰好紧跟在 A 的 `</invoke>` 的 `>` 后面。
-    // 这里只认结构：`<invoke` 或 `<prefix:invoke`，开标签名后须是空白/`>`/`/` 边界。
+    // note: cannot reuse find_invoke_start——it for `<` preceding is `>`the quote character case is rejected,
+    // but consecutive send burst in B of `<invoke` exactlyimmediately followin A of `</invoke>` of `>` after.
+    // here we only recognize the structure:`<invoke` or `<prefix:invoke`, after the opening tag name there must be whitespace/`>`/`/` boundary.
     let region = &buffer[after_open..];
     let mut search = 0usize;
     while let Some(rel) = region[search..].find("invoke") {
@@ -284,8 +284,8 @@ fn find_next_invoke_open(buffer: &str, start: usize) -> Option<usize> {
     None
 }
 
-/// 在 `[from, boundary)` 区间内查找最后一个 `</invoke>` / `</prefix:invoke>` 的结束位置
-/// （exclusive，含闭标签）。找不到返回 `None`（块还没到齐）。
+/// in `[from, boundary)` find the last one within the interval `</invoke>` / `</prefix:invoke>` ofendbitset
+/// (exclusive, including the close tag). Returns when not found `None`(the block has not fully arrived).
 fn find_last_invoke_close(buffer: &str, from: usize, boundary: usize) -> Option<usize> {
     let region_end = boundary.min(buffer.len());
     if from >= region_end {
@@ -297,11 +297,11 @@ fn find_last_invoke_close(buffer: &str, from: usize, boundary: usize) -> Option<
     let mut last: Option<usize> = None;
     while let Some(rel) = region[search..].find("invoke>") {
         let name_pos = search + rel;
-        // '</invoke>' 形式
+        // '</invoke>' form
         if name_pos >= 2 && &region[name_pos - 2..name_pos] == "</" {
             last = Some(from + name_pos + "invoke>".len());
         } else if name_pos >= 1 && bytes[name_pos - 1] == b':' {
-            // '</prefix:invoke>' 形式
+            // '</prefix:invoke>' form
             let mut j = name_pos - 1; // ':'
             while j > 0 && {
                 let c = bytes[j - 1];
@@ -318,7 +318,7 @@ fn find_last_invoke_close(buffer: &str, from: usize, boundary: usize) -> Option<
     last
 }
 
-/// 从标签字符串中抠出 `name="..."` 的值（取第一个匹配）
+/// extract from the tag string `name="..."` the value (take the first match)
 fn extract_name_attr(tag: &str) -> Option<String> {
     let needle = "name=\"";
     let rel = tag.find(needle)?;
@@ -327,16 +327,16 @@ fn extract_name_attr(tag: &str) -> Option<String> {
     Some(tag[start..start + end_rel].to_string())
 }
 
-/// 解析一个完整 invoke 块，抠出 (tool_name, input_json_string)
+/// parseacomplete invoke block,extractout (tool_name, input_json_string)
 ///
-/// - tool name 来自 invoke 开标签的 `name="..."`（兼容 antml: 前缀）
-/// - 参数为零个或多个 `<parameter name="K">V</parameter>`（兼容前缀）
-/// - 参数值取到下一个参数开标签前的**最后一个** `</parameter>` 为界（贪婪），
-///   允许多行 / 含 `<` / 中文 / 含字面 `</parameter>`（P0-1 修复）
-/// - 用 serde_json 拼成 object（值都是字符串，自动转义）
-/// - 无合法 name 或拼不出合法 JSON 返回 `None`
+/// - tool name from invoke opening tagof `name="..."`(compat antml: prefix)
+/// - the parameters are zero or more `<parameter name="K">V</parameter>`(compatprefix)
+/// - The parameter value extends up to before the next parameter open tag.**mostaftera** `</parameter>` as the boundary (greedy),
+///   allowmulti line / contains `<` / Chinese / contains literal `</parameter>`(P0-1 fix)
+/// - use serde_json assemble into object(the values are all strings, auto escaped)
+/// - no valid name orconcatenatenotoutvalid JSON return `None`
 fn parse_invoke_block(block: &str) -> Option<(String, String)> {
-    // invoke 开标签 = 块开头到第一个 '>'
+    // invoke opening tag = from the block start to the first '>'
     let open_end = block.find('>')?;
     let open_tag = &block[..=open_end];
     let tool_name = extract_name_attr(open_tag)?;
@@ -349,20 +349,20 @@ fn parse_invoke_block(block: &str) -> Option<(String, String)> {
     let mut cursor = 0usize;
     while let Some(rel) = body[cursor..].find("parameter name=\"") {
         let name_kw = cursor + rel;
-        // 确认是真正的 '<parameter' 或 '<prefix:parameter' 开标签
-        // name_kw 指向 'parameter'，往前应是 '<' 或 '<prefix:'
-        // 确认是真正的开标签（'<parameter' / '<prefix:parameter'）；仅用于校验，不需要位置值
+        // confirmisreal '<parameter' or '<prefix:parameter' opening tag
+        // name_kw point to 'parameter',towardbeforeshouldis '<' or '<prefix:'
+        // confirm it is a real opening tag ('<parameter' / '<prefix:parameter'); used only for validation, no position value needed.
         if open_tag_lt_pos(body, name_kw).is_none() {
             cursor = name_kw + "parameter".len();
             continue;
         }
-        // 找该参数开标签的 '>'
+        // find the opening tag of this parameter '>'
         let tag_gt = match body[name_kw..].find('>') {
             Some(r) => name_kw + r,
-            None => break, // 开标签未闭合，停止
+            None => break, // the opening tag is not closed, stop
         };
         let param_open_tag = &body[name_kw..tag_gt + 1];
-        // 从 'parameter name="..."' 抠 key（剥掉前缀干扰：直接找 name="）
+        // from 'parameter name="..."' extract key(strips prefix interference: directly finds name=")
         let key = match extract_name_attr(param_open_tag) {
             Some(k) => k,
             None => {
@@ -370,16 +370,16 @@ fn parse_invoke_block(block: &str) -> Option<(String, String)> {
                 continue;
             }
         };
-        // 参数值取到 </parameter>（兼容前缀）为界。find_param_close 较贵，只调一次，
-        // 同时复用 (闭标签起始, 闭标签结束) 两个值：起始用于切值，结束用于推进游标。
+        // parametervalue taketo </parameter>(compatible prefix) as the boundary.find_param_close relatively expensive, called only once,
+        // samewhenreuse (closetagstart, closetagend) Two values: the start is used to slice the value, the end is used to advance the cursor.
         let val_start = tag_gt + 1;
         let (close_start, close_end) = match find_param_close(body, val_start) {
             Some(pair) => pair,
-            None => break, // 值未闭合，停止
+            None => break, // the value is not closed, stop
         };
         let value = &body[val_start..close_start];
         map.insert(key, serde_json::Value::String(value.to_string()));
-        // 推进到闭标签之后
+        // advance to after the closing tag
         cursor = close_end;
     }
 
@@ -388,17 +388,17 @@ fn parse_invoke_block(block: &str) -> Option<(String, String)> {
     Some((tool_name, s))
 }
 
-/// 从 `from` 开始查找第一个 parameter 闭标签，返回 (起始位置, 结束位置 exclusive)
+/// from `from` start finding the first parameter closetag, return (startbitset, endbitset exclusive)
 ///
-/// 兼容裸 `</parameter>` 与带前缀 `</prefix:parameter>`。
+/// compat bare `</parameter>` andcarryprefix `</prefix:parameter>`.
 fn find_param_close(body: &str, from: usize) -> Option<(usize, usize)> {
-    // P0-1：参数值（尤其 apply_patch 的 patch 正文）可能含字面 `</parameter>`。
-    // 朴素「取第一个 </parameter>」会把值截断。改成「贪婪取边界内最后一个 </parameter>」：
-    // 边界 = 下一个 `<parameter name="` 开标签（多参数场景），没有则到 body 结尾。
-    // 这样：① 单参数（含 apply_patch）取到真正的最后一个闭合，内容里的字面闭合不误伤；
-    //      ② 多参数仍按下一个参数开标签正确切分。
-    // 局限（已诚实标注）：若参数值里同时含字面 `<parameter name="`，边界判定会偏早；
-    // 实测 apply_patch 正文极少出现该字面串，可接受。
+    // P0-1: the parameter value (especially apply_patch of patch body) may contain a literal `</parameter>`.
+    // the naive take the first </parameter>would truncate the value. Changed to greedily take the last one within the boundary. </parameter>:
+    // boundary = next `<parameter name="` open tag (multi parameter case); if none, up to body end.
+    // like this:① singleparameter(including apply_patch) captures the truly last closing; literal closings inside the content are not harmed;
+    //      ② Multiple parameters are still split correctly by the next parameter open tag.
+    // Limitation (honestly noted): if the parameter value also contains a literal `<parameter name="`, the boundary determination will be too early;
+    // measured apply_patch The body rarely contains this literal string, so it is acceptable.
     let boundary = match find_next_param_open(body, from) {
         Some(p) => p,
         None => body.len(),
@@ -410,11 +410,11 @@ fn find_param_close(body: &str, from: usize) -> Option<(usize, usize)> {
     let bytes = region.as_bytes();
     while let Some(rel) = region[search..].find(kw) {
         let name_pos = search + rel;
-        // '</parameter>' 形式
+        // '</parameter>' form
         if name_pos >= 2 && &region[name_pos - 2..name_pos] == "</" {
             last = Some((from + name_pos - 2, from + name_pos + kw.len()));
         } else if name_pos >= 1 && bytes[name_pos - 1] == b':' {
-            // '</prefix:parameter>' 形式
+            // '</prefix:parameter>' form
             let mut j = name_pos - 1; // ':'
             while j > 0 && {
                 let c = bytes[j - 1];
@@ -431,13 +431,13 @@ fn find_param_close(body: &str, from: usize) -> Option<(usize, usize)> {
     last
 }
 
-/// 从 `from` 开始查找下一个 `<parameter name="`（或 `<prefix:parameter name="`）开标签的字节位置。
-/// 用于 `find_param_close` 的贪婪边界：当前参数值最多吃到下一个参数开标签之前。
+/// from `from` start finding the next `<parameter name="`(or `<prefix:parameter name="`) the byte position of the opening tag.
+/// used for `find_param_close` greedy boundary: the current parameter value at most extends up to before the next parameter open tag.
 fn find_next_param_open(body: &str, from: usize) -> Option<usize> {
     let mut search = from;
     while let Some(rel) = body[search..].find("parameter name=\"") {
         let kw_pos = search + rel;
-        // 必须是真正的开标签：'parameter' 前面是 '<' 或 '<prefix:'
+        // must be a real opening tag:'parameter' preceding is '<' or '<prefix:'
         if let Some(lt) = open_tag_lt_pos(body, kw_pos) {
             return Some(lt);
         }
@@ -446,29 +446,29 @@ fn find_next_param_open(body: &str, from: usize) -> Option<usize> {
     None
 }
 
-/// 剥掉块前文本尾部的独立 stray token 行（单独一行的 `call` 或 `count`）
+/// Strips the standalone one at the tail of the text before the block. stray token line (a line of its own `call` or `count`)
 ///
-/// 实测里 `<invoke>` 前常出现一行裸 `call`/`count`，需要从块前叙述文本里剥掉，
-/// 避免泄漏给客户端。只剥“尾部、且独占一行”的 stray token，前面的正常叙述保留。
-/// 已实测到的 stray token 集合：Opus 长上下文退化时，泄漏的 `<invoke>` 前常有一行裸的
-/// `call` / `count` / `card`。集合形式便于以后扩充。
+/// in measurement `<invoke>` a bare line often appears before `call`/`count`, needs to be stripped from the narrative text before the block,
+/// Avoids leaking to the client. Only strips“at the tail, and on a line of its own”of stray token, the preceding normal narrative is kept.
+/// alreadymeasuredtoof stray token set:Opus When the long context degrades, the leaked `<invoke>` a bare line often exists before
+/// `call` / `count` / `card`. The set form makes future extension easy.
 const STRAY_INVOKE_TOKENS: &[&str] = &["call", "count", "card"];
 
-/// 复读熔断阈值：同一个 stray token（call/count/card）连续作为独占一行重复出现
-/// 超过这么多次，判定为「Opus 长上下文退化复读死循环」，立即熔断本轮文本输出。
+/// repeat readout circuit breaker threshold: the same stray token(call/count/card) repeats consecutively as a standalone line.
+/// exceeding this many times is judged asOpus long context degraded repeat loop, immediately circuit breaks this round text output.
 ///
-/// 取值权衡：正常工具调用前最多出现 1 个引导词行（偶有 2~3），绝不会连续几十次。
-/// 设为 32 远高于正常上限、又远低于退化时的数万次，既不误伤正常引导词，又能尽早止血。
+/// Value tradeoff: before a normal tool call at most appears 1 guide word lines (occasionally 2~3), never dozens of times in a row.
+/// set to 32 Far above the normal ceiling and far below the tens of thousands seen when degraded, neither harming normal guide words nor delaying the stop.
 const REPEAT_GUARD_TRIP_THRESHOLD: u32 = 32;
 
-/// 块级复读折叠：对「已完整的整段文本」做一次性复读熔断。
+/// Block level repeat folding: performs a one shot repeat circuit breaking on the complete whole text.
 ///
-/// 用于非流式 / web_search loop 路径（`extract_invoke_content_blocks` 入口）——
-/// 那条路不经过流式 `emit_text_delta_raw` 的逐 chunk 熔断，所以在这里独立兜一次。
+/// used fornon streaming / web_search loop path (`extract_invoke_content_blocks` entry)——
+/// that path does not go through streaming `emit_text_delta_raw` per chunk circuit breaking, so it is caught independently here once.
 ///
-/// 规则与流式版一致：同一个 `STRAY_INVOKE_TOKENS`（call/count/card）连续作为独占一行
-/// 重复超过 `REPEAT_GUARD_TRIP_THRESHOLD` 次，判定为 Opus 退化复读，**从超阈值处截断**，
-/// 丢弃其后的全部复读垃圾（断雪球、不灌历史）。阈值内的少量引导词重复原样保留。
+/// The rule is consistent with the streaming version: the same `STRAY_INVOKE_TOKENS`(call/count/card) consecutively as a line of its own
+/// duplicateexceeds `REPEAT_GUARD_TRIP_THRESHOLD` times,decideas Opus degrade to repetition,**truncate from where the threshold is exceeded**,
+/// Discards all repeated garbage after it (breaks the snowball, does not fill history). A small number of guide word repeats within the threshold are kept as is.
 fn collapse_stray_token_floods(text: &str) -> std::borrow::Cow<'_, str> {
     let mut last_line = "";
     let mut run: u32 = 0;
@@ -484,7 +484,7 @@ fn collapse_stray_token_floods(text: &str) -> std::borrow::Cow<'_, str> {
                 run = 1;
             }
             if run >= REPEAT_GUARD_TRIP_THRESHOLD {
-                // 从「本段（这一行）开头」截断：保留阈值内已累计的内容。
+                // Truncates from the start of this segment (this line): keeps the content accumulated within the threshold.
                 cut_at = Some(offset);
                 break;
             }
@@ -504,22 +504,22 @@ fn strip_trailing_stray_tokens(before: &str) -> &str {
     let mut end = before.len();
     loop {
         let bytes = before.as_bytes();
-        // 先跳过尾部的换行符，定位“最后一行”的真实结束位置
+        // First skips the trailing newline, then locates.“mostafteroneline”the real end position
         let mut e = end;
         while e > 0 && (bytes[e - 1] == b'\n' || bytes[e - 1] == b'\r') {
             e -= 1;
         }
         let line_start = before[..e].rfind('\n').map(|p| p + 1).unwrap_or(0);
         let last_line = before[line_start..e].trim();
-        // Opus 长上下文退化时，泄漏的 <invoke> 前常有一个孤立的 stray token 行。
-        // 实测样本里出现过 call / count / card 三种；用集合便于以后扩充。
+        // Opus When the long context degrades, the leaked <invoke> there is often an isolated one before stray token line.
+        // appeared in the measured samples call / count / card three kinds; using a set makes future extension easy.
         if STRAY_INVOKE_TOKENS.contains(&last_line) {
-            // 只剥 stray token 行本身，【保留】前一行末尾的换行符。
-            // 旧实现用 line_start - 1 把前一行的换行也吞掉，会把前面的叙述正文和
-            // 后续 <invoke> 挤到同一行，导致 invoke_looks_like_real_leak 的“行首”判定
-            // 失败、漏捞真泄漏（narrative\ncall\n<invoke>）。改成 end = line_start：
-            //   "some text\ncall" -> "some text\n"（行首信号保留）
-            //   "call"（无前导正文）-> ""（line_start==0）
+            // only strip stray token the line itself, keeps the newline at the end of the previous line.
+            // oldimplementuse line_start - 1 swallowing the previous line newline too would combine the preceding narrative body with
+            // subsequent <invoke> squeezed onto the same line, causing invoke_looks_like_real_leak of“line start”decide
+            // failure, missing a real leak (narrative\ncall\n<invoke>).changeinto end = line_start:
+            //   "some text\ncall" -> "some text\n"(the line start signal is preserved)
+            //   "call"(no leading body text)-> ""(line_start==0)
             end = line_start;
             if end == 0 {
                 return "";
@@ -531,32 +531,32 @@ fn strip_trailing_stray_tokens(before: &str) -> &str {
     &before[..end]
 }
 
-/// 判定一个 `<invoke>` 块到底像“真泄漏的工具调用”还是“正文里讨论的文本”
+/// decidea `<invoke>` blocktobottom looks like“the tool call of a real leak”or still“the text discussed in the body”
 ///
-/// 实测真泄漏的 `<invoke>` 都出现在**行首**（前面是流的开头、或上一行已经换行结束），
-/// 而正文讨论里的 `<invoke>` 一般**嵌在一句话中间**——前面同一行还有普通文字。
+/// measuredreal leakof `<invoke>` all appearin**line start**(before it is the stream start, or the previous line already ended with a newline),
+/// while the one in the body discussion `<invoke>` generally**embedded in the middle of a sentence**——There is still ordinary text before it on the same line.
 ///
-/// 判定规则（输入 `before` 是 `<invoke>` 之前、已剥过 stray token 的文本）：
-/// - `before` 为空（`<invoke>` 在流开头）→ 像真泄漏，抓。
-/// - `before` 去掉尾部空格/制表符后以换行结尾（`<invoke>` 独占新行）→ 抓。
-/// - 否则（同一行前面还有非空白正文）→ 像讨论文本，不抓。
+/// determination rule (input `before` is `<invoke>` ofbefore,alreadystripped stray token oftext):
+/// - `before` is empty (`<invoke>` instreamstart)→ looks like a real leak, capture.
+/// - `before` removetailspace/after a tab it ends with a newline (`<invoke>` aloneoccupynewline)→ capture.
+/// - Otherwise (the same line still has non whitespace body before it)→ looks like discussion text, do not capture.
 ///
-/// 注意：这里的“尾部空白”只剥行内空白（空格 / 制表符），不剥换行；
-/// 换行结尾才是“另起一行”的信号。
+/// note:thisinside“tailemptyblank”only strip inline whitespace (space / tab), do not strip newlines;
+/// swaplineonly at the endis“start anotherline”the signal.
 fn invoke_looks_like_real_leak(before: &str) -> bool {
-    // 剥掉尾部的行内空白（空格 / 制表符），但保留换行
+    // Strips the trailing inline whitespace (spaces / tab), but keep newlines
     let trimmed = before.trim_end_matches([' ', '\t']);
-    // 行首：要么前面什么都没有，要么上一行已经以换行结束
+    // Line start: either there is nothing before, or the previous line already ended with a newline.
     trimmed.is_empty() || trimmed.ends_with('\n') || trimmed.ends_with('\r')
 }
 
-/// 推进「代码围栏」奇偶状态，对切分到多个 chunk 的 ``` 分隔符鲁棒。
+/// Advances the code fence parity state; for content split across multiple chunk of ``` separator robustness.
 ///
-/// 只在遇到换行符时才对「已重组的完整行」判定是否为围栏行（行首去空白后以 ``` 开头）。
-/// 未遇换行的尾部留在 `partial` 里，等后续 chunk 拼齐——所以即使 ``` 被切成
-/// `` `` `` + `` ` `` 两个 chunk，重组成完整行后仍能正确翻转 `open`。
+/// Only when a newline is encountered does it judge whether the reassembled complete line is a fence line (after trimming leading whitespace, starting with ``` at the start).
+/// the tail that has not met a newline stays in `partial` in,etc.subsequent chunk align together——so even if ``` split into
+/// `` `` `` + `` ` `` two chunk, after reassembling into a complete line it can still flip correctly. `open`.
 ///
-/// 返回值仅在内部使用；主要副作用是更新 `open` 与 `partial`。
+/// The return value is used only internally; the main side effect is updating. `open` and `partial`.
 fn advance_code_fence_state(open: &mut bool, partial: &mut String, text: &str) {
     for ch in text.chars() {
         if ch == '\n' {
@@ -570,23 +570,23 @@ fn advance_code_fence_state(open: &mut bool, partial: &mut String, text: &str) {
     }
 }
 
-/// 纯函数：在不改动真实状态的前提下，试算「把 `text` 走完之后围栏是否打开」。
-/// 用于 drain 决策处判断某个 `<invoke>` 是否落在围栏内。
+/// Pure function: without changing the real state, trial computes putting `text` whether the fence is open after processing.
+/// used for drain at the decision point judge a certain `<invoke>` whether it falls within the fence.
 fn fence_open_after(open: bool, partial: &str, text: &str) -> bool {
     let mut o = open;
     let mut p = partial.to_string();
     advance_code_fence_state(&mut o, &mut p, text);
-    // 还要考虑：partial 里残留的「未换行行」如果本身已经是 ``` 开头，
-    // 它在遇到换行前不算翻转（保守：只有完整行才翻转）。这里返回已翻转的 o。
+    // must also consider:partial the leftover incomplete line, if it is itself already ``` at start,
+    // It does not count as flipped before a newline (conservative: only a complete line flips). Here it returns the already flipped o.
     o
 }
 
-/// 计算缓冲区末尾“可能是部分 `<invoke` 开标签前缀”的字节数，需要保留等待更多内容
+/// compute the end of the buffer“may bepart `<invoke` opening tagprefix”bytes; needs to be kept while waiting for more content.
 ///
-/// 例如缓冲区以 `<inv` / `<` / `<i` 结尾时，可能是被切碎的 invoke 开标签，
-/// 保留这段尾巴等下一个 chunk 拼齐，避免把半个标签当文本吐出去。
+/// for examplebufferto `<inv` / `<` / `<i` At the end, it may be a cut apart invoke opening tag,
+/// keep this tail segment for the next chunk Assembles fully, avoiding emitting half a tag as text.
 fn partial_invoke_tag_suffix_len(buf: &str) -> usize {
-    // 任何形如 `<...`（最后一个 '<' 之后没有 '>'）的尾巴都可能是部分开标签
+    // any form like `<...`(mostaftera '<' afterwards none '>') the tail may be a partial open tag.
     if let Some(lt) = buf.rfind('<') {
         if !buf[lt..].contains('>') {
             return buf.len() - lt;
@@ -595,14 +595,14 @@ fn partial_invoke_tag_suffix_len(buf: &str) -> usize {
     0
 }
 
-/// 从完整文本中提取 thinking 块（用于非流式响应）
+/// extract from the complete text thinking block (used for non streaming response)
 ///
-/// 使用与流式处理相同的标签检测逻辑（引用字符过滤），确保一致性。
-/// 非流式场景下文本已完整，无需处理跨 chunk 分割问题。
+/// Uses the same tag detection logic as streaming (quote character filtering) to ensure consistency.
+/// In the non streaming case the text is complete; no need to handle cross chunk splitissue.
 ///
-/// # 返回值
-/// - `(Some(thinking_content), remaining_text)` — 检测到有效 thinking 块
-/// - `(None, original_text)` — 未检测到，原样返回
+/// # return value
+/// - `(Some(thinking_content), remaining_text)` — detectedhaseffect thinking block
+/// - `(None, original_text)` — not detected, return as is
 pub(crate) fn extract_thinking_from_complete_text(text: &str) -> (Option<String>, String) {
     let start_pos = match find_real_thinking_start_tag(text) {
         Some(pos) => pos,
@@ -612,7 +612,7 @@ pub(crate) fn extract_thinking_from_complete_text(text: &str) -> (Option<String>
     let before = &text[..start_pos];
     let after_open = &text[start_pos + "<thinking>".len()..];
 
-    // 查找结束标签：优先匹配带 \n\n 后缀的，退而使用末尾匹配
+    // Finds the end tag: prefers matching the one with \n\n the suffix, falling back to an end match.
     let (thinking_raw, text_after) = if let Some(end_pos) = find_real_thinking_end_tag(after_open) {
         (
             &after_open[..end_pos],
@@ -622,14 +622,14 @@ pub(crate) fn extract_thinking_from_complete_text(text: &str) -> (Option<String>
         let after_tag = end_pos + "</thinking>".len();
         (&after_open[..end_pos], after_open[after_tag..].trim_start())
     } else {
-        // 找不到有效的结束标签，不做提取
+        // No valid end tag found; does not extract.
         return (None, text.to_string());
     };
 
-    // 剥离开头的换行符（与流式处理一致：模型输出 <thinking>\n）
+    // Strips leading newlines (consistent with streaming: model output <thinking>\n)
     let thinking_content = thinking_raw.strip_prefix('\n').unwrap_or(thinking_raw);
 
-    // 组装剩余文本：跳过纯空白的 before 部分
+    // Assembles the remaining text: skips the pure whitespace ones. before part
     let mut remaining = String::new();
     if !before.trim().is_empty() {
         remaining.push_str(before);
@@ -643,37 +643,37 @@ pub(crate) fn extract_thinking_from_complete_text(text: &str) -> (Option<String>
     }
 }
 
-/// 一次性（非流式 / 整段已完整）把 assistant 文本切成 Anthropic content block 序列，
-/// 把混在文本里的字面 `<invoke name="...">...</invoke>` 工具调用捞回成结构化 `tool_use`。
+/// at once (non streaming / the whole segment is complete) take assistant split text into Anthropic content block sequence,
+/// take the literal mixed into the text `<invoke name="...">...</invoke>` recover the tool call into a structured `tool_use`.
 ///
-/// 复用与流式 `drain_invoke_sniff_buffer` **完全相同**的安全判定，避免误抓正文里讨论的命令：
-///   ① 行首判定 `invoke_looks_like_real_leak`（块前去 stray token 后须在行首）
-///   ② 代码围栏判定 `fence_open_after`（被 ``` 包裹的展示文本不捞）
-///   ③ 工具表硬护栏 `known_tool_names`（解析出的工具名必须是本次请求声明的工具）
-/// 任一不满足 → 该 `<invoke>` 块当普通文本原样保留。
+/// reusewith streaming `drain_invoke_sniff_buffer` **exactly the same**safety judgment, avoiding wrongly catching commands discussed in the body:
+///   ① line start check `invoke_looks_like_real_leak`(remove before block stray token aftermustinline start)
+///   ② code fencedecide `fence_open_after`(by ``` wrapped display text is not recovered)
+///   ③ tool tablehard guardrail `known_tool_names`(the parsed tool name must be a tool declared by this request)
+/// any onenotsatisfy → this `<invoke>` The block is kept as is as plain text.
 ///
-/// 与流式版本的区别：这里输入是**已完整**的整段文本，所以不需要 hold 缓冲、
-/// 部分开标签、`MAX_INVOKE_HOLD_BYTES` 那套增量逻辑——直接线性扫描即可。
+/// The difference from the streaming version: here the input is**already complete**the whole segment of text, so no need to hold buffer,
+/// partopening tag,`MAX_INVOKE_HOLD_BYTES` that incremental logic——a direct linear scan suffices.
 ///
-/// 返回的 content block 形态与调用方现有约定一致：
-///   - 文本：`{"type":"text","text": "..."}`
-///   - 工具：`{"type":"tool_use","id":"toolu_...","name":"...","input": {...}}`
-/// 文本块按需合并相邻片段；空文本片段不产出。`input` 解析失败时 fall back 成 `{}`。
+/// returned content block The form is consistent with the caller existing convention:
+///   - text:`{"type":"text","text": "..."}`
+///   - tool:`{"type":"tool_use","id":"toolu_...","name":"...","input": {...}}`
+/// Text blocks merge adjacent pieces on demand; empty text pieces are not produced.`input` parsefailedwhen fall back into `{}`.
 ///
-/// `tool_name_map`（短名 → 原始名）用于把捞回的工具名还原成客户端可识别的原始名，
-/// 与流式 `synthesize_tool_use` 一致；映射为空或命中失败时按原名返回。
+/// `tool_name_map`(short name → original name) used to restore the recovered tool name back to the original name the client recognizes,
+/// with streaming `synthesize_tool_use` consistent; when the mapping is empty or no hit, returns the original name.
 pub(crate) fn extract_invoke_content_blocks(
     text: &str,
     known_tool_names: &std::collections::HashSet<String>,
     tool_name_map: &std::collections::HashMap<String, String>,
 ) -> Vec<serde_json::Value> {
-    // 🛑 块级复读熔断：先把 Opus 退化的「同一 stray token 连续复读」截断，
-    // 再做 invoke 嗅探。覆盖 web_search loop（99.9% 真实流量）这条非流式路径。
+    // 🛑 block level repeat readout circuit breaker: first Opus degradeofopen bracketsame stray token consecutive repeat readout truncation,
+    // then do invoke sniff.override web_search loop(99.9% real traffic) this non streaming path.
     let collapsed = collapse_stray_token_floods(text);
     let text: &str = &collapsed;
     let mut blocks: Vec<serde_json::Value> = Vec::new();
     let mut pending_text = String::new();
-    // 围栏奇偶状态：跨「已吐出的文本」累进，确保 ``` 跨片段也能正确判定。
+    // Fence parity state: advances across the already emitted text, ensuring ``` can be correctly determined across fragments.
     let mut fence_open = false;
     let mut fence_partial = String::new();
 
@@ -696,7 +696,7 @@ pub(crate) fn extract_invoke_content_blocks(
         let end = match find_invoke_block_end(rest, start) {
             Some(e) => e,
             None => {
-                // 块没闭合（整段已完整仍未见 </invoke>）→ 不是干净的工具调用，整段当文本。
+                // The block is not closed (the whole segment is complete yet still no </invoke>)→ Not a clean tool call; the whole segment is treated as text.
                 pending_text.push_str(rest);
                 break;
             }
@@ -704,9 +704,9 @@ pub(crate) fn extract_invoke_content_blocks(
 
         let before = &rest[..start];
         let stripped_before = strip_trailing_stray_tokens(before);
-        // ③ 围栏：在「块之前的文本」走完后围栏是否打开
+        // ③ Fence: whether the fence is open after the text before the block is processed.
         let fence_after_before = fence_open_after(fence_open, &fence_partial, before);
-        // ② 工具名解析 + 工具表护栏
+        // ② toolnameparse + tool tableguardrail
         let parsed = parse_invoke_block(&rest[start..end]);
         let name_known = parsed
             .as_ref()
@@ -714,7 +714,7 @@ pub(crate) fn extract_invoke_content_blocks(
             .unwrap_or(false);
 
         if invoke_looks_like_real_leak(stripped_before) && !fence_after_before && name_known {
-            // 真泄漏：保留剥过 stray token 的前文（推进围栏），再产出结构化 tool_use。
+            // real leak: keep the stripped stray token the preceding text (advances the fence), then produces structured tool_use.
             if !stripped_before.is_empty() {
                 advance_code_fence_state(&mut fence_open, &mut fence_partial, stripped_before);
                 pending_text.push_str(stripped_before);
@@ -735,7 +735,7 @@ pub(crate) fn extract_invoke_content_blocks(
                 "input": input,
             }));
         } else {
-            // 不捞（句中 / 围栏内 / 工具名未知 / 解析失败）→ 整块（含 before）当文本，推进围栏。
+            // notretrieve(sentencein / inside fence / toolnameunknown / parsefailed)→ whole block (including before) as text, advance the fence.
             let chunk = &rest[..end];
             advance_code_fence_state(&mut fence_open, &mut fence_partial, chunk);
             pending_text.push_str(chunk);
@@ -747,7 +747,7 @@ pub(crate) fn extract_invoke_content_blocks(
     blocks
 }
 
-/// SSE 事件
+/// SSE event
 #[derive(Debug, Clone)]
 pub struct SseEvent {
     pub event: String,
@@ -762,7 +762,7 @@ impl SseEvent {
         }
     }
 
-    /// 格式化为 SSE 字符串
+    /// formatted as SSE string
     pub fn to_sse_string(&self) -> String {
         format!(
             "event: {}\ndata: {}\n\n",
@@ -772,7 +772,7 @@ impl SseEvent {
     }
 }
 
-/// 内容块状态
+/// content blockstate
 #[derive(Debug, Clone)]
 struct BlockState {
     block_type: String,
@@ -790,28 +790,28 @@ impl BlockState {
     }
 }
 
-/// SSE 状态管理器
+/// SSE statemanager
 ///
-/// 确保 SSE 事件序列符合 Claude API 规范：
-/// 1. message_start 只能出现一次
-/// 2. content_block 必须先 start 再 delta 再 stop
-/// 3. message_delta 只能出现一次，且在所有 content_block_stop 之后
-/// 4. message_stop 在最后
+/// ensure SSE event sequenceconform to Claude API spec:
+/// 1. message_start onlycanappearonce
+/// 2. content_block must first start again delta again stop
+/// 3. message_delta can appear only once, and among all content_block_stop after
+/// 4. message_stop at the end
 #[derive(Debug)]
 pub struct SseStateManager {
-    /// message_start 是否已发送
+    /// message_start iswhetheralreadysend
     message_started: bool,
-    /// message_delta 是否已发送
+    /// message_delta iswhetheralreadysend
     message_delta_sent: bool,
-    /// 活跃的内容块状态
+    /// the active content block state
     active_blocks: HashMap<i32, BlockState>,
-    /// 消息是否已结束
+    /// whether the message has ended
     message_ended: bool,
-    /// 下一个块索引
+    /// nextblock index
     next_block_index: i32,
-    /// 当前 stop_reason
+    /// current stop_reason
     stop_reason: Option<String>,
-    /// 是否有工具调用
+    /// whether there is a tool call
     has_tool_use: bool,
 }
 
@@ -834,38 +834,38 @@ impl SseStateManager {
         }
     }
 
-    /// 判断指定块是否处于可接收 delta 的打开状态
+    /// Determines whether the given block is in a receivable delta ofopenstate
     fn is_block_open_of_type(&self, index: i32, expected_type: &str) -> bool {
         self.active_blocks
             .get(&index)
             .is_some_and(|b| b.started && !b.stopped && b.block_type == expected_type)
     }
 
-    /// 获取下一个块索引
+    /// get the next block index
     pub fn next_block_index(&mut self) -> i32 {
         let index = self.next_block_index;
         self.next_block_index += 1;
         index
     }
 
-    /// 记录工具调用
+    /// recordtool call
     pub fn set_has_tool_use(&mut self, has: bool) {
         self.has_tool_use = has;
     }
 
-    /// 设置 stop_reason
+    /// set stop_reason
     pub fn set_stop_reason(&mut self, reason: impl Into<String>) {
         self.stop_reason = Some(reason.into());
     }
 
-    /// 检查是否存在非 thinking 类型的内容块（如 text 或 tool_use）
+    /// check whether there exists a non thinking content block of the type (such as text or tool_use)
     fn has_non_thinking_blocks(&self) -> bool {
         self.active_blocks
             .values()
             .any(|b| b.block_type != "thinking")
     }
 
-    /// 获取最终的 stop_reason
+    /// fetchfinalof stop_reason
     pub fn get_stop_reason(&self) -> String {
         if let Some(ref reason) = self.stop_reason {
             reason.clone()
@@ -876,17 +876,17 @@ impl SseStateManager {
         }
     }
 
-    /// 处理 message_start 事件
+    /// handle message_start event
     pub fn handle_message_start(&mut self, event: serde_json::Value) -> Option<SseEvent> {
         if self.message_started {
-            tracing::debug!("跳过重复的 message_start 事件");
+            tracing::debug!("skipduplicate message_start event");
             return None;
         }
         self.message_started = true;
         Some(SseEvent::new("message_start", event))
     }
 
-    /// 处理 content_block_start 事件
+    /// handle content_block_start event
     pub fn handle_content_block_start(
         &mut self,
         index: i32,
@@ -895,12 +895,12 @@ impl SseStateManager {
     ) -> Vec<SseEvent> {
         let mut events = Vec::new();
 
-        // 如果是 tool_use 块，先关闭之前的文本块
+        // if it is tool_use block, first closes the previous text block.
         if block_type == "tool_use" {
             self.has_tool_use = true;
             for (block_index, block) in self.active_blocks.iter_mut() {
                 if block.block_type == "text" && block.started && !block.stopped {
-                    // 自动发送 content_block_stop 关闭文本块
+                    // auto send content_block_stop closetext block
                     events.push(SseEvent::new(
                         "content_block_stop",
                         json!({
@@ -913,10 +913,10 @@ impl SseStateManager {
             }
         }
 
-        // 检查块是否已存在
+        // check whether the block already exists
         if let Some(block) = self.active_blocks.get_mut(&index) {
             if block.started {
-                tracing::debug!("块 {} 已启动，跳过重复的 content_block_start", index);
+                tracing::debug!("block {} already started, skip the duplicate content_block_start", index);
                 return events;
             }
             block.started = true;
@@ -930,17 +930,17 @@ impl SseStateManager {
         events
     }
 
-    /// 处理 content_block_delta 事件
+    /// handle content_block_delta event
     pub fn handle_content_block_delta(
         &mut self,
         index: i32,
         data: serde_json::Value,
     ) -> Option<SseEvent> {
-        // 确保块已启动
+        // ensureblockalreadystart
         if let Some(block) = self.active_blocks.get(&index) {
             if !block.started || block.stopped {
                 tracing::warn!(
-                    "块 {} 状态异常: started={}, stopped={}",
+                    "block {} abnormal state: started={}, stopped={}",
                     index,
                     block.started,
                     block.stopped
@@ -948,19 +948,19 @@ impl SseStateManager {
                 return None;
             }
         } else {
-            // 块不存在，可能需要先创建
-            tracing::warn!("收到未知块 {} 的 delta 事件", index);
+            // The block does not exist; it may need to be created first.
+            tracing::warn!("receivedunknownblock {} of delta event", index);
             return None;
         }
 
         Some(SseEvent::new("content_block_delta", data))
     }
 
-    /// 处理 content_block_stop 事件
+    /// handle content_block_stop event
     pub fn handle_content_block_stop(&mut self, index: i32) -> Option<SseEvent> {
         if let Some(block) = self.active_blocks.get_mut(&index) {
             if block.stopped {
-                tracing::debug!("块 {} 已停止，跳过重复的 content_block_stop", index);
+                tracing::debug!("block {} already stopped, skip the duplicate content_block_stop", index);
                 return None;
             }
             block.stopped = true;
@@ -975,7 +975,7 @@ impl SseStateManager {
         None
     }
 
-    /// 生成最终事件序列
+    /// generate the final event sequence
     pub fn generate_final_events(
         &mut self,
         input_tokens: i32,
@@ -985,7 +985,7 @@ impl SseStateManager {
     ) -> Vec<SseEvent> {
         let mut events = Vec::new();
 
-        // 关闭所有未关闭的块
+        // close all unclosed blocks
         for (index, block) in self.active_blocks.iter_mut() {
             if block.started && !block.stopped {
                 events.push(SseEvent::new(
@@ -999,7 +999,7 @@ impl SseStateManager {
             }
         }
 
-        // 发送 message_delta
+        // send message_delta
         if !self.message_delta_sent {
             self.message_delta_sent = true;
             events.push(SseEvent::new(
@@ -1020,7 +1020,7 @@ impl SseStateManager {
             ));
         }
 
-        // 发送 message_stop
+        // send message_stop
         if !self.message_ended {
             self.message_ended = true;
             events.push(SseEvent::new(
@@ -1035,79 +1035,79 @@ impl SseStateManager {
 
 use super::converter::get_context_window_size;
 
-/// 流处理上下文
+/// streamhandlecontext
 pub struct StreamContext {
-    /// SSE 状态管理器
+    /// SSE statemanager
     pub state_manager: SseStateManager,
-    /// 请求的模型名称
+    /// the requested model name
     pub model: String,
-    /// 消息 ID
+    /// message ID
     pub message_id: String,
-    /// 输入 tokens（估算值）
+    /// input tokens(estimatevalue)
     pub input_tokens: i32,
-    /// 从 contextUsageEvent 计算的实际输入 tokens
+    /// from contextUsageEvent the computed actual input tokens
     pub context_input_tokens: Option<i32>,
-    /// 输出 tokens 累计
+    /// output tokens cumulative
     pub output_tokens: i32,
-    /// 工具块索引映射 (tool_id -> block_index)
+    /// tool block index mapping (tool_id -> block_index)
     pub tool_block_indices: HashMap<String, i32>,
-    /// 工具名称反向映射（短名称 → 原始名称），用于响应时还原
+    /// Tool name reverse mapping (short name → original name), used to restore during the response.
     pub tool_name_map: HashMap<String, String>,
-    /// 本次请求声明的所有工具名（原始 client 名）。`<invoke>` 文本容错的灾难兜底：
-    /// 只有合成名在此集合里才允许捞回成结构化 tool_use，否则当文本吐出。
-    /// 为空（请求未带 tools）时不捞回任何 invoke——宁可漏捞，不可误执行。
+    /// All tool names declared by this request (original client name).`<invoke>` disaster fallback for text fault tolerance:
+    /// Only when the synthesized name is in this set is recovery into structured allowed. tool_use, otherwise emit as text.
+    /// is empty (the request did not carry tools) do not recover anything invoke——Better to miss than to wrongly execute.
     pub known_tool_names: std::collections::HashSet<String>,
-    /// 跨整条流的「代码围栏」奇偶状态：每遇到一行以 ``` 开头就翻转。
-    /// 在围栏内（true）时，`<invoke>` 一律不捞回（视为正文展示的代码块）。
+    /// Code fence parity state across the whole stream: each time a line is encountered starting with ``` startthen flip.
+    /// ininside fence(true) when,`<invoke>` Never recovered (treated as a code block shown in the body).
     pub code_fence_open: bool,
-    /// 围栏检测的「未完成行」累加器：只在遇到换行时才对完整行判定是否为 ``` 围栏行。
-    /// 这样即使 ``` 分隔符被切分到多个 chunk（如 `` `` + ` ``），重组成完整行后仍能正确识别。
+    /// Accumulator for the incomplete line in fence detection: only on a newline does it judge whether the complete line is ``` fence line.
+    /// so even if ``` the separator is split into multiple chunk(such as `` `` + ` ``), after reassembling into a complete line it can still be correctly recognized.
     pub fence_scan_partial: String,
-    /// thinking 是否启用
+    /// thinking iswhetherenable
     pub thinking_enabled: bool,
-    /// thinking 内容缓冲区
+    /// thinking contentbuffer
     pub thinking_buffer: String,
-    /// invoke 文本嗅探缓冲区（用于从明文流里嗅探字面 `<invoke>` 工具调用块）
+    /// invoke Text sniff buffer (used to sniff literals from the plaintext stream). `<invoke>` tool callblock)
     pub invoke_sniff_buffer: String,
-    /// 是否在 thinking 块内
+    /// whether in thinking within block
     pub in_thinking_block: bool,
-    /// thinking 块是否已提取完成
+    /// thinking whether the block has finished extraction
     pub thinking_extracted: bool,
-    /// thinking 块索引
+    /// thinking block index
     pub thinking_block_index: Option<i32>,
-    /// 上游原生 reasoningContentEvent 下发的 thinking 签名
+    /// upstream native reasoningContentEvent dispatched thinking signature
     pending_thinking_signature: Option<String>,
-    /// 文本块索引（thinking 启用时动态分配）
+    /// text blockindex (thinking dynamically allocate when enabled)
     pub text_block_index: Option<i32>,
-    /// 是否需要剥离 thinking 内容开头的换行符
-    /// 模型输出 `<thinking>\n` 时，`\n` 可能与标签在同一 chunk 或下一 chunk
+    /// iswhetherneedstrip thinking the newline at the start of the content
+    /// model output `<thinking>\n` when,`\n` may be on the same as the tag chunk or next chunk
     strip_thinking_leading_newline: bool,
-    /// 中转层 CacheMeter 的缓存覆盖情况（estimate 口径）。最终上报时按真实 total
-    /// 做互斥分摊：`input + cache_creation + cache_read == total`，避免把被缓存
-    /// 覆盖的前缀重复计进 input_tokens。
+    /// relay layer CacheMeter the cache coverage (estimate basis). At final report, by the real total
+    /// perform mutually exclusive allocation:`input + cache_creation + cache_read == total`, to avoid treating the cached
+    /// the covered prefix is counted repeatedly into input_tokens.
     pub cache_usage: super::cache_metering::CacheUsage,
-    /// meteringEvent 上报的 credit 计费量（上游真实下发）
+    /// meteringEvent reported credit Billing amount (truly delivered by upstream).
     pub credits: f64,
-    /// 复读熔断：最近一次作为文本吐出的「尾行」内容（去空白）。
-    /// Opus 长上下文退化时会把同一个 stray token（call/count/card）一行一行无限复读，
-    /// 我们在文本出口处统计「同一短行连续重复了多少次」。
+    /// Repeat circuit breaker: the content of the most recent tail line emitted as text (whitespace trimmed).
+    /// Opus When the long context degrades it repeats the same one. stray token(call/count/card) repeats line by line infinitely,
+    /// At the text exit we count how many times the same short line repeated consecutively.
     repeat_guard_last_line: String,
-    /// 复读熔断：当前尾行已连续重复的次数。
+    /// Repeat circuit breaker: the number of consecutive repeats of the current tail line.
     repeat_guard_run: u32,
-    /// 复读熔断：是否已经触发过熔断（触发后本轮后续文本一律丢弃，不再吐、不写历史）。
+    /// Repeat circuit breaker: whether the breaker has already tripped (once tripped, all remaining text this round is dropped, not emitted and not written to history).
     repeat_guard_tripped: bool,
 }
 
 impl StreamContext {
-    /// 解析最终上报口径的 `(input_tokens, cache_creation, cache_read)`。
+    /// parse the final reported measure `(input_tokens, cache_creation, cache_read)`.
     ///
-    /// total 真值优先取 contextUsage（上游真实百分比×窗口），否则用客户端估算的
-    /// `input_tokens`；再由 [`CacheUsage::split_against_total`] 做互斥分摊。
+    /// total truthyprioritytake contextUsage(the real upstream percentage×window), otherwise uses the client estimated one.
+    /// `input_tokens`; then by [`CacheUsage::split_against_total`] perform mutually exclusive allocation.
     pub fn resolved_usage(&self) -> (i32, i32, i32) {
         let total_real = self.context_input_tokens.unwrap_or(self.input_tokens);
         self.cache_usage.split_against_total(total_real)
     }
-    /// 创建 StreamContext
+    /// create StreamContext
     pub fn new_with_thinking(
         model: impl Into<String>,
         input_tokens: i32,
@@ -1144,7 +1144,7 @@ impl StreamContext {
         }
     }
 
-    /// 生成 message_start 事件
+    /// generate message_start event
     pub fn create_message_start_event(&self) -> serde_json::Value {
         json!({
             "type": "message_start",
@@ -1166,10 +1166,10 @@ impl StreamContext {
         })
     }
 
-    /// 生成初始事件序列 (message_start + 文本块 start)
+    /// generate the initial event sequence (message_start + text block start)
     ///
-    /// 当 thinking 启用时，不在初始化时创建文本块，而是等到实际收到内容时再创建。
-    /// 这样可以确保 thinking 块（索引 0）在文本块（索引 1）之前。
+    /// when thinking When enabled, does not create a text block at init, but waits until content is actually received before creating it.
+    /// this way cantoensure thinking block (index 0) in the text block (index 1) before.
     pub fn generate_initial_events(&mut self) -> Vec<SseEvent> {
         let mut events = Vec::new();
 
@@ -1179,13 +1179,13 @@ impl StreamContext {
             events.push(event);
         }
 
-        // 如果启用了 thinking，不在这里创建文本块
-        // thinking 块和文本块会在 process_content_with_thinking 中按正确顺序创建
+        // ifenabledone thinking, do not create a text block here
+        // thinking the block and the text block will be at process_content_with_thinking create in the correct order in
         if self.thinking_enabled {
             return events;
         }
 
-        // 创建初始文本块（仅在未启用 thinking 时）
+        // Creates the initial text block (only when not enabled thinking when)
         let text_block_index = self.state_manager.next_block_index();
         self.text_block_index = Some(text_block_index);
         let text_block_events = self.state_manager.handle_content_block_start(
@@ -1205,32 +1205,32 @@ impl StreamContext {
         events
     }
 
-    /// 处理 Kiro 事件并转换为 Anthropic SSE 事件
+    /// handle Kiro eventandconvert to Anthropic SSE event
     pub fn process_kiro_event(&mut self, event: &Event) -> Vec<SseEvent> {
         match event {
             Event::AssistantResponse(resp) => self.process_assistant_response(&resp.content),
             Event::ToolUse(tool_use) => self.process_tool_use(tool_use),
             Event::ReasoningContent(reasoning) => self.process_reasoning_content(reasoning),
             Event::ContextUsage(context_usage) => {
-                // 从上下文使用百分比计算实际的 input_tokens
+                // Computes the actual one from the context usage percentage. input_tokens
                 let window_size = get_context_window_size(&self.model);
                 let actual_input_tokens =
                     (context_usage.context_usage_percentage * (window_size as f64) / 100.0) as i32;
                 self.context_input_tokens = Some(actual_input_tokens);
-                // 上下文使用量达到 100% 时，设置 stop_reason 为 model_context_window_exceeded
+                // the context usage reaches 100% when,set stop_reason as model_context_window_exceeded
                 if context_usage.context_usage_percentage >= 100.0 {
                     self.state_manager
                         .set_stop_reason("model_context_window_exceeded");
                 }
                 tracing::debug!(
-                    "收到 contextUsageEvent: {}%, 计算 input_tokens: {}",
+                    "received contextUsageEvent: {}%, compute input_tokens: {}",
                     context_usage.context_usage_percentage,
                     actual_input_tokens
                 );
                 Vec::new()
             }
             Event::Metering(metering) => {
-                // 上游 meteringEvent 只下发 credit；token / cache 字段不存在。
+                // upstream meteringEvent only dispatch credit;token / cache fielddoes not exist.
                 self.credits += metering.usage;
                 tracing::debug!("metering credits +{:.6}", metering.usage);
                 Vec::new()
@@ -1239,25 +1239,25 @@ impl StreamContext {
                 error_code,
                 error_message,
             } => {
-                tracing::error!("收到错误事件: {} - {}", error_code, error_message);
+                tracing::error!("receivederrorevent: {} - {}", error_code, error_message);
                 Vec::new()
             }
             Event::Exception {
                 exception_type,
                 message,
             } => {
-                // 处理 ContentLengthExceededException
+                // handle ContentLengthExceededException
                 if exception_type == "ContentLengthExceededException" {
                     self.state_manager.set_stop_reason("max_tokens");
                 }
-                tracing::warn!("收到异常事件: {} - {}", exception_type, message);
+                tracing::warn!("receivedexceptionevent: {} - {}", exception_type, message);
                 Vec::new()
             }
             _ => Vec::new(),
         }
     }
 
-    /// 处理助手响应事件
+    /// handle the assistant response event
     fn process_assistant_response(&mut self, content: &str) -> Vec<SseEvent> {
         if content.is_empty() {
             return Vec::new();
@@ -1268,47 +1268,47 @@ impl StreamContext {
             events.extend(self.close_open_thinking_block());
         }
 
-        // 估算 tokens
+        // estimate tokens
         self.output_tokens += estimate_tokens(content);
 
-        // 如果启用了thinking，需要处理thinking块
+        // ifenabledonethinking,needhandlethinkingblock
         if self.thinking_enabled {
             events.extend(self.process_content_with_thinking(content));
             return events;
         }
 
-        // 非 thinking 模式同样复用统一的 text_delta 发送逻辑，
-        // 以便在 tool_use 自动关闭文本块后能够自愈重建新的文本块，避免“吞字”。
+        // non thinking the mode also reuses the unified text_delta sendlogic,
+        // so that in tool_use After auto closing the text block, can self heal by rebuilding a new text block, avoiding“swallow characters”.
         events.extend(self.create_text_delta_events(content));
         events
     }
 
-    /// 处理包含thinking块的内容
+    /// handle containingthinkingblock content
     fn process_content_with_thinking(&mut self, content: &str) -> Vec<SseEvent> {
         let mut events = Vec::new();
 
-        // 将内容添加到缓冲区进行处理
+        // Adds the content to the buffer for processing.
         self.thinking_buffer.push_str(content);
 
         loop {
             if !self.in_thinking_block && !self.thinking_extracted {
-                // 查找 <thinking> 开始标签（跳过被反引号包裹的）
+                // find <thinking> Start tag (skips those wrapped by backticks).
                 if let Some(start_pos) = find_real_thinking_start_tag(&self.thinking_buffer) {
-                    // 发送 <thinking> 之前的内容作为 text_delta
-                    // 注意：如果前面只是空白字符（如 adaptive 模式返回的 \n\n），则跳过，
-                    // 避免在 thinking 块之前产生无意义的 text 块导致客户端解析失败
+                    // send <thinking> the preceding content as text_delta
+                    // Note: if what precedes is only whitespace (such as adaptive modereturned \n\n),thenskip,
+                    // avoid in thinking produces meaningless before the block text block causes the client to fail parsing
                     let before_thinking = self.thinking_buffer[..start_pos].to_string();
                     if !before_thinking.is_empty() && !before_thinking.trim().is_empty() {
                         events.extend(self.create_text_delta_events(&before_thinking));
                     }
 
-                    // 进入 thinking 块
+                    // enter thinking block
                     self.in_thinking_block = true;
                     self.strip_thinking_leading_newline = true;
                     self.thinking_buffer =
                         self.thinking_buffer[start_pos + "<thinking>".len()..].to_string();
 
-                    // 创建 thinking 块的 content_block_start 事件
+                    // create thinking block content_block_start event
                     let thinking_index = self.state_manager.next_block_index();
                     self.thinking_block_index = Some(thinking_index);
                     let start_events = self.state_manager.handle_content_block_start(
@@ -1325,8 +1325,8 @@ impl StreamContext {
                     );
                     events.extend(start_events);
                 } else {
-                    // 没有找到 <thinking>，检查是否可能是部分标签
-                    // 保留可能是部分标签的内容
+                    // not found <thinking>, checks whether it may be a partial tag.
+                    // Keeps content that may be a partial tag.
                     let target_len = self
                         .thinking_buffer
                         .len()
@@ -1334,11 +1334,11 @@ impl StreamContext {
                     let safe_len = find_char_boundary(&self.thinking_buffer, target_len);
                     if safe_len > 0 {
                         let safe_content = self.thinking_buffer[..safe_len].to_string();
-                        // 如果 thinking 尚未提取，且安全内容只是空白字符，
-                        // 则不发送为 text_delta，继续保留在缓冲区等待更多内容。
-                        // 这避免了 4.6 模型中 <thinking> 标签跨事件分割时，
-                        // 前导空白（如 "\n\n"）被错误地创建为 text 块，
-                        // 导致 text 块先于 thinking 块出现的问题。
+                        // if thinking not yet extracted, and the safe content is only whitespace,
+                        // thennotsendas text_delta, keeps it in the buffer waiting for more content.
+                        // this avoids 4.6 in model <thinking> when the tag is split across events,
+                        // beforeguideemptyblank(such as "\n\n") was wrongly created as text block,
+                        // cause text block precedes thinking the problem of the block appearing.
                         if !safe_content.is_empty() && !safe_content.trim().is_empty() {
                             events.extend(self.create_text_delta_events(&safe_content));
                             self.thinking_buffer = self.thinking_buffer[safe_len..].to_string();
@@ -1347,21 +1347,21 @@ impl StreamContext {
                     break;
                 }
             } else if self.in_thinking_block {
-                // 剥离 <thinking> 标签后紧跟的换行符（可能跨 chunk）
+                // strip <thinking> The newline immediately after the tag (may span chunk)
                 if self.strip_thinking_leading_newline {
                     if self.thinking_buffer.starts_with('\n') {
                         self.thinking_buffer = self.thinking_buffer[1..].to_string();
                         self.strip_thinking_leading_newline = false;
                     } else if !self.thinking_buffer.is_empty() {
-                        // buffer 非空但不以 \n 开头，不再需要剥离
+                        // buffer nonemptybutnotto \n at the start, no longer need to strip
                         self.strip_thinking_leading_newline = false;
                     }
-                    // buffer 为空时保留标志，等待下一个 chunk
+                    // buffer When empty, keeps the flag and waits for the next one. chunk
                 }
 
-                // 在 thinking 块内，查找 </thinking> 结束标签（跳过被反引号包裹的）
+                // in thinking within block,find </thinking> End tag (skips those wrapped by backticks).
                 if let Some(end_pos) = find_real_thinking_end_tag(&self.thinking_buffer) {
-                    // 提取 thinking 内容
+                    // extract thinking content
                     let thinking_content = self.thinking_buffer[..end_pos].to_string();
                     if !thinking_content.is_empty() {
                         if let Some(thinking_index) = self.thinking_block_index {
@@ -1371,17 +1371,17 @@ impl StreamContext {
                         }
                     }
 
-                    // 结束 thinking 块
+                    // end thinking block
                     self.in_thinking_block = false;
                     self.thinking_extracted = true;
 
-                    // 发送空的 thinking_delta 事件，然后发送 content_block_stop 事件
+                    // send empty thinking_delta event, then send content_block_stop event
                     if let Some(thinking_index) = self.thinking_block_index {
-                        // 先发送空的 thinking_delta
+                        // firstsend empty thinking_delta
                         events.push(self.create_thinking_delta_event(thinking_index, ""));
-                        // signature_delta：满足客户端 thinking 模式下的本地校验
+                        // signature_delta:satisfyclient thinking local validation under the mode
                         events.push(self.create_signature_delta_event(thinking_index));
-                        // 再发送 content_block_stop
+                        // then send content_block_stop
                         if let Some(stop_event) =
                             self.state_manager.handle_content_block_stop(thinking_index)
                         {
@@ -1389,16 +1389,16 @@ impl StreamContext {
                         }
                     }
 
-                    // 剥离 `</thinking>\n\n`（find_real_thinking_end_tag 已确认 \n\n 存在）
+                    // strip `</thinking>\n\n`(find_real_thinking_end_tag confirmed \n\n exists)
                     self.thinking_buffer =
                         self.thinking_buffer[end_pos + "</thinking>\n\n".len()..].to_string();
                 } else {
-                    // 没有找到结束标签，发送当前缓冲区内容作为 thinking_delta。
-                    // 保留末尾可能是部分 `</thinking>\n\n` 的内容：
-                    // find_real_thinking_end_tag 要求标签后有 `\n\n` 才返回 Some，
-                    // 因此保留区必须覆盖 `</thinking>\n\n` 的完整长度（13 字节），
-                    // 否则当 `</thinking>` 已在 buffer 但 `\n\n` 尚未到达时，
-                    // 标签的前几个字符会被错误地作为 thinking_delta 发出。
+                    // No end tag was found; sends the current buffer content as thinking_delta.
+                    // keep the tail which may be partial `</thinking>\n\n` content:
+                    // find_real_thinking_end_tag requiretagafterhas `\n\n` return only then Some,
+                    // therefore the retained region must cover `</thinking>\n\n` ofcompletelength(13 bytes),
+                    // otherwise when `</thinking>` already in buffer but `\n\n` not yetarrivewhen,
+                    // The first few characters of the tag would be wrongly taken as thinking_delta emit.
                     let target_len = self
                         .thinking_buffer
                         .len()
@@ -1418,7 +1418,7 @@ impl StreamContext {
                     break;
                 }
             } else {
-                // thinking 已提取完成，剩余内容作为 text_delta
+                // thinking Already extracted; the remaining content serves as text_delta
                 if !self.thinking_buffer.is_empty() {
                     let remaining = self.thinking_buffer.clone();
                     self.thinking_buffer.clear();
@@ -1431,13 +1431,13 @@ impl StreamContext {
         events
     }
 
-    /// 创建 text_delta 事件（带 invoke 嗅探的统一明文漏斗）
+    /// create text_delta event (with invoke the unified plaintext funnel for sniffing)
     ///
-    /// 这是 thinking / 非 thinking 两条路径 + 两个端点唯一共用的明文出口。
-    /// 在这里把文本累进 `invoke_sniff_buffer`，循环嗅探完整的字面 `<invoke>` 工具调用块：
-    /// - 命中完整块：先把块前文本（剥掉尾部独立的 `call`/`count` 行）走 `emit_text_delta_raw` 吐出，
-    ///   再合成结构化 tool_use 事件，再继续循环；
-    /// - 未命中完整块：保留可能的部分标签尾巴留在缓冲区，其余走 `emit_text_delta_raw`。
+    /// this is thinking / non thinking two paths + The only plaintext exit shared by the two endpoints.
+    /// accumulate the text here into `invoke_sniff_buffer`, loop sniff the complete literal `<invoke>` tool callblock:
+    /// - Hit a complete block: first take the text before the block (strip the trailing standalone `call`/`count` line) goes `emit_text_delta_raw` emit,
+    ///   againsynthesizestructtransform tool_use the event, then continue the loop;
+    /// - No complete block hit: keeps the possible partial tag tail in the buffer, the rest goes to `emit_text_delta_raw`.
     fn create_text_delta_events(&mut self, text: &str) -> Vec<SseEvent> {
         if text.is_empty() {
             return Vec::new();
@@ -1446,16 +1446,16 @@ impl StreamContext {
         self.drain_invoke_sniff_buffer(false)
     }
 
-    /// 行首未闭合 `<invoke` 块的字节上限。仅用于防止"行首一个永不闭合的 `<invoke`
-    /// 把整条流永久 hold 住"这种极端情况；正常的 invoke（哪怕是大 patch）都远小于此，
-    /// 所以不会误杀合法的多行/分片工具调用。
+    /// line startnot closed `<invoke` The byte limit of the block. Only used to prevent"one at the line start that never closes `<invoke`
+    /// takewholeentrystreampermanent hold hold"this extreme case; the normal invoke(even ifislarge patch) are all far smaller than this,
+    /// so it does not wrongly kill a legitimate multi line one./fragmented tool call.
     const MAX_INVOKE_HOLD_BYTES: usize = 262_144;
 
-    /// 嗅探并排空 `invoke_sniff_buffer`
+    /// sniff and arrangeempty `invoke_sniff_buffer`
     ///
-    /// - `flush=false`（流式中途）：未命中完整块时，保留可能是部分标签的尾巴（最长一个未闭合
-    ///   `<invoke` 块或一段疑似开标签前缀），其余前缀文本走 `emit_text_delta_raw` 吐出。
-    /// - `flush=true`（流末尾）：不再保留尾巴，剩余全部走 `emit_text_delta_raw` 吐出（防尾字节丢）。
+    /// - `flush=false`(mid stream): when no complete block is hit, keeps the tail that may be a partial tag (at most one unclosed
+    ///   `<invoke` block or a suspected open tag prefix), the remaining prefix text goes to `emit_text_delta_raw` emit.
+    /// - `flush=true`(stream end): no longer keeps a tail, all remaining goes to `emit_text_delta_raw` emit (to prevent trailing byte loss).
     fn drain_invoke_sniff_buffer(&mut self, flush: bool) -> Vec<SseEvent> {
         let mut events = Vec::new();
         // Drive the loop on an owned local buffer taken out of `self` ONCE, instead of
@@ -1471,43 +1471,43 @@ impl StreamContext {
                 Some(start) => {
                     match find_invoke_block_end(&buf, start) {
                         Some(end) => {
-                            // 命中完整块：先判定它像真泄漏还是正文讨论（P1 歧义信号）
+                            // Hit a complete block: first judge whether it looks like a real leak or body discussion (P1 ambiguous signalnumber)
                             let before = strip_trailing_stray_tokens(&buf[..start]);
-                            // 🅱 先把 before 里的围栏开合并进一个「试算」状态：如果这个 <invoke>
-                            // 落在代码围栏内（正文展示的代码块），一律不捞回，当文本吐出。
+                            // 🅱 first take before the fence open and close there merge into a trial state: if this <invoke>
+                            // Falls within a code fence (a code block shown in the body); never recovered, emitted as text.
                             let fence_after_before = fence_open_after(
                                 self.code_fence_open,
                                 &self.fence_scan_partial,
                                 before,
                             );
-                            // 🅳 灾难兜底：只有解析出的工具名在本次请求声明的工具表里，才允许捞回。
-                            // 表为空（请求没带 tools）或名字不在表里 → 当文本吐，宁可漏捞不可误执行。
+                            // 🅳 Disaster fallback: only when the parsed tool name is in the tool table declared by this request is recovery allowed.
+                            // the table is empty (the request did not carry tools) or the name is not in the table → Emitted as text; better to miss than to wrongly execute.
                             let parsed = parse_invoke_block(&buf[start..end]);
                             let name_known = parsed
                                 .as_ref()
                                 .map(|(n, _)| self.known_tool_names.contains(n))
                                 .unwrap_or(false);
                             if invoke_looks_like_real_leak(before) && !fence_after_before && name_known {
-                                // 真泄漏：吐块前文本（剥掉尾部独立的 call/count 行）+ 合成 tool_use
+                                // Real leak: emits the text before the block (strips the trailing standalone call/count line)+ synthesize tool_use
                                 if !before.is_empty() {
                                     events.extend(self.emit_text_delta_raw(before));
                                 }
-                                // parsed 在上面已确认是 Some 且 name_known
+                                // parsed already confirmed above to be Some and name_known
                                 let (name, input_json) = parsed.expect("parsed is Some when name_known");
                                 events.extend(self.synthesize_tool_use(name, input_json));
                             } else {
-                                // 不捞回（嵌句中 / 围栏内 / 工具名未知 / 解析失败）→ 整段当普通文本吐出
+                                // do not recover (embedded in a sentence / inside fence / toolnameunknown / parsefailed)→ emit the whole segment as ordinary text
                                 events.extend(self.emit_text_delta_raw(&buf[..end]));
                             }
-                            // 推进本地缓冲区到块之后，继续循环（不再回写 self、不再整体 clone）
+                            // Advances the local buffer past the block and continues the loop (no longer writes back self, notagainoverall clone)
                             buf = buf[end..].to_string();
                             continue;
                         }
                         None => {
-                            // 块还没到齐。先用 P1 行首判定：不在行首的 <invoke 当讨论文本，
-                            // 直接整段吐出，不进 hold 缓冲（P2：避免 hold 住后续文本到流末尾）。
+                            // the block has not fully arrived. use first P1 line start determination: not at the line start <invoke whendiscusstext,
+                            // emit the whole segment directly, do not enter hold buffer (P2: avoid hold the subsequent text to the stream end).
                             let before = strip_trailing_stray_tokens(&buf[..start]);
-                            // 🅱 围栏内的未闭合 <invoke> 也不 hold（是正文代码块），直接当文本吐。
+                            // 🅱 the unclosed within the fence <invoke> also not hold(it is a body code block), emitted directly as text.
                             let fence_after_before = fence_open_after(
                                 self.code_fence_open,
                                 &self.fence_scan_partial,
@@ -1519,27 +1519,27 @@ impl StreamContext {
                                 }
                                 break;
                             }
-                            // 行首的未闭合块：把 start 之前的文本吐出，保留 start.. 等闭合
+                            // the unclosed block at the line start: take start emit the preceding text, keep start.. wait for close
                             if start > 0 {
                                 events.extend(self.emit_text_delta_raw(&buf[..start]));
                             }
                             let remainder = buf[start..].to_string();
                             if flush {
-                                // flush 模式：残留半块当普通文本吐出
+                                // flush Mode: a leftover half block is emitted as plain text.
                                 if !remainder.is_empty() {
                                     events.extend(self.emit_text_delta_raw(&remainder));
                                 }
                             } else {
-                                // P2 上限：hold 的 <invoke 块累计超过阈值仍没等到 </invoke>，
-                                // 放弃等待，当普通文本吐出，避免无限期 hold 后续文本。
-                                // 仅用纯字节上限兜底"永不闭合的 `<invoke` 把流卡死"；
-                                // 不再按换行数放弃——多行参数（apply_patch 等）是常态，
-                                // 换行数不是放弃 hold 的好信号，否则会误杀分片到达的合法 invoke。
+                                // P2 limit:hold of <invoke The block accumulation exceeds the threshold yet still does not wait for </invoke>,
+                                // Gives up waiting and emits as plain text, avoiding indefinite hold subsequenttext.
+                                // use only a pure byte upper limit as fallback"forevernotclosedof `<invoke` stall the stream";
+                                // no longer give up by the newline count——multi lineparameter(apply_patch etc.)isnormal state,
+                                // the newline count is not the give up hold a good signal; otherwise it would wrongly kill a legitimate one arriving in pieces. invoke.
                                 let too_long = remainder.len() > Self::MAX_INVOKE_HOLD_BYTES;
                                 if too_long {
                                     events.extend(self.emit_text_delta_raw(&remainder));
                                 } else {
-                                    // 保留半块到 self，等下一片到达再续
+                                    // retainhalfblockto self, wait for the next fragment to arrive then continue
                                     self.invoke_sniff_buffer = remainder;
                                 }
                             }
@@ -1548,13 +1548,13 @@ impl StreamContext {
                     }
                 }
                 None => {
-                    // 没有任何 invoke 开标签
+                    // noneany invoke opening tag
                     if flush {
                         if !buf.is_empty() {
                             events.extend(self.emit_text_delta_raw(&buf));
                         }
                     } else {
-                        // 保留一段可能是部分 `<invoke` 开标签前缀的尾巴，其余吐出
+                        // keep a segment that may be partial `<invoke` the tail of the open tag prefix; the rest is emitted.
                         let keep = partial_invoke_tag_suffix_len(&buf);
                         let split = buf.len() - keep;
                         let safe = find_char_boundary(&buf, split);
@@ -1570,7 +1570,7 @@ impl StreamContext {
         events
     }
 
-    /// 合成一组结构化 tool_use 事件（照抄 process_tool_use 的 6 步）
+    /// synthesize a set of structured tool_use event (copy verbatim process_tool_use of 6 step)
     fn synthesize_tool_use(&mut self, parsed_name: String, input_json: String) -> Vec<SseEvent> {
         let mut events = Vec::new();
         self.state_manager.set_has_tool_use(true);
@@ -1616,29 +1616,29 @@ impl StreamContext {
         events
     }
 
-    /// 创建 text_delta 事件（原始逻辑，无嗅探）
+    /// create text_delta event (original logic, no sniffing).
     ///
-    /// 如果文本块尚未创建，会先创建文本块。
-    /// 当发生 tool_use 时，状态机会自动关闭当前文本块；后续文本会自动创建新的文本块继续输出。
+    /// If the text block has not been created yet, creates it first.
+    /// when occurs tool_use the state machine automatically closes the current text block; subsequent text automatically creates a new text block and continues output.
     ///
-    /// 返回值包含可能的 content_block_start 事件和 content_block_delta 事件。
-    /// 复读熔断过滤器：在文本真正吐给客户端之前，逐行检测「同一 stray token 连续复读」。
+    /// the return value contains the possible content_block_start event and content_block_delta event.
+    /// Repeat circuit breaker filter: before text is actually emitted to the client, checks line by line for the same stray token consecutiverepeat.
     ///
-    /// 工作方式（流式安全，跨 chunk 累计）：
-    /// - 把进来的 `text` 按行切，逐行和上一行（去空白）比较；
-    /// - 只对 `STRAY_INVOKE_TOKENS`（call/count/card）这类退化引导词计数，普通文本一律放行；
-    /// - 同一 stray token 连续重复达到 `REPEAT_GUARD_TRIP_THRESHOLD` 即「跳闸」；
-    /// - 跳闸后：本轮内后续任何文本（含继续复读的 count）一律丢弃，返回空串。
+    /// Works this way (stream safe, cross chunk cumulative):
+    /// - take incoming `text` Splits by line and compares each line with the previous (whitespace trimmed);
+    /// - only for `STRAY_INVOKE_TOKENS`(call/count/card) such degraded guide word counts; ordinary text is always passed;
+    /// - same stray token consecutiveduplicatereachto `REPEAT_GUARD_TRIP_THRESHOLD` that is tripping the breaker;
+    /// - After tripping: any subsequent text this round (including continued repeats count) are all discarded, returns an empty string.
     ///
-    /// 返回应当继续吐出的文本（跳闸时返回空串）。
+    /// Returns the text that should continue to be emitted (returns an empty string when tripped).
     fn repeat_guard_filter(&mut self, text: &str) -> String {
-        // 已跳闸：本轮剩余文本全部丢弃，断雪球。
+        // Already tripped: all remaining text this round is discarded, breaking the snowball.
         if self.repeat_guard_tripped {
             return String::new();
         }
 
         let mut kept = String::new();
-        // 用 split_inclusive 保留换行符，确保放行的正常文本不丢字节。
+        // use split_inclusive Keeps newlines to ensure passed normal text does not lose bytes.
         for segment in text.split_inclusive('\n') {
             let line = segment.trim();
             if STRAY_INVOKE_TOKENS.contains(&line) {
@@ -1649,15 +1649,15 @@ impl StreamContext {
                     self.repeat_guard_run = 1;
                 }
                 if self.repeat_guard_run >= REPEAT_GUARD_TRIP_THRESHOLD {
-                    // 跳闸：丢弃这一行及本轮后续所有文本。已经放行的 kept 保留
-                    // （阈值内的少量重复无害），但不再追加，并标记 tripped。
+                    // Trips: discards this line and all subsequent text this round. Already passed kept retain
+                    // (a small number of repeats within the threshold is harmless), but no longer appends, and marks tripped.
                     self.repeat_guard_tripped = true;
                     return kept;
                 }
-                // 阈值内：照常放行（少量引导词重复是正常的）。
+                // Within the threshold: passes as usual (a small number of guide word repeats is normal).
                 kept.push_str(segment);
             } else {
-                // 普通文本行（含空行）：重置复读计数，正常放行。
+                // Ordinary text line (including blank lines): resets the repeat count and passes normally.
                 if !line.is_empty() {
                     self.repeat_guard_last_line = line.to_string();
                     self.repeat_guard_run = 0;
@@ -1671,40 +1671,40 @@ impl StreamContext {
     fn emit_text_delta_raw(&mut self, text: &str) -> Vec<SseEvent> {
         let mut events = Vec::new();
 
-        // 🛑 复读熔断（root cause: Opus 长上下文退化，把同一 stray token 一行行无限复读）。
-        // 在文本出口处过滤：一旦同一短行连续重复超过阈值，丢弃后续复读文本，
-        // 既不让它喷给客户端、不烧满 max_tokens，也不写进对话历史（断雪球）。
+        // 🛑 repeat circuit breaker(root cause: Opus long context degradation, put the same stray token repeat line by line infinitely).
+        // Filters at the text exit: once the same short line repeats consecutively beyond the threshold, discards the subsequent repeated text,
+        // Neither lets it spray to the client nor burns up max_tokens, and also not written into conversation history (breaks the snowball).
         let kept = self.repeat_guard_filter(text);
         if kept.is_empty() {
             return events;
         }
         let text: &str = &kept;
 
-        // 🅱 维护跨流的代码围栏奇偶状态：所有真正作为「文本」吐出的内容都过这里，
-        // 在此累进围栏状态，使后续 <invoke> 能判断自己是否落在代码块内。
+        // 🅱 Maintains the cross stream code fence parity state: everything that is truly emitted as text passes through here,
+        // Advances the fence state here so subsequent <invoke> Can determine whether it falls within a code block.
         let mut fence_open = self.code_fence_open;
         let mut fence_partial = std::mem::take(&mut self.fence_scan_partial);
         advance_code_fence_state(&mut fence_open, &mut fence_partial, text);
         self.code_fence_open = fence_open;
         self.fence_scan_partial = fence_partial;
 
-        // 如果当前 text_block_index 指向的块已经被关闭（例如 tool_use 开始时自动 stop），
-        // 则丢弃该索引并创建新的文本块继续输出，避免 delta 被状态机拒绝导致“吞字”。
+        // if current text_block_index The pointed block has already been closed (for example tool_use startwhenautomatic stop),
+        // then discards that index and creates a new text block to continue output, avoiding delta rejected by the state machine causing“swallow characters”.
         if let Some(idx) = self.text_block_index {
             if !self.state_manager.is_block_open_of_type(idx, "text") {
                 self.text_block_index = None;
             }
         }
 
-        // 获取或创建文本块索引
+        // get or create the text block index
         let text_index = if let Some(idx) = self.text_block_index {
             idx
         } else {
-            // 文本块尚未创建，需要先创建
+            // The text block has not been created yet; it must be created first.
             let idx = self.state_manager.next_block_index();
             self.text_block_index = Some(idx);
 
-            // 发送 content_block_start 事件
+            // send content_block_start event
             let start_events = self.state_manager.handle_content_block_start(
                 idx,
                 "text",
@@ -1721,7 +1721,7 @@ impl StreamContext {
             idx
         };
 
-        // 发送 content_block_delta 事件
+        // send content_block_delta event
         if let Some(delta_event) = self.state_manager.handle_content_block_delta(
             text_index,
             json!({
@@ -1876,7 +1876,7 @@ impl StreamContext {
         events
     }
 
-    /// 创建 thinking_delta 事件
+    /// create thinking_delta event
     fn create_thinking_delta_event(&self, index: i32, thinking: &str) -> SseEvent {
         SseEvent::new(
             "content_block_delta",
@@ -1891,16 +1891,16 @@ impl StreamContext {
         )
     }
 
-    /// 创建 signature_delta 事件
+    /// create signature_delta event
     ///
-    /// Anthropic 协议下 thinking 块流式结束前必须发一个 signature_delta，
-    /// SDK 会把它聚合到 thinking 块的 `signature` 字段。客户端在下一轮把
-    /// assistant 消息回传时本地校验 thinking 块必须带非空 signature，否则抛出
-    /// `The content[].thinking in the thinking mode must be passed back to the API`。
+    /// Anthropic under protocol thinking Before the block streaming ends, one must be sent signature_delta,
+    /// SDK willit aggregatesto thinking block `signature` field. On the next round the client
+    /// assistant local validation when the message is returned thinking blockmust carrynonempty signature, otherwisethrow
+    /// `The content[].thinking in the thinking mode must be passed back to the API`.
     ///
-    /// 上游 Kiro 不是 Anthropic 服务端，不会下发真实签名，因此这里发一个非空
-    /// 占位字符串以满足客户端本地校验。该字段不参与转发回 Kiro 的逻辑
-    /// （converter 只读 `block.thinking`，不读 signature）。
+    /// upstream Kiro is not Anthropic The server does not deliver a real signature, so here it sends a non empty
+    /// Placeholder string to satisfy client local validation. This field is not forwarded back. Kiro logic
+    /// (converter read only `block.thinking`, do not read signature).
     fn create_signature_delta_event(&self, index: i32) -> SseEvent {
         self.create_signature_delta_event_with(index, THINKING_SIGNATURE_PLACEHOLDER)
     }
@@ -1919,7 +1919,7 @@ impl StreamContext {
         )
     }
 
-    /// 处理工具使用事件
+    /// handle the tool use event
     fn process_tool_use(
         &mut self,
         tool_use: &crate::kiro::model::events::ToolUseEvent,
@@ -1932,10 +1932,10 @@ impl StreamContext {
             events.extend(self.close_open_thinking_block());
         }
 
-        // tool_use 必须发生在 thinking 结束之后。
-        // 但当 `</thinking>` 后面没有 `\n\n`（例如紧跟 tool_use 或流结束）时，
-        // thinking 结束标签会滞留在 thinking_buffer，导致后续 flush 时把 `</thinking>` 当作内容输出。
-        // 这里在开始 tool_use block 前做一次“边界场景”的结束标签识别与过滤。
+        // tool_use must occurin thinking endafter.
+        // but when `</thinking>` nothing after `\n\n`(for exampleimmediately follow tool_use or when the stream ends,
+        // thinking the closing tag will linger in thinking_buffer, causingsubsequent flush take when `</thinking>` output as content.
+        // hereinstart tool_use block do once before“boundary case”end tag recognition and filtering.
         if self.thinking_enabled && self.in_thinking_block {
             if let Some(end_pos) = find_real_thinking_end_tag_at_buffer_end(&self.thinking_buffer) {
                 let thinking_content = self.thinking_buffer[..end_pos].to_string();
@@ -1947,16 +1947,16 @@ impl StreamContext {
                     }
                 }
 
-                // 结束 thinking 块
+                // end thinking block
                 self.in_thinking_block = false;
                 self.thinking_extracted = true;
 
                 if let Some(thinking_index) = self.thinking_block_index {
-                    // 先发送空的 thinking_delta
+                    // firstsend empty thinking_delta
                     events.push(self.create_thinking_delta_event(thinking_index, ""));
-                    // signature_delta：满足客户端 thinking 模式下的本地校验
+                    // signature_delta:satisfyclient thinking local validation under the mode
                     events.push(self.create_signature_delta_event(thinking_index));
-                    // 再发送 content_block_stop
+                    // then send content_block_stop
                     if let Some(stop_event) =
                         self.state_manager.handle_content_block_stop(thinking_index)
                     {
@@ -1964,7 +1964,7 @@ impl StreamContext {
                     }
                 }
 
-                // 把结束标签后的内容当作普通文本（通常为空或空白）
+                // Treats content after the end tag as plain text (usually empty or whitespace).
                 let after_pos = end_pos + "</thinking>".len();
                 let remaining = self.thinking_buffer[after_pos..].trim_start().to_string();
                 self.thinking_buffer.clear();
@@ -1974,9 +1974,9 @@ impl StreamContext {
             }
         }
 
-        // thinking 模式下，process_content_with_thinking 可能会为了探测 `<thinking>` 而暂存一小段尾部文本。
-        // 如果此时直接开始 tool_use，状态机会自动关闭 text block，导致这段"待输出文本"看起来被 tool_use 吞掉。
-        // 约束：只在尚未进入 thinking block、且 thinking 尚未被提取时，将缓冲区当作普通文本 flush。
+        // thinking under the mode,process_content_with_thinking may for the sake of probing `<thinking>` and temporarily holds a short piece of tail text.
+        // if we start directly at this point tool_use, the state machine will close automatically text block, causingthissegment"pendingoutputtext"appears to be tool_use swallow.
+        // constraint: only when not yet entered thinking block, and thinking When not yet extracted, treats the buffer as plain text. flush.
         if self.thinking_enabled
             && !self.in_thinking_block
             && !self.thinking_extracted
@@ -1986,7 +1986,7 @@ impl StreamContext {
             events.extend(self.create_text_delta_events(&buffered));
         }
 
-        // 获取或分配块索引
+        // get or allocate the block index
         let block_index = if let Some(&idx) = self.tool_block_indices.get(&tool_use.tool_use_id) {
             idx
         } else {
@@ -1996,14 +1996,14 @@ impl StreamContext {
             idx
         };
 
-        // 还原工具名称（如果有映射）
+        // Restores the tool name (if there is a mapping).
         let original_name = self
             .tool_name_map
             .get(&tool_use.name)
             .cloned()
             .unwrap_or_else(|| tool_use.name.clone());
 
-        // 发送 content_block_start
+        // send content_block_start
         let start_events = self.state_manager.handle_content_block_start(
             block_index,
             "tool_use",
@@ -2020,9 +2020,9 @@ impl StreamContext {
         );
         events.extend(start_events);
 
-        // 发送参数增量 (ToolUseEvent.input 是 String 类型)
+        // sendparameterincrement (ToolUseEvent.input is String type)
         if !tool_use.input.is_empty() {
-            self.output_tokens += (tool_use.input.len() as i32 + 3) / 4; // 估算 token
+            self.output_tokens += (tool_use.input.len() as i32 + 3) / 4; // estimate token
 
             if let Some(delta_event) = self.state_manager.handle_content_block_delta(
                 block_index,
@@ -2039,7 +2039,7 @@ impl StreamContext {
             }
         }
 
-        // 如果是完整的工具调用（stop=true），发送 content_block_stop
+        // If it is a complete tool call (stop=true), send content_block_stop
         if tool_use.stop {
             if let Some(stop_event) = self.state_manager.handle_content_block_stop(block_index) {
                 events.push(stop_event);
@@ -2049,7 +2049,7 @@ impl StreamContext {
         events
     }
 
-    /// 生成最终事件序列
+    /// generate the final event sequence
     pub fn generate_final_events(&mut self) -> Vec<SseEvent> {
         let mut events = Vec::new();
 
@@ -2057,10 +2057,10 @@ impl StreamContext {
             events.extend(self.close_open_thinking_block());
         }
 
-        // Flush thinking_buffer 中的剩余内容
+        // Flush thinking_buffer inremainingcontent
         if self.thinking_enabled && !self.thinking_buffer.is_empty() {
             if self.in_thinking_block {
-                // 末尾可能残留 `</thinking>`（例如紧跟 tool_use 或流结束），需要在 flush 时过滤掉结束标签。
+                // the end cancanleftover `</thinking>`(for exampleimmediately follow tool_use or the stream ends), needs to at flush filter out the closing tag.
                 if let Some(end_pos) =
                     find_real_thinking_end_tag_at_buffer_end(&self.thinking_buffer)
                 {
@@ -2073,10 +2073,10 @@ impl StreamContext {
                         }
                     }
 
-                    // 关闭 thinking 块：先发送空的 thinking_delta，再发送 content_block_stop
+                    // close thinking block: first send an empty thinking_delta, then send content_block_stop
                     if let Some(thinking_index) = self.thinking_block_index {
                         events.push(self.create_thinking_delta_event(thinking_index, ""));
-                        // signature_delta：满足客户端 thinking 模式下的本地校验
+                        // signature_delta:satisfyclient thinking local validation under the mode
                         events.push(self.create_signature_delta_event(thinking_index));
                         if let Some(stop_event) =
                             self.state_manager.handle_content_block_stop(thinking_index)
@@ -2085,7 +2085,7 @@ impl StreamContext {
                         }
                     }
 
-                    // 把结束标签后的内容当作普通文本（通常为空或空白）
+                    // Treats content after the end tag as plain text (usually empty or whitespace).
                     let after_pos = end_pos + "</thinking>".len();
                     let remaining = self.thinking_buffer[after_pos..].trim_start().to_string();
                     self.thinking_buffer.clear();
@@ -2095,19 +2095,19 @@ impl StreamContext {
                         events.extend(self.create_text_delta_events(&remaining));
                     }
                 } else {
-                    // 如果还在 thinking 块内，发送剩余内容作为 thinking_delta
+                    // if still in thinking inside the block, sends the remaining content as thinking_delta
                     if let Some(thinking_index) = self.thinking_block_index {
                         events.push(
                             self.create_thinking_delta_event(thinking_index, &self.thinking_buffer),
                         );
                     }
-                    // 关闭 thinking 块：先发送空的 thinking_delta，再发送 content_block_stop
+                    // close thinking block: first send an empty thinking_delta, then send content_block_stop
                     if let Some(thinking_index) = self.thinking_block_index {
-                        // 先发送空的 thinking_delta
+                        // firstsend empty thinking_delta
                         events.push(self.create_thinking_delta_event(thinking_index, ""));
-                        // signature_delta：满足客户端 thinking 模式下的本地校验
+                        // signature_delta:satisfyclient thinking local validation under the mode
                         events.push(self.create_signature_delta_event(thinking_index));
-                        // 再发送 content_block_stop
+                        // then send content_block_stop
                         if let Some(stop_event) =
                             self.state_manager.handle_content_block_stop(thinking_index)
                         {
@@ -2116,16 +2116,16 @@ impl StreamContext {
                     }
                 }
             } else {
-                // 否则发送剩余内容作为 text_delta
+                // otherwise send the remaining content as text_delta
                 let buffer_content = self.thinking_buffer.clone();
                 events.extend(self.create_text_delta_events(&buffer_content));
             }
             self.thinking_buffer.clear();
         }
 
-        // 如果整个流中只产生了 thinking 块，没有 text 也没有 tool_use，
-        // 则设置 stop_reason 为 max_tokens（表示模型耗尽了 token 预算在思考上），
-        // 并补发一套完整的 text 事件（内容为一个空格），确保 content 数组中有 text 块
+        // if the whole stream only produced thinking block, none text also none tool_use,
+        // then set stop_reason as max_tokens(means the model exhausted token the budget on thinking),
+        // and resend a complete set of text event (content is a single space), ensuring content array has text block
         if self.thinking_enabled
             && self.thinking_block_index.is_some()
             && !self.state_manager.has_non_thinking_blocks()
@@ -2134,16 +2134,16 @@ impl StreamContext {
             events.extend(self.create_text_delta_events(" "));
         }
 
-        // Flush invoke 嗅探缓冲区的残留：先再嗅探一次完整块（万一最后一块就是完整 invoke），
-        // 剩下的走 emit_text_delta_raw flush 出去（防尾字节丢）。
+        // Flush invoke Sniff buffer remainder: sniff once more for a complete block first (in case the last piece is complete) invoke),
+        // remaining go emit_text_delta_raw flush emit out (to prevent trailing byte loss).
         if !self.invoke_sniff_buffer.is_empty() {
             events.extend(self.drain_invoke_sniff_buffer(true));
         }
 
-        // 互斥口径：total 真值（contextUsage 优先）− 缓存覆盖 = 未缓存的 input。
+        // mutually exclusivebasis:total truthy (contextUsage priority)− cache override = uncached input.
         let (final_input_tokens, cache_creation, cache_read) = self.resolved_usage();
 
-        // 生成最终事件
+        // generatefinalevent
         events.extend(self.state_manager.generate_final_events(
             final_input_tokens,
             self.output_tokens,
@@ -2154,27 +2154,27 @@ impl StreamContext {
     }
 }
 
-/// 缓冲流处理上下文 - 用于 /cc/v1/messages 流式请求
+/// buffered stream processing context - used for /cc/v1/messages streaming request
 ///
-/// 与 `StreamContext` 不同，此上下文会缓冲所有事件直到流结束，
-/// 然后用从 `contextUsageEvent` 计算的正确 `input_tokens` 更正 `message_start` 事件。
+/// and `StreamContext` Different, this context buffers all events until the stream ends,
+/// soafterusefrom `contextUsageEvent` computeofcorrect `input_tokens` correct `message_start` event.
 ///
-/// 工作流程：
-/// 1. 使用 `StreamContext` 正常处理所有 Kiro 事件
-/// 2. 把生成的 SSE 事件缓存起来（而不是立即发送）
-/// 3. 流结束时，找到 `message_start` 事件并更新其 `input_tokens`
-/// 4. 一次性返回所有事件
+/// workflow:
+/// 1. use `StreamContext` normalhandleall Kiro event
+/// 2. take generated SSE Caches the event (rather than sending immediately).
+/// 3. when the stream ends, find `message_start` eventandupdateits `input_tokens`
+/// 4. return all events at once
 pub struct BufferedStreamContext {
-    /// 内部流处理上下文（复用现有的事件处理逻辑）
+    /// Internal stream processing context (reuses the existing event handling logic).
     inner: StreamContext,
-    /// 缓冲的所有事件（包括 message_start、content_block_start 等）
+    /// all buffered events (including message_start,content_block_start etc.)
     event_buffer: Vec<SseEvent>,
-    /// 是否已经生成了初始事件
+    /// Whether the initial event has already been generated.
     initial_events_generated: bool,
 }
 
 impl BufferedStreamContext {
-    /// 创建缓冲流上下文
+    /// create a buffered stream context
     pub fn new(
         model: impl Into<String>,
         estimated_input_tokens: i32,
@@ -2196,49 +2196,49 @@ impl BufferedStreamContext {
         }
     }
 
-    /// 注入由 CacheMeter 计算的缓存覆盖情况（estimate 口径），最终上报时分摊。
+    /// injected by CacheMeter computed cache coverage (estimate basis), apportioned at final report.
     pub fn set_cache_usage(&mut self, cache_usage: super::cache_metering::CacheUsage) {
         self.inner.cache_usage = cache_usage;
     }
 
-    /// 处理 Kiro 事件并缓冲结果
+    /// handle Kiro the event and buffer the result
     ///
-    /// 复用 StreamContext 的事件处理逻辑，但把结果缓存而不是立即发送。
+    /// reuse StreamContext event handling logic, but caches the result instead of sending immediately.
     pub fn process_and_buffer(&mut self, event: &crate::kiro::model::events::Event) {
-        // 首次处理事件时，先生成初始事件（message_start 等）
+        // When processing an event for the first time, first generates the initial event (message_start etc.)
         if !self.initial_events_generated {
             let initial_events = self.inner.generate_initial_events();
             self.event_buffer.extend(initial_events);
             self.initial_events_generated = true;
         }
 
-        // 处理事件并缓冲结果
+        // process the event and buffer the result
         let events = self.inner.process_kiro_event(event);
         self.event_buffer.extend(events);
     }
 
-    /// 完成流处理并返回所有事件
+    /// Completes stream processing and returns all events.
     ///
-    /// 此方法会：
-    /// 1. 生成最终事件（message_delta, message_stop）
-    /// 2. 用正确的 input_tokens 更正 message_start 事件
-    /// 3. 返回所有缓冲的事件
+    /// thismethodwill:
+    /// 1. generate the final event (message_delta, message_stop)
+    /// 2. with correct input_tokens correct message_start event
+    /// 3. return all buffered events
     pub fn finish_and_get_all_events(&mut self) -> Vec<SseEvent> {
-        // 如果从未处理过事件，也要生成初始事件
+        // If no event was ever processed, still generates the initial event.
         if !self.initial_events_generated {
             let initial_events = self.inner.generate_initial_events();
             self.event_buffer.extend(initial_events);
             self.initial_events_generated = true;
         }
 
-        // 互斥口径分摊：total 真值 − 缓存覆盖 = 未缓存 input（与 inner 收尾一致）。
+        // mutually exclusive measure apportionment:total truthy − cache override = uncached input(with inner wrap upconsistent).
         let (final_input_tokens, cache_creation, cache_read) = self.inner.resolved_usage();
 
-        // 生成最终事件（StreamContext 内部会用同样的优先级与分摊）
+        // generate the final event (StreamContext internally uses the same priority and apportionment)
         let final_events = self.inner.generate_final_events();
         self.event_buffer.extend(final_events);
 
-        // 更正 message_start 事件中的 input_tokens 与 cache_* 字段
+        // correct message_start in event input_tokens and cache_* field
         for event in &mut self.event_buffer {
             if event.event == "message_start" {
                 if let Some(message) = event.data.get_mut("message") {
@@ -2254,9 +2254,9 @@ impl BufferedStreamContext {
         std::mem::take(&mut self.event_buffer)
     }
 
-    /// 取出最终用量（在 finish_and_get_all_events 之后调用）
+    /// take out the final usage (at finish_and_get_all_events aftercall)
     ///
-    /// 返回顺序：(input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, credits)
+    /// returnorder:(input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, credits)
     pub fn final_usage(&self) -> (i32, i32, i32, i32, f64) {
         let (input, creation, read) = self.inner.resolved_usage();
         (
@@ -2269,9 +2269,9 @@ impl BufferedStreamContext {
     }
 }
 
-/// 简单的 token 估算（中英文字符混合）
+/// simple token Estimate (mixed Chinese and English characters).
 ///
-/// 公开供 cache_meter 等模块复用同一估算口径。
+/// public for cache_meter and similar modules reuse the same estimation basis.
 pub fn estimate_tokens(text: &str) -> i32 {
     let chars: Vec<char> = text.chars().collect();
     let mut chinese_count = 0;
@@ -2285,7 +2285,7 @@ pub fn estimate_tokens(text: &str) -> i32 {
         }
     }
 
-    // 中文约 1.5 字符/token，英文约 4 字符/token
+    // Chinese about 1.5 character/token, English about 4 character/token
     let chinese_tokens = (chinese_count * 2 + 2) / 3;
     let other_tokens = (other_count + 3) / 4;
 
@@ -2296,8 +2296,8 @@ pub fn estimate_tokens(text: &str) -> i32 {
 mod tests {
     use super::*;
 
-    /// 测试用的「已知工具表」：包含 invoke 测试里会合成的工具名，
-    /// 让 🅳 工具表校验放行这些名字，从而能验证捞回逻辑本身。
+    /// The known tool table for testing: contains invoke The tool name synthesized in tests,
+    /// let 🅳 Tool table validation passes these names, so the recovery logic itself can be verified.
     fn test_known_tools() -> std::collections::HashSet<String> {
         ["exec_command", "apply_patch", "tool_a", "tool_b", "write_file", "wait_agent"]
             .iter()
@@ -2387,11 +2387,11 @@ mod tests {
     fn test_sse_state_manager_message_start() {
         let mut manager = SseStateManager::new();
 
-        // 第一次应该成功
+        // the first time should succeed
         let event = manager.handle_message_start(json!({"type": "message_start"}));
         assert!(event.is_some());
 
-        // 第二次应该被跳过
+        // the second time should be skipped
         let event = manager.handle_message_start(json!({"type": "message_start"}));
         assert!(event.is_none());
     }
@@ -2400,7 +2400,7 @@ mod tests {
     fn test_sse_state_manager_block_lifecycle() {
         let mut manager = SseStateManager::new();
 
-        // 创建块
+        // create block
         let events = manager.handle_content_block_start(0, "text", json!({}));
         assert_eq!(events.len(), 1);
 
@@ -2412,7 +2412,7 @@ mod tests {
         let event = manager.handle_content_block_stop(0);
         assert!(event.is_some());
 
-        // 重复 stop 应该被跳过
+        // duplicate stop shouldthisskipped
         let event = manager.handle_content_block_stop(0);
         assert!(event.is_none());
     }
@@ -2430,7 +2430,7 @@ mod tests {
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, false, map, test_known_tools());
         let _ = ctx.generate_initial_events();
 
-        // 模拟 Kiro 返回短名称的 tool_use
+        // simulate Kiro returnshort nameof tool_use
         let tool_event = Event::ToolUse(ToolUseEvent {
             name: "short_abc12345".to_string(),
             tool_use_id: "toolu_01".to_string(),
@@ -2440,14 +2440,14 @@ mod tests {
 
         let events = ctx.process_kiro_event(&tool_event);
 
-        // content_block_start 中的 name 应该是原始长名称
+        // content_block_start in name should be the original long name
         let start_event = events
             .iter()
             .find(|e| e.event == "content_block_start")
             .unwrap();
         assert_eq!(
             start_event.data["content_block"]["name"], "mcp__very_long_original_tool_name",
-            "应还原为原始工具名称"
+            "should be restored to the original tool name"
         );
     }
 
@@ -2467,7 +2467,7 @@ mod tests {
             .text_block_index
             .expect("initial text block index should exist");
 
-        // tool_use 开始会自动关闭现有 text block
+        // tool_use starting will automatically close the existing text block
         let tool_events = ctx.process_tool_use(&crate::kiro::model::events::ToolUseEvent {
             name: "test_tool".to_string(),
             tool_use_id: "tool_1".to_string(),
@@ -2482,7 +2482,7 @@ mod tests {
             "tool_use should stop the previous text block"
         );
 
-        // 之后再来文本增量，应自动创建新的 text block 而不是往已 stop 的块里写 delta
+        // when a text delta arrives afterward, should automatically create a new text block andis nottowardalready stop write in block delta
         let text_events = ctx.process_assistant_response("hello");
         let new_text_start_index = text_events.iter().find_map(|e| {
             if e.event == "content_block_start" && e.data["content_block"]["type"] == "text" {
@@ -2512,19 +2512,19 @@ mod tests {
 
     #[test]
     fn test_tool_use_flushes_pending_thinking_buffer_text_before_tool_block() {
-        // thinking 模式下，短文本可能被暂存在 thinking_buffer 以等待 `<thinking>` 的跨 chunk 匹配。
-        // 当紧接着出现 tool_use 时，应先 flush 这段文本，再开始 tool_use block。
+        // thinking In this mode, short text may be temporarily held in thinking_buffer to wait for `<thinking>` cross chunk match.
+        // whenappears immediately after tool_use when, should first flush this text, then start tool_use block.
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, true, HashMap::new(), test_known_tools());
         let _initial_events = ctx.generate_initial_events();
 
-        // 两段短文本（各 2 个中文字符），总长度仍可能不足以满足 safe_len>0 的输出条件，
-        // 因而会留在 thinking_buffer 中等待后续 chunk。
-        let ev1 = ctx.process_assistant_response("有修");
+        // two segments of short text (each 2 Chinese characters); the total length may still be insufficient to satisfy safe_len>0 ofoutputentryitem,
+        // and therefore will leavein thinking_buffer inetc.pendingsubsequent chunk.
+        let ev1 = ctx.process_assistant_response("has mod");
         assert!(
             ev1.iter().all(|e| e.event != "content_block_delta"),
             "short prefix should be buffered under thinking mode"
         );
-        let ev2 = ctx.process_assistant_response("改：");
+        let ev2 = ctx.process_assistant_response("edit:");
         assert!(
             ev2.iter().all(|e| e.event != "content_block_delta"),
             "short prefix should still be buffered under thinking mode"
@@ -2583,7 +2583,7 @@ mod tests {
             events.iter().any(|e| {
                 e.event == "content_block_delta"
                     && e.data["delta"]["type"] == "text_delta"
-                    && e.data["delta"]["text"] == "有修改："
+                    && e.data["delta"]["text"] == "modified:"
             }),
             "flushed text should equal the buffered prefix"
         );
@@ -2592,24 +2592,24 @@ mod tests {
     #[test]
     fn test_estimate_tokens() {
         assert!(estimate_tokens("Hello") > 0);
-        assert!(estimate_tokens("你好") > 0);
-        assert!(estimate_tokens("Hello 你好") > 0);
+        assert!(estimate_tokens("hello") > 0);
+        assert!(estimate_tokens("Hello hello") > 0);
     }
 
     #[test]
     fn test_find_real_thinking_start_tag_basic() {
-        // 基本情况：正常的开始标签
+        // Base case: a normal start tag.
         assert_eq!(find_real_thinking_start_tag("<thinking>"), Some(0));
         assert_eq!(find_real_thinking_start_tag("prefix<thinking>"), Some(6));
     }
 
     #[test]
     fn test_find_real_thinking_start_tag_with_backticks() {
-        // 被反引号包裹的应该被跳过
+        // Those wrapped by backticks should be skipped.
         assert_eq!(find_real_thinking_start_tag("`<thinking>`"), None);
         assert_eq!(find_real_thinking_start_tag("use `<thinking>` tag"), None);
 
-        // 先有被包裹的，后有真正的开始标签
+        // First a wrapped one, then a real start tag.
         assert_eq!(
             find_real_thinking_start_tag("about `<thinking>` tag<thinking>content"),
             Some(22)
@@ -2618,14 +2618,14 @@ mod tests {
 
     #[test]
     fn test_find_real_thinking_start_tag_with_quotes() {
-        // 被双引号包裹的应该被跳过
+        // Those wrapped by double quotes should be skipped.
         assert_eq!(find_real_thinking_start_tag("\"<thinking>\""), None);
         assert_eq!(find_real_thinking_start_tag("the \"<thinking>\" tag"), None);
 
-        // 被单引号包裹的应该被跳过
+        // Those wrapped by single quotes should be skipped.
         assert_eq!(find_real_thinking_start_tag("'<thinking>'"), None);
 
-        // 混合情况
+        // mixed case
         assert_eq!(
             find_real_thinking_start_tag("about \"<thinking>\" and '<thinking>' then<thinking>"),
             Some(40)
@@ -2634,7 +2634,7 @@ mod tests {
 
     #[test]
     fn test_find_real_thinking_end_tag_basic() {
-        // 基本情况：正常的结束标签后面有双换行符
+        // Base case: a normal end tag is followed by a double newline.
         assert_eq!(find_real_thinking_end_tag("</thinking>\n\n"), Some(0));
         assert_eq!(
             find_real_thinking_end_tag("content</thinking>\n\n"),
@@ -2645,7 +2645,7 @@ mod tests {
             Some(9)
         );
 
-        // 没有双换行符的情况
+        // the case without a double newline
         assert_eq!(find_real_thinking_end_tag("</thinking>"), None);
         assert_eq!(find_real_thinking_end_tag("</thinking>\n"), None);
         assert_eq!(find_real_thinking_end_tag("</thinking> more"), None);
@@ -2653,43 +2653,43 @@ mod tests {
 
     #[test]
     fn test_find_real_thinking_end_tag_with_backticks() {
-        // 被反引号包裹的应该被跳过
+        // Those wrapped by backticks should be skipped.
         assert_eq!(find_real_thinking_end_tag("`</thinking>`\n\n"), None);
         assert_eq!(
             find_real_thinking_end_tag("mention `</thinking>` in code\n\n"),
             None
         );
 
-        // 只有前面有反引号
+        // only a backtick in front
         assert_eq!(find_real_thinking_end_tag("`</thinking>\n\n"), None);
 
-        // 只有后面有反引号
+        // only a backtick behind
         assert_eq!(find_real_thinking_end_tag("</thinking>`\n\n"), None);
     }
 
     #[test]
     fn test_find_real_thinking_end_tag_with_quotes() {
-        // 被双引号包裹的应该被跳过
+        // Those wrapped by double quotes should be skipped.
         assert_eq!(find_real_thinking_end_tag("\"</thinking>\"\n\n"), None);
         assert_eq!(
             find_real_thinking_end_tag("the string \"</thinking>\" is a tag\n\n"),
             None
         );
 
-        // 被单引号包裹的应该被跳过
+        // Those wrapped by single quotes should be skipped.
         assert_eq!(find_real_thinking_end_tag("'</thinking>'\n\n"), None);
         assert_eq!(
             find_real_thinking_end_tag("use '</thinking>' as marker\n\n"),
             None
         );
 
-        // 混合情况：双引号包裹后有真正的标签
+        // Mixed case: after a double quote wrap there is a real tag.
         assert_eq!(
             find_real_thinking_end_tag("about \"</thinking>\" tag</thinking>\n\n"),
             Some(23)
         );
 
-        // 混合情况：单引号包裹后有真正的标签
+        // Mixed case: after a single quote wrap there is a real tag.
         assert_eq!(
             find_real_thinking_end_tag("about '</thinking>' tag</thinking>\n\n"),
             Some(23)
@@ -2698,19 +2698,19 @@ mod tests {
 
     #[test]
     fn test_find_real_thinking_end_tag_mixed() {
-        // 先有被包裹的，后有真正的结束标签
+        // First a wrapped one, then a real end tag.
         assert_eq!(
             find_real_thinking_end_tag("discussing `</thinking>` tag</thinking>\n\n"),
             Some(28)
         );
 
-        // 多个被包裹的，最后一个是真正的
+        // Multiple wrapped ones, the last is the real one.
         assert_eq!(
             find_real_thinking_end_tag("`</thinking>` and `</thinking>` done</thinking>\n\n"),
             Some(36)
         );
 
-        // 多种引用字符混合
+        // mixed multiple quote characters
         assert_eq!(
             find_real_thinking_end_tag(
                 "`</thinking>` and \"</thinking>\" and '</thinking>' done</thinking>\n\n"
@@ -2726,7 +2726,7 @@ mod tests {
 
         let mut all_events = Vec::new();
 
-        // thinking 内容以 `</thinking>` 结尾，但后面没有 `\n\n`（模拟紧跟 tool_use 的场景）
+        // thinking content starts with `</thinking>` at the end, but nothing behind `\n\n`(simulateimmediately follow tool_use scenario)
         all_events.extend(ctx.process_assistant_response("<thinking>abc</thinking>"));
 
         let tool_events = ctx.process_tool_use(&crate::kiro::model::events::ToolUseEvent {
@@ -2739,7 +2739,7 @@ mod tests {
 
         all_events.extend(ctx.generate_final_events());
 
-        // 不应把 `</thinking>` 当作 thinking 内容输出
+        // should not `</thinking>` treat as thinking content output
         assert!(
             all_events.iter().all(|e| {
                 !(e.event == "content_block_delta"
@@ -2749,7 +2749,7 @@ mod tests {
             "`</thinking>` should be filtered from output"
         );
 
-        // thinking block 必须在 tool_use block 之前关闭
+        // thinking block must be in tool_use block close before
         let thinking_index = ctx
             .thinking_block_index
             .expect("thinking block index should exist");
@@ -2773,9 +2773,9 @@ mod tests {
 
     #[test]
     fn test_thinking_block_emits_signature_delta_before_stop() {
-        // 客户端在 thinking 模式下要求 thinking 块带 signature 字段，否则下一轮回传时
-        // 会抛出 "must be passed back to the API"。本测试验证 thinking 块结束前发送了
-        // 一个非空的 signature_delta 事件。
+        // client at thinking under the moderequire thinking block carries signature field; otherwise on the next round when returned
+        // will throw "must be passed back to the API".thistestverify thinking sent before the block ends
+        // anonemptyof signature_delta event.
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, true, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
@@ -2829,13 +2829,13 @@ mod tests {
 
     #[test]
     fn test_thinking_strips_leading_newline_same_chunk() {
-        // <thinking>\n 在同一个 chunk 中，\n 应被剥离
+        // <thinking>\n in the same chunk in,\n should be stripped
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, true, HashMap::new(), test_known_tools());
         let _initial_events = ctx.generate_initial_events();
 
         let events = ctx.process_assistant_response("<thinking>\nHello world");
 
-        // 找到所有 thinking_delta 事件
+        // find all thinking_delta event
         let thinking_deltas: Vec<_> = events
             .iter()
             .filter(|e| {
@@ -2843,7 +2843,7 @@ mod tests {
             })
             .collect();
 
-        // 拼接所有 thinking 内容
+        // concatenate all thinking content
         let full_thinking: String = thinking_deltas
             .iter()
             .map(|e| e.data["delta"]["thinking"].as_str().unwrap_or(""))
@@ -2858,7 +2858,7 @@ mod tests {
 
     #[test]
     fn test_thinking_strips_leading_newline_cross_chunk() {
-        // <thinking> 在第一个 chunk 末尾，\n 在第二个 chunk 开头
+        // <thinking> in the first chunk at end,\n in the second chunk start
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, true, HashMap::new(), test_known_tools());
         let _initial_events = ctx.generate_initial_events();
 
@@ -2890,7 +2890,7 @@ mod tests {
 
     #[test]
     fn test_thinking_no_strip_when_no_leading_newline() {
-        // <thinking> 后直接跟内容（无 \n），内容应完整保留
+        // <thinking> directly followed by content (no \n), the content should be fully preserved
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, true, HashMap::new(), test_known_tools());
         let _initial_events = ctx.generate_initial_events();
 
@@ -2919,11 +2919,11 @@ mod tests {
 
     #[test]
     fn test_text_after_thinking_strips_leading_newlines() {
-        // `</thinking>\n\n` 后的文本不应以 \n\n 开头
+        // `</thinking>\n\n` the text after should not \n\n start
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, true, HashMap::new(), test_known_tools());
         let _initial_events = ctx.generate_initial_events();
 
-        let events = ctx.process_assistant_response("<thinking>\nabc</thinking>\n\n你好");
+        let events = ctx.process_assistant_response("<thinking>\nabc</thinking>\n\nhello");
 
         let text_deltas: Vec<_> = events
             .iter()
@@ -2940,10 +2940,10 @@ mod tests {
             "text after thinking should not start with \\n, got: {:?}",
             full_text
         );
-        assert_eq!(full_text, "你好");
+        assert_eq!(full_text, "hello");
     }
 
-    /// 辅助函数：从事件列表中提取所有 thinking_delta 的拼接内容
+    /// Helper function: extracts all from the event list. thinking_delta ofconcatenatecontent
     fn collect_thinking_content(events: &[SseEvent]) -> String {
         events
             .iter()
@@ -2955,7 +2955,7 @@ mod tests {
             .collect()
     }
 
-    /// 辅助函数：从事件列表中提取所有 text_delta 的拼接内容
+    /// Helper function: extracts all from the event list. text_delta ofconcatenatecontent
     fn collect_text_content(events: &[SseEvent]) -> String {
         events
             .iter()
@@ -2964,10 +2964,10 @@ mod tests {
             .collect()
     }
 
-    /// 辅助函数：从事件列表中提取所有合成的 tool_use 调用
+    /// Helper function: extracts all synthesized ones from the event list. tool_use call
     ///
-    /// 抓 `content_block_start` 里 `content_block.type == "tool_use"` 的 name，
-    /// 再配对同 index 的 `input_json_delta.partial_json`，返回 (name, input_json)。
+    /// capture `content_block_start` in `content_block.type == "tool_use"` of name,
+    /// then pair the same index of `input_json_delta.partial_json`, return (name, input_json).
     fn collect_tool_uses(events: &[SseEvent]) -> Vec<(String, String)> {
         let mut result = Vec::new();
         for e in events.iter() {
@@ -2977,7 +2977,7 @@ mod tests {
                     .as_str()
                     .unwrap_or("")
                     .to_string();
-                // 找同 index 的 input_json_delta
+                // find same index of input_json_delta
                 let input = events
                     .iter()
                     .find(|d| {
@@ -2996,28 +2996,28 @@ mod tests {
 
     #[test]
     fn test_invoke_sniff_backtick_wrapped_is_not_captured() {
-        // 🔴 防误伤：被反引号包裹的 <invoke> 是引用，不应被抓
+        // 🔴 Prevents wrongful harm: those wrapped by backticks. <invoke> is a quote, should not be captured
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
         let mut all = Vec::new();
-        all.extend(ctx.process_assistant_response("示例：`<invoke name=\"x\">` 这种写法"));
+        all.extend(ctx.process_assistant_response("example:`<invoke name=\"x\">` this form"));
         all.extend(ctx.generate_final_events());
 
         let tools = collect_tool_uses(&all);
-        assert!(tools.is_empty(), "被反引号包裹的不应被抓: {:?}", tools);
+        assert!(tools.is_empty(), "Those wrapped by backticks should not be caught.: {:?}", tools);
 
         let text = collect_text_content(&all);
         assert!(
             text.contains("<invoke name=\"x\">"),
-            "原文应原样保留在 text 中: {:?}",
+            "the original text should be kept as is in text in: {:?}",
             text
         );
     }
 
     #[test]
     fn test_invoke_sniff_single_bare_invoke() {
-        // 🟢 单个裸 invoke（无外壳）
+        // 🟢 single bare invoke(noshell)
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
@@ -3028,20 +3028,20 @@ mod tests {
         all.extend(ctx.generate_final_events());
 
         let tools = collect_tool_uses(&all);
-        assert_eq!(tools.len(), 1, "应合成 1 个 tool_use: {:?}", tools);
-        assert_eq!(tools[0].0, "exec_command", "name 应为 exec_command");
+        assert_eq!(tools.len(), 1, "should synthesize 1 item tool_use: {:?}", tools);
+        assert_eq!(tools[0].0, "exec_command", "name should be exec_command");
         let parsed: serde_json::Value =
-            serde_json::from_str(&tools[0].1).expect("input 应为合法 JSON");
-        assert_eq!(parsed["cmd"], "ls", "input 应含 cmd=ls");
+            serde_json::from_str(&tools[0].1).expect("input should be valid JSON");
+        assert_eq!(parsed["cmd"], "ls", "input should contain cmd=ls");
     }
 
     #[test]
     fn test_invoke_sniff_param_value_with_lt_multiline_chinese() {
-        // 🟢 参数值含 `<`、多行、中文 → 不被截断
+        // 🟢 parameter value contains `<`,multi line,Chinese → not truncated
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
-        let value = "第一行 a < b\n第二行 路径 /tmp/中文";
+        let value = "first line a < b\nsecond line path /tmp/Chinese";
         let chunk = format!(
             "<invoke name=\"write_file\"><parameter name=\"content\">{}</parameter></invoke>",
             value
@@ -3051,18 +3051,18 @@ mod tests {
         all.extend(ctx.generate_final_events());
 
         let tools = collect_tool_uses(&all);
-        assert_eq!(tools.len(), 1, "应合成 1 个 tool_use: {:?}", tools);
+        assert_eq!(tools.len(), 1, "should synthesize 1 item tool_use: {:?}", tools);
         let parsed: serde_json::Value =
-            serde_json::from_str(&tools[0].1).expect("input 应为合法 JSON");
+            serde_json::from_str(&tools[0].1).expect("input should be valid JSON");
         assert_eq!(
             parsed["content"], value,
-            "参数值应完整保留（含 < / 多行 / 中文）"
+            "parameter value should be fully preserved (including < / multi line / Chinese)"
         );
     }
 
     #[test]
     fn test_invoke_sniff_two_invokes_sequential() {
-        // 🟢 2 个 invoke 串联 → 2 个 tool_use
+        // 🟢 2 item invoke chain → 2 item tool_use
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
@@ -3073,14 +3073,14 @@ mod tests {
         all.extend(ctx.generate_final_events());
 
         let tools = collect_tool_uses(&all);
-        assert_eq!(tools.len(), 2, "应合成 2 个 tool_use: {:?}", tools);
+        assert_eq!(tools.len(), 2, "should synthesize 2 item tool_use: {:?}", tools);
         assert_eq!(tools[0].0, "tool_a");
         assert_eq!(tools[1].0, "tool_b");
     }
 
     #[test]
     fn test_invoke_sniff_split_across_chunks() {
-        // 🟢 跨 chunk 分片：标签被切碎多次喂入
+        // 🟢 across chunk Sharded: the tag is cut apart and fed in multiple times.
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
@@ -3092,16 +3092,16 @@ mod tests {
         all.extend(ctx.generate_final_events());
 
         let tools = collect_tool_uses(&all);
-        assert_eq!(tools.len(), 1, "跨 chunk 应合成 1 个 tool_use: {:?}", tools);
+        assert_eq!(tools.len(), 1, "across chunk should synthesize 1 item tool_use: {:?}", tools);
         assert_eq!(tools[0].0, "exec_command");
         let parsed: serde_json::Value =
-            serde_json::from_str(&tools[0].1).expect("input 应为合法 JSON");
+            serde_json::from_str(&tools[0].1).expect("input should be valid JSON");
         assert_eq!(parsed["cmd"], "ls");
     }
 
     #[test]
     fn test_invoke_sniff_strips_stray_call_token() {
-        // 🟢 stray token：<invoke> 前有单独一行 `call` → 剥掉，text 不含残留 call
+        // 🟢 stray token:<invoke> beforehasa single oneline `call` → strip off,text no residue call
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
@@ -3112,28 +3112,28 @@ mod tests {
         all.extend(ctx.generate_final_events());
 
         let tools = collect_tool_uses(&all);
-        assert_eq!(tools.len(), 1, "应合成 1 个 tool_use: {:?}", tools);
+        assert_eq!(tools.len(), 1, "should synthesize 1 item tool_use: {:?}", tools);
 
         let text = collect_text_content(&all);
         assert!(
             !text.contains("call"),
-            "前置的 stray `call` 应被剥掉，text 不应残留: {:?}",
+            "leading stray `call` should bestrip off,text should not remain: {:?}",
             text
         );
     }
 
     #[test]
     fn strip_trailing_stray_preserves_preceding_newline() {
-        // 回归：narrative 文本后跟一行 stray token（`some text\ncall`）。
-        // 旧实现把 stray 行连同其【前面的换行】一起剥掉 -> 得到 "some text"（无换行结尾），
-        // 这会让随后的 invoke_looks_like_real_leak 行首启发式失败、漏捞真泄漏。
-        // 正确：只剥 stray 行本身，保留前一行的换行 -> "some text\n"。
+        // regression:narrative textafterfollow oneline stray token(`some text\ncall`).
+        // old implementation stray Strips the line together with the newline before it. -> obtain "some text"(no trailing newline),
+        // this willletfollowafterof invoke_looks_like_real_leak The line start heuristic fails and misses a real leak.
+        // correct:only strip stray the line itself, keeping the previous line newline. -> "some text\n".
         let got = strip_trailing_stray_tokens("some text\ncall");
         assert_eq!(
             got, "some text\n",
             "must keep the newline terminating the narrative line so the invoke stays line-start"
         );
-        // 且剥完的结果应让行首判定通过
+        // And the stripped result should pass the line start judgment.
         assert!(
             invoke_looks_like_real_leak(got),
             "stripped narrative must still look like a line-start leak (ends with newline)"
@@ -3142,51 +3142,51 @@ mod tests {
 
     #[test]
     fn test_invoke_sniff_reclaims_after_narrative_then_stray_token() {
-        // 端到端：`正文\ncall\n<invoke...>` —— 正文 + stray token + 真泄漏 invoke。
-        // 旧实现漏捞（stray 剥过头把正文和 invoke 挤一行），修后应成功捞回 tool_use。
+        // end to end:`body\ncall\n<invoke...>` —— body + stray token + real leak invoke.
+        // oldimplementmissed retrieval(stray over stripping mixes the body text and invoke squeezed onto one line); after the fix recovery should succeed. tool_use.
         let mut ctx =
             StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
         let mut all = Vec::new();
         all.extend(ctx.process_assistant_response(
-            "先看看结果。\ncall\n<invoke name=\"exec_command\"><parameter name=\"cmd\">ls</parameter></invoke>",
+            "first checkresult.\ncall\n<invoke name=\"exec_command\"><parameter name=\"cmd\">ls</parameter></invoke>",
         ));
         all.extend(ctx.generate_final_events());
 
         let tools = collect_tool_uses(&all);
-        assert_eq!(tools.len(), 1, "narrative+stray+invoke 应捞回 1 个 tool_use: {:?}", tools);
+        assert_eq!(tools.len(), 1, "narrative+stray+invoke should recover 1 item tool_use: {:?}", tools);
         let text = collect_text_content(&all);
-        assert!(text.contains("先看看结果"), "叙述正文应保留: {:?}", text);
-        assert!(!text.contains("call\n<invoke") && !text.contains("<invoke"), "invoke 不应泄漏为文本: {:?}", text);
+        assert!(text.contains("first checkresult"), "the narrative body should be kept: {:?}", text);
+        assert!(!text.contains("call\n<invoke") && !text.contains("<invoke"), "invoke should not leak as text: {:?}", text);
     }
 
     #[test]
     fn test_invoke_sniff_keeps_narrative_before_invoke() {
-        // 🟢 invoke 前有叙述：text 含"先看看"，1 个 tool_use
+        // 🟢 invoke beforehasnarrate:text contains"first check",1 item tool_use
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
         let mut all = Vec::new();
         all.extend(ctx.process_assistant_response(
-            "先看看\n<invoke name=\"exec_command\"><parameter name=\"cmd\">ls</parameter></invoke>",
+            "first check\n<invoke name=\"exec_command\"><parameter name=\"cmd\">ls</parameter></invoke>",
         ));
         all.extend(ctx.generate_final_events());
 
         let tools = collect_tool_uses(&all);
-        assert_eq!(tools.len(), 1, "应合成 1 个 tool_use: {:?}", tools);
+        assert_eq!(tools.len(), 1, "should synthesize 1 item tool_use: {:?}", tools);
 
         let text = collect_text_content(&all);
         assert!(
-            text.contains("先看看"),
-            "叙述文本应保留在 text 中: {:?}",
+            text.contains("first check"),
+            "the narrative text should be kept in text in: {:?}",
             text
         );
     }
 
     #[test]
     fn test_invoke_sniff_truncated_block_not_captured() {
-        // 🔴 截断半块（无 </invoke> 闭合）→ 0 tool_use
+        // 🔴 truncated halfblock(no </invoke> closed)→ 0 tool_use
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
@@ -3197,106 +3197,106 @@ mod tests {
         all.extend(ctx.generate_final_events());
 
         let tools = collect_tool_uses(&all);
-        assert!(tools.is_empty(), "未闭合的块不应被抓: {:?}", tools);
+        assert!(tools.is_empty(), "an unclosed block should not be captured: {:?}", tools);
     }
 
     #[test]
     fn test_invoke_midsentence_not_captured() {
-        // 🔴 P1：正文里嵌在句子中间（无反引号、非行首）的 <invoke> 是讨论文本，不应被抓
+        // 🔴 P1: embedded in the middle of a sentence in the body (no backtick, not line start), <invoke> is discussion text, should not be captured
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
         let mut all = Vec::new();
         all.extend(ctx.process_assistant_response(
-            "解析器示意：模型吐出 <invoke name=\"exec_command\"><parameter name=\"cmd\">ls</parameter></invoke> 这种文本",
+            "parser illustration: the model emits <invoke name=\"exec_command\"><parameter name=\"cmd\">ls</parameter></invoke> this text",
         ));
         all.extend(ctx.generate_final_events());
 
         let tools = collect_tool_uses(&all);
         assert!(
             tools.is_empty(),
-            "句中讨论的 <invoke> 不应被抓: {:?}",
+            "sentenceindiscussof <invoke> should not be captured: {:?}",
             tools
         );
 
         let text = collect_text_content(&all);
         assert!(
-            text.contains("解析器示意") && text.contains("这种文本"),
-            "正文应完整保留（含前后叙述）: {:?}",
+            text.contains("parserillustrate") && text.contains("this text"),
+            "The body should be fully preserved (including narrative before and after).: {:?}",
             text
         );
         assert!(
             text.contains("<invoke name=\"exec_command\">"),
-            "原 <invoke> 文本应原样保留在 text 中: {:?}",
+            "original <invoke> the text should be kept as is in text in: {:?}",
             text
         );
     }
 
     #[test]
     fn test_invoke_midsentence_unclosed_not_hold() {
-        // 🔴 P2：流式中途遇到句中不闭合的 <invoke，不应 hold 住后续文本到流末尾
+        // 🔴 P2: encounters an unclosed mid sentence one during streaming. <invoke, should not hold capture the subsequent text to the end of the stream
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
-        // 第一次 process：句中不闭合的 <invoke>，前面同一行有正文“讨论”
-        let first = ctx.process_assistant_response("讨论 <invoke name=\"x\"> 语义，");
+        // first time process: the unclosed one within a sentence <invoke>, there is body text earlier on the same line“discuss”
+        let first = ctx.process_assistant_response("discuss <invoke name=\"x\"> semantics,");
         let first_text = collect_text_content(&first);
         assert!(
-            first_text.contains("讨论"),
-            "句中不闭合的 <invoke 不应 hold 住正文，应及时吐出“讨论”: {:?}",
+            first_text.contains("discuss"),
+            "sentenceinnotclosedof <invoke should not hold capture the body text, should emit in time“discuss”: {:?}",
             first_text
         );
 
         let mut all = first;
-        all.extend(ctx.process_assistant_response("后面内容。"));
+        all.extend(ctx.process_assistant_response("afterfacecontent."));
         all.extend(ctx.generate_final_events());
 
         let tools = collect_tool_uses(&all);
         assert!(
             tools.is_empty(),
-            "不闭合的句中 <invoke 不应被抓: {:?}",
+            "notclosedofsentencein <invoke should not be captured: {:?}",
             tools
         );
 
         let text = collect_text_content(&all);
         assert!(
-            text.contains("讨论") && text.contains("语义") && text.contains("后面内容。"),
-            "全部正文应完整保留: {:?}",
+            text.contains("discuss") && text.contains("semantics") && text.contains("afterfacecontent."),
+            "all body text should be fully preserved: {:?}",
             text
         );
     }
 
     #[test]
     fn test_invoke_multiline_patch_split_still_captured() {
-        // 🟢 P3：行首合法 invoke，参数值是 20+ 行多行文本（模拟 apply_patch），
-        // 逐行流式喂入。修复前换行数 ≥16 会被 too_long 误杀降级成文本；修复后应抓到。
+        // 🟢 P3:line startvalid invoke,parametervalue is 20+ line multi line text (simulate apply_patch),
+        // Feeds line by line in streaming. Before the fix the newline count ≥16 will be too_long Wrongly killed and downgraded to text; after the fix it should be caught.
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
-        // 构造一个 24 行的多行 patch 内容
+        // construct a 24 multi line patch content
         let mut patch_lines = Vec::new();
         for i in 0..24 {
             patch_lines.push(format!("+ line number {i} of the patch body"));
         }
         let patch_value = patch_lines.join("\n");
 
-        // 整块拼好后，按行切片逐片喂入（每片末尾补回换行，最后一行不补）
+        // After the whole block is assembled, slices it by line and feeds piece by piece (each piece appends the newline back, the last line does not).
         let full = format!(
             "<invoke name=\"apply_patch\"><parameter name=\"input\">{}</parameter></invoke>",
             patch_value
         );
         let mut all = Vec::new();
-        // 按换行拆成片，逐片喂；保证 invoke 在每片到齐前换行数早已 ≥16
+        // Splits into pieces by newline and feeds piece by piece; ensures invoke Before all pieces arrive the newline count has already ≥16
         let bytes = full.as_bytes();
         let mut idx = 0;
         while idx < bytes.len() {
-            // 找到下一个换行边界（含换行）作为一片
+            // Finds the next newline boundary (including the newline) as one piece.
             let mut end = idx;
             while end < bytes.len() && bytes[end] != b'\n' {
                 end += 1;
             }
             if end < bytes.len() {
-                end += 1; // 把换行也带上
+                end += 1; // takeswaplinealso carry along
             }
             let piece = std::str::from_utf8(&bytes[idx..end]).unwrap();
             all.extend(ctx.process_assistant_response(piece));
@@ -3308,25 +3308,25 @@ mod tests {
         assert_eq!(
             tools.len(),
             1,
-            "分片喂入的多行 invoke 应抓到 1 个 tool_use: {:?}",
+            "multi line fed in fragments invoke should capture 1 item tool_use: {:?}",
             tools
         );
-        assert_eq!(tools[0].0, "apply_patch", "name 应为 apply_patch");
+        assert_eq!(tools[0].0, "apply_patch", "name should be apply_patch");
         let parsed: serde_json::Value =
-            serde_json::from_str(&tools[0].1).expect("input 应为合法 JSON");
+            serde_json::from_str(&tools[0].1).expect("input should be valid JSON");
         assert_eq!(
             parsed["input"], patch_value,
-            "多行参数值应完整保留（换行不丢）"
+            "A multi line parameter value should be fully preserved (newlines not lost)."
         );
     }
 
     #[test]
     fn test_invoke_large_patch_split_captured() {
-        // 🟢 P3：参数值 ~17KB 多行，分片喂入，断言抓到 1 个 tool_use（在 256KB 上限之下）。
+        // 🟢 P3: parameter value ~17KB Multi line, fed in shards, asserts it is caught. 1 item tool_use(in 256KB below the limit).
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
-        // 每行 ~70 字节 × 250 行 ≈ 17KB
+        // each line ~70 bytes × 250 line ≈ 17KB
         let mut lines = Vec::new();
         for i in 0..250 {
             lines.push(format!(
@@ -3336,7 +3336,7 @@ mod tests {
         let big_value = lines.join("\n");
         assert!(
             big_value.len() > 16 * 1024,
-            "测试数据应 >16KB，实际 {}",
+            "testdatashould >16KB, actual {}",
             big_value.len()
         );
 
@@ -3344,7 +3344,7 @@ mod tests {
             "<invoke name=\"apply_patch\"><parameter name=\"input\">{}</parameter></invoke>",
             big_value
         );
-        // 固定 512 字节一片喂入（注意 UTF-8 边界，这里内容是 ASCII 安全）
+        // fixed 512 fed in one byte per fragment (note UTF-8 boundary, here the content is ASCII safe)
         let mut all = Vec::new();
         let bytes = full.as_bytes();
         let mut idx = 0;
@@ -3360,26 +3360,26 @@ mod tests {
         assert_eq!(
             tools.len(),
             1,
-            "~17KB 分片喂入的 invoke 应抓到 1 个 tool_use: {:?}",
+            "~17KB feed in shardsof invoke should capture 1 item tool_use: {:?}",
             tools.iter().map(|t| &t.0).collect::<Vec<_>>()
         );
         assert_eq!(tools[0].0, "apply_patch");
         let parsed: serde_json::Value =
-            serde_json::from_str(&tools[0].1).expect("input 应为合法 JSON");
-        assert_eq!(parsed["input"], big_value, "大 patch 参数值应完整保留");
+            serde_json::from_str(&tools[0].1).expect("input should be valid JSON");
+        assert_eq!(parsed["input"], big_value, "large patch the parameter value should be fully preserved");
     }
 
     #[test]
     fn test_unclosed_invoke_eventually_flushed_as_text() {
-        // 🟢 锁定字节兜底仍在：行首 `<invoke>` 永不闭合、喂入超过 MAX_INVOKE_HOLD_BYTES，
-        // 应被当文本吐出（不无限 hold）。
+        // 🟢 The locked byte fallback is still in place: line start `<invoke>` never closes, fed in more than MAX_INVOKE_HOLD_BYTES,
+        // Should be emitted as text (not infinite hold).
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
-        // 行首开标签，永不闭合；填充超过上限的纯文本（无 </invoke>）
+        // Line start open tag, never closed; fills plain text exceeding the limit (no </invoke>)
         let mut all = Vec::new();
         all.extend(ctx.process_assistant_response("<invoke name=\"x\">"));
-        // 一次喂入超过上限的内容（用不含 `<` 的填充，避免触发其它路径）
+        // Feeds in content exceeding the limit at once (using one without `<` padding, avoiding triggering other paths)
         let filler = "A".repeat(StreamContext::MAX_INVOKE_HOLD_BYTES + 1024);
         all.extend(ctx.process_assistant_response(&filler));
         all.extend(ctx.generate_final_events());
@@ -3387,24 +3387,24 @@ mod tests {
         let tools = collect_tool_uses(&all);
         assert!(
             tools.is_empty(),
-            "永不闭合的 invoke 不应被抓: {:?}",
+            "forevernotclosedof invoke should not be captured: {:?}",
             tools.len()
         );
 
         let text = collect_text_content(&all);
         assert!(
             text.contains("<invoke name=\"x\">"),
-            "超上限的未闭合块应被当文本吐出（含开标签）"
+            "An unclosed block over the limit should be emitted as text (including the open tag)."
         );
         assert!(
             text.contains(&"A".repeat(100)),
-            "填充文本应被吐出，不应无限 hold"
+            "The padding text should be emitted and should not be infinite. hold"
         );
     }
 
     #[test]
     fn test_invoke_in_markdown_list_not_captured() {
-        // 🔴 markdown 列表项 `- <invoke>` 当讨论文本，不抓。
+        // 🔴 markdown list item `- <invoke>` treated as discussion text, do not capture.
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
@@ -3417,20 +3417,20 @@ mod tests {
         let tools = collect_tool_uses(&all);
         assert!(
             tools.is_empty(),
-            "markdown 列表里的 <invoke> 不应被抓: {:?}",
+            "markdown in the list <invoke> should not be captured: {:?}",
             tools
         );
         let text = collect_text_content(&all);
         assert!(
             text.contains("rm -rf /"),
-            "危险命令应留在文本里、不被执行: {:?}",
+            "A dangerous command should stay in the text and not be executed.: {:?}",
             text
         );
     }
 
     #[test]
     fn test_invoke_in_blockquote_not_captured() {
-        // 🔴 引用 `> <invoke>` 当讨论文本，不抓。
+        // 🔴 reference `> <invoke>` treated as discussion text, do not capture.
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
@@ -3443,13 +3443,13 @@ mod tests {
         let tools = collect_tool_uses(&all);
         assert!(
             tools.is_empty(),
-            "引用块里的 <invoke> 不应被抓: {:?}",
+            "referenceblockinside <invoke> should not be captured: {:?}",
             tools
         );
         let text = collect_text_content(&all);
         assert!(
             text.contains("rm -rf /"),
-            "危险命令应留在文本里、不被执行: {:?}",
+            "A dangerous command should stay in the text and not be executed.: {:?}",
             text
         );
     }
@@ -3476,15 +3476,15 @@ mod tests {
 
     #[test]
     fn test_end_tag_newlines_split_across_events() {
-        // `</thinking>\n` 在 chunk 1，`\n` 在 chunk 2，`text` 在 chunk 3
-        // 确保 `</thinking>` 不会被部分当作 thinking 内容发出
+        // `</thinking>\n` in chunk 1,`\n` in chunk 2,`text` in chunk 3
+        // ensure `</thinking>` will not be partly treated as thinking emit content
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, true, HashMap::new(), test_known_tools());
         let _initial_events = ctx.generate_initial_events();
 
         let mut all = Vec::new();
         all.extend(ctx.process_assistant_response("<thinking>\nabc</thinking>\n"));
         all.extend(ctx.process_assistant_response("\n"));
-        all.extend(ctx.process_assistant_response("你好"));
+        all.extend(ctx.process_assistant_response("hello"));
         all.extend(ctx.generate_final_events());
 
         let thinking = collect_thinking_content(&all);
@@ -3495,18 +3495,18 @@ mod tests {
         );
 
         let text = collect_text_content(&all);
-        assert_eq!(text, "你好", "text should be '你好', got: {:?}", text);
+        assert_eq!(text, "hello", "text should be 'hello', got: {:?}", text);
     }
 
     #[test]
     fn test_end_tag_alone_in_chunk_then_newlines_in_next() {
-        // `</thinking>` 单独在一个 chunk，`\n\ntext` 在下一个 chunk
+        // `</thinking>` separateina chunk,`\n\ntext` in the next chunk
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, true, HashMap::new(), test_known_tools());
         let _initial_events = ctx.generate_initial_events();
 
         let mut all = Vec::new();
         all.extend(ctx.process_assistant_response("<thinking>\nabc</thinking>"));
-        all.extend(ctx.process_assistant_response("\n\n你好"));
+        all.extend(ctx.process_assistant_response("\n\nhello"));
         all.extend(ctx.generate_final_events());
 
         let thinking = collect_thinking_content(&all);
@@ -3517,12 +3517,12 @@ mod tests {
         );
 
         let text = collect_text_content(&all);
-        assert_eq!(text, "你好", "text should be '你好', got: {:?}", text);
+        assert_eq!(text, "hello", "text should be 'hello', got: {:?}", text);
     }
 
     #[test]
     fn test_start_tag_newline_split_across_events() {
-        // `\n\n` 在 chunk 1，`<thinking>` 在 chunk 2，`\n` 在 chunk 3
+        // `\n\n` in chunk 1,`<thinking>` in chunk 2,`\n` in chunk 3
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, true, HashMap::new(), test_known_tools());
         let _initial_events = ctx.generate_initial_events();
 
@@ -3546,19 +3546,19 @@ mod tests {
 
     #[test]
     fn test_full_flow_maximally_split() {
-        // 极端拆分：每个关键边界都在不同 chunk
+        // Extreme split: every key boundary is in a different chunk
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, true, HashMap::new(), test_known_tools());
         let _initial_events = ctx.generate_initial_events();
 
         let mut all = Vec::new();
-        // \n\n<thinking>\n 拆成多段
+        // \n\n<thinking>\n split into segments
         all.extend(ctx.process_assistant_response("\n"));
         all.extend(ctx.process_assistant_response("\n"));
         all.extend(ctx.process_assistant_response("<thin"));
         all.extend(ctx.process_assistant_response("king>"));
         all.extend(ctx.process_assistant_response("\n"));
         all.extend(ctx.process_assistant_response("hello"));
-        // </thinking>\n\n 拆成多段
+        // </thinking>\n\n split into segments
         all.extend(ctx.process_assistant_response("</thi"));
         all.extend(ctx.process_assistant_response("nking>"));
         all.extend(ctx.process_assistant_response("\n"));
@@ -3579,7 +3579,7 @@ mod tests {
 
     #[test]
     fn test_thinking_only_sets_max_tokens_stop_reason() {
-        // 整个流只有 thinking 块，没有 text 也没有 tool_use，stop_reason 应为 max_tokens
+        // wholestreamonly thinking block, none text also none tool_use,stop_reason should be max_tokens
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, true, HashMap::new(), test_known_tools());
         let _initial_events = ctx.generate_initial_events();
 
@@ -3597,7 +3597,7 @@ mod tests {
             "stop_reason should be max_tokens when only thinking is produced"
         );
 
-        // 应补发一套完整的 text 事件（content_block_start + delta 空格 + content_block_stop）
+        // should resend a complete set of text event (content_block_start + delta space + content_block_stop)
         assert!(
             all_events.iter().any(|e| {
                 e.event == "content_block_start" && e.data["content_block"]["type"] == "text"
@@ -3612,7 +3612,7 @@ mod tests {
             }),
             "should emit text_delta with a single space"
         );
-        // text block 应被 generate_final_events 自动关闭
+        // text block should be generate_final_events auto close
         let text_block_index = all_events
             .iter()
             .find_map(|e| {
@@ -3634,7 +3634,7 @@ mod tests {
 
     #[test]
     fn test_thinking_with_text_keeps_end_turn_stop_reason() {
-        // thinking + text 的情况，stop_reason 应为 end_turn
+        // thinking + text case,stop_reason should be end_turn
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, true, HashMap::new(), test_known_tools());
         let _initial_events = ctx.generate_initial_events();
 
@@ -3655,7 +3655,7 @@ mod tests {
 
     #[test]
     fn test_thinking_with_tool_use_keeps_tool_use_stop_reason() {
-        // thinking + tool_use 的情况，stop_reason 应为 tool_use
+        // thinking + tool_use case,stop_reason should be tool_use
         let mut ctx = StreamContext::new_with_thinking("test-model", 1, true, HashMap::new(), test_known_tools());
         let _initial_events = ctx.generate_initial_events();
 
@@ -3682,31 +3682,31 @@ mod tests {
         );
     }
 
-    // ===== 新增回归测试：P0-1 参数含字面 XML / 🅱 代码围栏 / 🅳 工具表 / 🅲 card =====
+    // ===== add a regression test:P0-1 parametercontains literal XML / 🅱 code fence / 🅳 tool table / 🅲 card =====
 
-    /// 🅿️ P0-1：参数值里含字面 `</invoke>`，块不应被假闭合截断，input 要完整。
+    /// 🅿️ P0-1: the parameter value contains a literal `</invoke>`, the block should not be truncated by a false close,input must be complete.
     #[test]
     fn test_invoke_param_value_contains_literal_invoke_close() {
         let mut ctx =
             StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
-        // patch 正文里出现字面 </invoke>，真正的闭合在最后
+        // patch a literal appears in the body </invoke>, the real close is at the end
         let payload = "count\n<invoke name=\"apply_patch\"><parameter name=\"input\">line1\n</invoke>\nstill in patch\nline3</parameter></invoke>";
         let mut all = Vec::new();
         all.extend(ctx.process_assistant_response(payload));
         all.extend(ctx.generate_final_events());
         let tools = collect_tool_uses(&all);
-        assert_eq!(tools.len(), 1, "应合成 1 个 tool_use: {:?}", tools);
+        assert_eq!(tools.len(), 1, "should synthesize 1 item tool_use: {:?}", tools);
         assert_eq!(tools[0].0, "apply_patch");
-        let parsed: serde_json::Value = serde_json::from_str(&tools[0].1).expect("合法 JSON");
-        let input = parsed["input"].as_str().expect("有 input");
-        assert!(input.contains("still in patch"), "input 不应被假闭合截断: {input:?}");
-        assert!(input.contains("line3"), "input 应含 line3: {input:?}");
+        let parsed: serde_json::Value = serde_json::from_str(&tools[0].1).expect("valid JSON");
+        let input = parsed["input"].as_str().expect("has input");
+        assert!(input.contains("still in patch"), "input should not be truncated by a false close: {input:?}");
+        assert!(input.contains("line3"), "input should contain line3: {input:?}");
         let text = collect_text_content(&all);
-        assert!(!text.contains("still in patch"), "patch 正文不应泄漏到 text: {text:?}");
+        assert!(!text.contains("still in patch"), "patch the body should not leak into text: {text:?}");
     }
 
-    /// 🅿️ P0-1：参数值里含字面 `</parameter>`，值不应被截断丢失后半段。
+    /// 🅿️ P0-1: the parameter value contains a literal `</parameter>`, the value should not be truncated losing its second half.
     #[test]
     fn test_invoke_param_value_contains_literal_parameter_close() {
         let mut ctx =
@@ -3717,32 +3717,32 @@ mod tests {
         all.extend(ctx.process_assistant_response(payload));
         all.extend(ctx.generate_final_events());
         let tools = collect_tool_uses(&all);
-        assert_eq!(tools.len(), 1, "应合成 1 个 tool_use: {:?}", tools);
-        let parsed: serde_json::Value = serde_json::from_str(&tools[0].1).expect("合法 JSON");
-        let input = parsed["input"].as_str().expect("有 input");
-        assert!(input.contains("after the fake close"), "后半段不应丢: {input:?}");
+        assert_eq!(tools.len(), 1, "should synthesize 1 item tool_use: {:?}", tools);
+        let parsed: serde_json::Value = serde_json::from_str(&tools[0].1).expect("valid JSON");
+        let input = parsed["input"].as_str().expect("has input");
+        assert!(input.contains("after the fake close"), "afterhalfsegmentshould notdrop: {input:?}");
     }
 
-    /// 🅱：代码围栏（```）内的 <invoke> 是正文展示，不应被捞回成 tool_use。
+    /// 🅱:code fence(```) inside <invoke> is body display, should not be recovered into tool_use.
     #[test]
     fn test_invoke_inside_code_fence_not_captured() {
         let mut ctx =
             StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
-        let payload = "示例代码：\n```\n<invoke name=\"exec_command\"><parameter name=\"cmd\">rm -rf /</parameter></invoke>\n```\n讲解完毕。";
+        let payload = "examplecode:\n```\n<invoke name=\"exec_command\"><parameter name=\"cmd\">rm -rf /</parameter></invoke>\n```\nexplanation complete.";
         let mut all = Vec::new();
         all.extend(ctx.process_assistant_response(payload));
         all.extend(ctx.generate_final_events());
         let tools = collect_tool_uses(&all);
-        assert!(tools.is_empty(), "围栏内展示文本不应被捞回: {:?}", tools);
+        assert!(tools.is_empty(), "Text shown inside a fence should not be recovered.: {:?}", tools);
         let text = collect_text_content(&all);
-        assert!(text.contains("<invoke name=\"exec_command\">"), "应原样保留: {text:?}");
+        assert!(text.contains("<invoke name=\"exec_command\">"), "shouldoriginalsampleretain: {text:?}");
     }
 
-    /// 🅳：合成出的工具名不在已知工具表里 → 不捞回，当文本吐出（防误执行）。
+    /// 🅳: the synthesized tool name is not in the known tool table. → Not recovered, emitted as text (prevents wrong execution).
     #[test]
     fn test_invoke_unknown_tool_name_not_synthesized() {
-        // 已知工具表里没有 totally_unknown_tool
+        // not in the known tool table totally_unknown_tool
         let mut ctx =
             StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
@@ -3751,12 +3751,12 @@ mod tests {
         all.extend(ctx.process_assistant_response(payload));
         all.extend(ctx.generate_final_events());
         let tools = collect_tool_uses(&all);
-        assert!(tools.is_empty(), "未知工具名不应被合成: {:?}", tools);
+        assert!(tools.is_empty(), "an unknown tool name should not be synthesized: {:?}", tools);
         let text = collect_text_content(&all);
-        assert!(text.contains("totally_unknown_tool"), "未知工具应原样当文本: {text:?}");
+        assert!(text.contains("totally_unknown_tool"), "an unknown tool should be treated as text as is: {text:?}");
     }
 
-    /// 🅳：已知工具表为空（请求没带 tools）→ 一律不捞回，宁可漏捞不可误执行。
+    /// 🅳: the known tool table is empty (the request did not carry tools)→ Never recovered; better to miss than to wrongly execute.
     #[test]
     fn test_invoke_empty_known_tools_never_captured() {
         let mut ctx = StreamContext::new_with_thinking(
@@ -3772,44 +3772,44 @@ mod tests {
         all.extend(ctx.process_assistant_response(payload));
         all.extend(ctx.generate_final_events());
         let tools = collect_tool_uses(&all);
-        assert!(tools.is_empty(), "工具表为空时不应捞回: {:?}", tools);
+        assert!(tools.is_empty(), "when the tool table is empty nothing should be recovered: {:?}", tools);
     }
 
-    /// 🅲：stray token `card` 也应被剥掉，块仍被捞回。
+    /// 🅲:stray token `card` should also be stripped, the block is still recovered.
     #[test]
     fn test_invoke_strips_stray_card_token() {
         let mut ctx =
             StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
-        let payload = "我先等结果。\n\ncard\n<invoke name=\"wait_agent\"><parameter name=\"x\">1</parameter></invoke>";
+        let payload = "I firstetc.result.\n\ncard\n<invoke name=\"wait_agent\"><parameter name=\"x\">1</parameter></invoke>";
         let mut all = Vec::new();
         all.extend(ctx.process_assistant_response(payload));
         all.extend(ctx.generate_final_events());
         let tools = collect_tool_uses(&all);
-        assert_eq!(tools.len(), 1, "card 前缀的块应被捞回: {:?}", tools);
+        assert_eq!(tools.len(), 1, "card the prefixed block should be recovered: {:?}", tools);
         assert_eq!(tools[0].0, "wait_agent");
         let text = collect_text_content(&all);
-        assert!(!text.contains("card"), "card stray token 不应泄漏: {text:?}");
-        assert!(text.contains("我先等结果"), "正常叙述应保留: {text:?}");
+        assert!(!text.contains("card"), "card stray token should not leak: {text:?}");
+        assert!(text.contains("I firstetc.result"), "normal narration should be kept: {text:?}");
     }
 
-    /// 🅱 跨 chunk：``` 围栏开标签在 chunk 边界被切碎，仍能正确识别围栏内不捞回。
+    /// 🅱 across chunk:``` fenceopening tagin chunk Even with the boundary cut apart, still correctly identifies not to recover inside a fence.
     #[test]
     fn test_invoke_fence_split_across_chunks() {
         let mut ctx =
             StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
         let mut all = Vec::new();
-        // 围栏开标签分两个 chunk 到达
-        all.extend(ctx.process_assistant_response("看代码：\n``"));
+        // the fence opening tag is split into two chunk arrive
+        all.extend(ctx.process_assistant_response("see code:\n``"));
         all.extend(ctx.process_assistant_response("`\n<invoke name=\"exec_command\"><parameter name=\"cmd\">x</parameter></invoke>\n```"));
         all.extend(ctx.generate_final_events());
         let tools = collect_tool_uses(&all);
-        assert!(tools.is_empty(), "跨 chunk 围栏内不应捞回: {:?}", tools);
+        assert!(tools.is_empty(), "across chunk should not recover within the fence: {:?}", tools);
     }
 
-    /// 🟡 回归（Reviewer 问题1）：连发 burst，块 A 在 `</invoke>` 前混了非 `>` 收尾文字，
-    /// 不应把 A、B 误合并成一个块、也不应让 B 的参数串进 A。两个块都应独立捞回。
+    /// 🟡 regression (Reviewer issue1): send consecutively burst, block A in `</invoke>` mixed non before `>` closing text,
+    /// should not A,B wrongly merged into one block, nor should it let B parameterstringenter A. Both blocks should be recovered independently.
     #[test]
     fn test_invoke_burst_with_trailing_text_not_merged() {
         let mut ctx =
@@ -3820,17 +3820,17 @@ mod tests {
         all.extend(ctx.process_assistant_response(payload));
         all.extend(ctx.generate_final_events());
         let tools = collect_tool_uses(&all);
-        assert_eq!(tools.len(), 2, "应独立合成 2 个 tool_use，不能误合并: {:?}", tools);
+        assert_eq!(tools.len(), 2, "shouldindependentsynthesize 2 item tool_use,notcanincorrect merge: {:?}", tools);
         assert_eq!(tools[0].0, "tool_a");
         assert_eq!(tools[1].0, "tool_b");
-        let a: serde_json::Value = serde_json::from_str(&tools[0].1).expect("合法 JSON");
-        let b: serde_json::Value = serde_json::from_str(&tools[1].1).expect("合法 JSON");
-        assert!(a.get("y").is_none(), "B 的参数 y 不应串进 A: {a:?}");
+        let a: serde_json::Value = serde_json::from_str(&tools[0].1).expect("valid JSON");
+        let b: serde_json::Value = serde_json::from_str(&tools[1].1).expect("valid JSON");
+        assert!(a.get("y").is_none(), "B parameter y should not leak into A: {a:?}");
         assert_eq!(a["x"], "1");
         assert_eq!(b["y"], "2");
     }
 
-    /// 🟢 正常连发 burst（块紧贴、A 以 </parameter> 收尾）仍应正确拆成两个。
+    /// 🟢 normal consecutive send burst(blockclosely attached,A to </parameter> closing) should still be correctly split into two.
     #[test]
     fn test_invoke_burst_clean_two_blocks() {
         let mut ctx =
@@ -3841,14 +3841,14 @@ mod tests {
         all.extend(ctx.process_assistant_response(payload));
         all.extend(ctx.generate_final_events());
         let tools = collect_tool_uses(&all);
-        assert_eq!(tools.len(), 2, "紧贴连发应拆成 2 个: {:?}", tools);
+        assert_eq!(tools.len(), 2, "closely consecutive should be split into 2 item: {:?}", tools);
         assert_eq!(tools[0].0, "tool_a");
         assert_eq!(tools[1].0, "tool_b");
     }
 
-    /// 🔁 回放验证：用问题 thread `019e9e8d` 里真实的 `count\n<invoke>` 泄漏原文，
-    /// 断言新容错把它捞回成结构化 tool_use（而不是泄漏成字面 XML 文本）。
-    /// 真实工具名 exec_command 在工具表里 → 应捞回；参数 cmd / yield_time_ms 完整。
+    /// 🔁 replay validation: use the problem thread `019e9e8d` real inside `count\n<invoke>` leakoriginal text,
+    /// Asserts the new fault tolerance recovers it into structured. tool_use(rather than leaking as a literal XML text).
+    /// realtoolname exec_command intool tablein → should recover;parameter cmd / yield_time_ms complete.
     #[test]
     fn test_invoke_real_leak_sample_from_thread_019e9e8d() {
         let known: std::collections::HashSet<String> =
@@ -3856,44 +3856,44 @@ mod tests {
         let mut ctx =
             StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), known);
         let _ = ctx.generate_initial_events();
-        // 逐字摘自 thread 019e9e8d 真实泄漏 assistant 消息
-        let real = "）。\n\ncount\n<invoke name=\"exec_command\">\n<parameter name=\"cmd\">cd /Users/yuyifeng/.codex/everything-codex/runtime/agent-tools && python3 -m pytest -q -p no:cacheprovider objects/dev/beads/leaves/create_issue/ 2>&1 | tail -8</parameter>\n<parameter name=\"yield_time_ms\">60000</parameter>\n</invoke>";
+        // verbatim from thread 019e9e8d real leak assistant message
+        let real = ").\n\ncount\n<invoke name=\"exec_command\">\n<parameter name=\"cmd\">cd /Users/yuyifeng/.codex/everything-codex/runtime/agent-tools && python3 -m pytest -q -p no:cacheprovider objects/dev/beads/leaves/create_issue/ 2>&1 | tail -8</parameter>\n<parameter name=\"yield_time_ms\">60000</parameter>\n</invoke>";
         let mut all = Vec::new();
         all.extend(ctx.process_assistant_response(real));
         all.extend(ctx.generate_final_events());
         let tools = collect_tool_uses(&all);
-        assert_eq!(tools.len(), 1, "真实泄漏样本应被捞回成 1 个 tool_use: {:?}", tools);
-        assert_eq!(tools[0].0, "exec_command", "name 应为 exec_command");
+        assert_eq!(tools.len(), 1, "A real leak sample should be recovered into 1 item tool_use: {:?}", tools);
+        assert_eq!(tools[0].0, "exec_command", "name should be exec_command");
         let parsed: serde_json::Value =
-            serde_json::from_str(&tools[0].1).expect("input 应为合法 JSON");
+            serde_json::from_str(&tools[0].1).expect("input should be valid JSON");
         assert!(
             parsed["cmd"].as_str().unwrap_or("").contains("pytest"),
-            "cmd 参数应完整保留: {:?}", parsed
+            "cmd the parameter should be fully preserved: {:?}", parsed
         );
-        assert_eq!(parsed["yield_time_ms"], "60000", "yield_time_ms 参数应保留");
-        // 关键：字面 <invoke> 不应泄漏到 text
+        assert_eq!(parsed["yield_time_ms"], "60000", "yield_time_ms parametershouldretain");
+        // key:literal <invoke> should not leakto text
         let text = collect_text_content(&all);
         assert!(
             !text.contains("<invoke name=\"exec_command\">"),
-            "字面 <invoke> 不应泄漏到文本: {:?}", text
+            "literal <invoke> should not leak into text: {:?}", text
         );
-        // count stray token 也不应泄漏
+        // count stray token alsoshould not leak
         assert!(!text.contains("\ncount\n") && !text.ends_with("count"),
-            "count stray token 不应泄漏: {:?}", text);
+            "count stray token should not leak: {:?}", text);
     }
 
-    // ---- 复读熔断 (repeat guard)：root cause = Opus 长上下文退化复读 ----
+    // ---- repeat circuit breaker (repeat guard):root cause = Opus long context degradation repeat readout ----
 
-    /// 🔴→🟢 复现真实泄漏：模型一句正常话后无限复读 `count`（thread 019ea4e9 的真账）。
-    /// 熔断后吐出的 count 数必须远小于喂入的数量，且不撑满输出。
+    /// 🔴→🟢 Reproduces a real leak: the model repeats infinitely after one normal sentence. `count`(thread 019ea4e9 oftrueaccount).
+    /// circuit breakafteremitof count The count must be far smaller than the amount fed in, and must not fill the output.
     #[test]
     fn repeat_guard_trips_on_count_flood() {
         let mut ctx =
             StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
 
-        // 真实形态：正常话 + call + 海量 count（这里用 5000 次模拟 3.2 万次）
-        let mut payload = String::from("先看 crawlee 状态。\n\ncall\n\n");
+        // real form: normal speech + call + massive count(here use 5000 times simulate 3.2 ten thousand times)
+        let mut payload = String::from("first check crawlee state.\n\ncall\n\n");
         for _ in 0..5000 {
             payload.push_str("count\n\n");
         }
@@ -3905,18 +3905,18 @@ mod tests {
         let emitted_counts = text.matches("count").count();
         assert!(
             emitted_counts < 64,
-            "复读应被熔断：吐出的 count 数应远小于喂入的 5000，实际={}",
+            "repeat readout should be broken: the emitted count the count should be far smaller than the fed in 5000, actual={}",
             emitted_counts
         );
-        // 正常开头那句话必须保留（熔断不能误伤正文）
+        // The normal opening sentence must be kept (circuit breaking must not harm the body).
         assert!(
-            text.contains("先看 crawlee 状态"),
-            "熔断不应误伤正常正文: {:?}",
+            text.contains("first check crawlee state"),
+            "the circuit breaker should not harm normal body text: {:?}",
             &text[..text.len().min(80)]
         );
     }
 
-    /// 🟢 不误伤：正常工具调用前的 1 个引导词 `count` + 真 <invoke> 仍被正常捞回。
+    /// 🟢 No wrongful harm: the one before a normal tool call. 1 guide word `count` + true <invoke> is still normally recovered.
     #[test]
     fn repeat_guard_does_not_trip_on_single_stray_token() {
         let mut ctx =
@@ -3928,26 +3928,26 @@ mod tests {
         all.extend(ctx.process_assistant_response(payload));
         all.extend(ctx.generate_final_events());
         let tools = collect_tool_uses(&all);
-        assert_eq!(tools.len(), 1, "单个引导词不应触发熔断，invoke 应正常捞回: {:?}", tools);
+        assert_eq!(tools.len(), 1, "A single guide word should not trip the breaker,invoke shouldnormally retrieved: {:?}", tools);
         assert_eq!(tools[0].0, "exec_command");
     }
 
-    /// 🟢 不误伤：正常多行文本里偶尔出现 count 单词（非独占行复读）不熔断。
+    /// 🟢 No wrongful harm: occasionally appears in normal multi line text. count A single word (not a standalone line repeat) does not trip the breaker.
     #[test]
     fn repeat_guard_does_not_trip_on_normal_prose() {
         let mut ctx =
             StreamContext::new_with_thinking("test-model", 1, false, HashMap::new(), test_known_tools());
         let _ = ctx.generate_initial_events();
-        let payload = "我数了一下 count = 3，然后继续做别的事。\n这是第二行正常文字。\n第三行也正常。";
+        let payload = "Icountbriefly count = 3, then continue doing other things.\nthis is the second line of normal text.\nthe third line is also normal.";
         let mut all = Vec::new();
         all.extend(ctx.process_assistant_response(payload));
         all.extend(ctx.generate_final_events());
         let text = collect_text_content(&all);
-        assert!(text.contains("我数了一下"), "正常正文不应被熔断: {:?}", text);
-        assert!(text.contains("第三行也正常"), "正常正文应完整保留: {:?}", text);
+        assert!(text.contains("Icountbriefly"), "normal body text should not be broken by the circuit breaker: {:?}", text);
+        assert!(text.contains("numberthreelinealso normal"), "normal body text should be fully preserved: {:?}", text);
     }
 
-    /// 🟢 跨 chunk 复读也能熔断（流式分片到达，每片一个 count）。
+    /// 🟢 across chunk Repeats can also be circuit broken (streaming pieces arrive, one per piece). count).
     #[test]
     fn repeat_guard_trips_across_chunks() {
         let mut ctx =
@@ -3963,17 +3963,17 @@ mod tests {
         let emitted_counts = text.matches("count").count();
         assert!(
             emitted_counts < 64,
-            "跨 chunk 复读也应熔断：实际吐出 count={}",
+            "across chunk Repeats should also trip the breaker: actually emitted count={}",
             emitted_counts
         );
     }
 
-    // ---- 块级复读熔断 (collapse_stray_token_floods)：覆盖 web_search loop 路径 ----
+    // ---- blocklevelrepeat circuit breaker (collapse_stray_token_floods): cover web_search loop path ----
 
-    /// 🔴→🟢 块级路径（extract_invoke_content_blocks / web_search loop）也必须熔断 count 洪水。
+    /// 🔴→🟢 blocklevelpath (extract_invoke_content_blocks / web_search loop)must also trip the circuit breaker count flood.
     #[test]
     fn extract_blocks_collapses_count_flood() {
-        let mut text = String::from("先看 crawlee 状态。\n\ncall\n\n");
+        let mut text = String::from("first check crawlee state.\n\ncall\n\n");
         for _ in 0..5000 {
             text.push_str("count\n\n");
         }
@@ -3988,11 +3988,11 @@ mod tests {
             .filter_map(|b| b["text"].as_str())
             .collect();
         let emitted = joined.matches("count").count();
-        assert!(emitted < 64, "块级路径应折叠 count 洪水：实际={}", emitted);
-        assert!(joined.contains("先看 crawlee 状态"), "正常正文应保留: {:?}", &joined[..joined.len().min(60)]);
+        assert!(emitted < 64, "the block level path should fold count flood:actual={}", emitted);
+        assert!(joined.contains("first check crawlee state"), "normal body text should be kept: {:?}", &joined[..joined.len().min(60)]);
     }
 
-    /// 🟢 块级不误伤：单个引导词 count + 真 invoke 仍被捞回。
+    /// 🟢 Block level no wrongful harm: a single guide word. count + true invoke stillbyretrieve.
     #[test]
     fn extract_blocks_keeps_single_stray_and_reclaims() {
         let text = "count\n<invoke name=\"exec_command\">\n<parameter name=\"cmd\">ls</parameter>\n</invoke>";
@@ -4003,7 +4003,7 @@ mod tests {
         );
         assert!(
             blocks.iter().any(|b| b["type"] == "tool_use" && b["name"] == "exec_command"),
-            "单个引导词不应触发折叠，invoke 应捞回: {:?}",
+            "A single guide word should not trigger folding,invoke should recover: {:?}",
             blocks
         );
     }

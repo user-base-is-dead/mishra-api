@@ -1,4 +1,4 @@
-//! Admin API 业务逻辑服务
+//! Admin API business logic service
 
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
@@ -33,28 +33,28 @@ use super::types::{
     UpdateConfigResponse, UpdateCredentialRequest, UpdateRefreshTokenRequest,
 };
 
-/// 余额缓存过期时间（秒），5 分钟
+/// Balance cache expiry time (seconds),5 minutes
 const BALANCE_CACHE_TTL_SECS: i64 = 300;
 
-/// 在线检查更新结果缓存时间（秒），30 分钟。
-/// 在线检查更新结果缓存时间（秒），30 分钟。
-/// Docker Hub 的 tags 接口对匿名访问有 IP 维度的限流，30 分钟 TTL 既能让用户
-/// 看到红点提醒，又能避免短时间内重复请求被限流。
+/// The cache time for the online check for update result (seconds),30 minutes.
+/// The cache time for the online check for update result (seconds),30 minutes.
+/// Docker Hub of tags the interface has for anonymous access IP dimensional throttle,30 minutes TTL sincecanletuser
+/// sees the red dot reminder while avoiding repeated requests within a short time being throttled.
 const UPDATE_CHECK_TTL_SECS: i64 = 1800;
 
-/// 缓存的余额条目（含时间戳）
+/// The cached balance entry (including timestamp).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct CachedBalance {
-    /// 缓存时间（Unix 秒）
+    /// cachetime(Unix seconds)
     cached_at: f64,
-    /// 缓存的余额数据
+    /// cached balance data
     data: BalanceResponse,
 }
 
-/// 单条凭据导入结果（服务端内部用，映射为 SSE 事件）
+/// Single credential import result (for internal server use, mapped to SSE event)
 pub(crate) enum ImportStatus {
     Verified,
-    /// 直接导入（未验活）成功
+    /// Direct import (no liveness check) succeeded.
     Imported,
     Duplicate,
     Failed,
@@ -70,7 +70,7 @@ pub(crate) struct ImportItemResult {
 }
 
 impl ImportItemResult {
-    /// 转换为 SSE 事件（携带在数组中的下标）
+    /// convert to SSE event (carries the index within the array).
     pub fn into_event(self, index: usize) -> BatchImportEvent {
         let status = match self.status {
             ImportStatus::Verified => "verified",
@@ -99,12 +99,12 @@ impl ImportItemResult {
     }
 }
 
-/// 缓存的"检查更新"结果
+/// cached"checkupdate"result
 #[derive(Debug, Clone)]
 struct CachedUpdateCheck {
-    /// 缓存时间
+    /// cachetime
     cached_at: DateTime<Utc>,
-    /// 拉取到的更新信息
+    /// the pulled update information
     info: UpdateCheckInfo,
 }
 
@@ -143,66 +143,66 @@ impl RuntimeUpdateConfig {
     }
 }
 
-/// Admin 服务
+/// Admin service
 ///
-/// 封装所有 Admin API 的业务逻辑
+/// encapsulateall Admin API ofbusiness logic
 pub struct AdminService {
     token_manager: Arc<MultiTokenManager>,
     balance_cache: Mutex<HashMap<u64, CachedBalance>>,
     cache_path: Option<PathBuf>,
-    /// 已注册的端点名称集合（用于 add_credential 校验）
+    /// The set of registered endpoint names (used for add_credential validation)
     known_endpoints: HashSet<String>,
-    /// 代理 IP 池管理器
+    /// proxy IP poolmanager
     proxy_pool: ProxyPoolManager,
-    /// 在线镜像更新运行时配置
+    /// Online image update runtime config.
     update_config: Mutex<RuntimeUpdateConfig>,
-    /// 最近一次"检查更新"结果（带 TTL，用于减少 GitHub API 调用）
+    /// recentonce"checkupdate"result(carry TTL, used forreduce GitHub API call)
     update_check_cache: Mutex<Option<CachedUpdateCheck>>,
-    /// 进行中的 IdC 设备授权会话
+    /// enterlinein IdC device authorization session
     idc_sessions: Arc<Mutex<HashMap<String, IdcAuthSession>>>,
-    /// 进行中的 Social 登录会话
+    /// enterlinein Social loginsession
     social_sessions: Arc<Mutex<HashMap<String, SocialAuthSession>>>,
-    /// 请求链路追踪存储（用于日志治理：开关 + 保留天数运行时可改）
+    /// Request trace storage (for log governance: switch). + retention days changeable at runtime)
     trace_store: Option<crate::admin::trace_db::SharedTraceStore>,
-    /// 用量日志记录器（用于日志治理：保留天数运行时可改）
+    /// Usage log recorder (for log governance: retention days can be changed at runtime).
     usage_recorder: Option<crate::admin::usage_stats::SharedRecorder>,
 }
 
-/// Social 登录会话状态
+/// Social login session state
 struct SocialAuthSession {
     auth_endpoint: String,
-    /// 发起时生成的 state，用于 CSRF 验证
+    /// generated at initiation state, used for CSRF verify
     state: String,
     code_verifier: String,
     redirect_uri: String,
     expires_at: DateTime<Utc>,
-    /// 收到 OAuth 回调时的数据（code + login_option + path）
+    /// received OAuth the data at callback (code + login_option + path)
     callback_rx: tokio::sync::Mutex<tokio::sync::oneshot::Receiver<social::OAuthCallbackData>>,
     cred_template: KiroCredentials,
     proxy: Option<ProxyConfig>,
-    /// Drop 时自动关闭回调服务器并释放端口（本地模式 Some；远程模式 None）
+    /// Drop automatically closes the callback server and releases the port (local mode Some;remotemode None)
     _server_handle: Option<social::ServerHandle>,
-    /// 远程模式：公网 GET 回调路由通过此 Sender 投递回调数据（本地模式 None）。
-    /// 取出后即 None，保证只投递一次。
+    /// remote mode: public network GET the callback route via this Sender Delivers the callback data (local mode). None).
+    /// takeoutafterthat is None, to ensure it is delivered only once.
     remote_callback_tx:
         Option<Mutex<Option<tokio::sync::oneshot::Sender<social::OAuthCallbackData>>>>,
-    /// 重新登录时更新此凭据的 Token（非 None 时更新已有凭据而非创建新凭据）
+    /// Updates this credential on re-login. Token(non None updates an existing credential rather than creating a new one)
     relogin_target_id: Option<u64>,
 }
 
-/// 远程公网回调投递结果（供 GET 回调路由渲染提示页）
+/// Remote public callback delivery result (for GET the callback route renders the hint page)
 pub enum RemoteCallbackOutcome {
-    /// 已成功投递，等待轮询完成 token 兑换
+    /// Delivered successfully; waiting for polling to complete. token redeem
     Delivered,
-    /// 会话不存在（state 不匹配 / 非远程模式会话）
+    /// the session does not exist (state mismatch / non remote mode session)
     NotFound,
-    /// 会话已过期
+    /// sessionexpired
     Expired,
-    /// 回调已被处理过（重复点击 / 并发完成）
+    /// The callback has already been processed (repeated click). / concurrency finishedinto)
     AlreadyCompleted,
 }
 
-/// IdC 设备授权会话状态
+/// IdC device authorization session state
 struct IdcAuthSession {
     region: String,
     client_id: String,
@@ -210,21 +210,21 @@ struct IdcAuthSession {
     device_code: String,
     expires_at: DateTime<Utc>,
     poll_interval: i64,
-    /// 登录成功后写入的凭据配置
+    /// The credential config written after a successful login.
     cred_template: KiroCredentials,
-    /// 用于发起 token 请求的代理
+    /// used forinitiate token requestproxy
     proxy: Option<ProxyConfig>,
-    /// 重新登录时更新此凭据的 Token（非 None 时更新已有凭据而非创建新凭据）
+    /// Updates this credential on re-login. Token(non None updates an existing credential rather than creating a new one)
     relogin_target_id: Option<u64>,
 }
 
-/// 解析自动更新触发时间（`HH:MM`，本地 24 小时制）。允许 `H:M` 简写，
-/// 例如 `3:0`；解析失败时返回原字符串，便于错误信息提示。
+/// Parses the auto update trigger time (`HH:MM`, local 24 hour format). allow `H:M` shorthand,
+/// for example `3:0`; on parse failure returns the original string, convenient for error message hints.
 fn parse_auto_apply_time(value: &str) -> Result<(u32, u32), AdminServiceError> {
     let trimmed = value.trim();
     if trimmed.is_empty() {
         return Err(AdminServiceError::InvalidCredential(
-            "自动更新时间不能为空".to_string(),
+            "The auto update time cannot be empty.".to_string(),
         ));
     }
     let mut parts = trimmed.splitn(2, ':');
@@ -232,33 +232,33 @@ fn parse_auto_apply_time(value: &str) -> Result<(u32, u32), AdminServiceError> {
     let minute_str = parts.next().unwrap_or("");
     let hour: u32 = hour_str.parse().map_err(|_| {
         AdminServiceError::InvalidCredential(format!(
-            "自动更新时间格式无效：{}（应为 HH:MM）",
+            "The auto update time format is invalid:{}(should be HH:MM)",
             value
         ))
     })?;
     let minute: u32 = minute_str.parse().map_err(|_| {
         AdminServiceError::InvalidCredential(format!(
-            "自动更新时间格式无效：{}（应为 HH:MM）",
+            "The auto update time format is invalid:{}(should be HH:MM)",
             value
         ))
     })?;
     if hour > 23 || minute > 59 {
         return Err(AdminServiceError::InvalidCredential(format!(
-            "自动更新时间超出范围：{}（HH 0-23，MM 0-59）",
+            "The auto update time is out of range:{}(HH 0-23,MM 0-59)",
             value
         )));
     }
     Ok((hour, minute))
 }
 
-/// 把 HH:MM 规范化成 `HH:MM`（两位补零），方便存储和比较。
+/// take HH:MM normalizeinto `HH:MM`(zero padded two digits), convenient for storage and comparison.
 fn normalize_auto_apply_time(value: &str) -> Result<String, AdminServiceError> {
     let (h, m) = parse_auto_apply_time(value)?;
     Ok(format!("{:02}:{:02}", h, m))
 }
 
-/// GitHub `repos/{owner}/{repo}/releases/tags/{tag}` 返回 JSON 中我们关心
-/// 的字段，用于在「检查更新」结果里附带本次发布的 changelog。
+/// GitHub `repos/{owner}/{repo}/releases/tags/{tag}` return JSON inwe care about
+/// field, used to attach this release info within the check for update result. changelog.
 #[derive(Debug, Deserialize)]
 struct GitHubRelease {
     #[serde(default)]
@@ -273,13 +273,13 @@ struct GitHubRelease {
     tag_name: String,
 }
 
-/// 比较两个 semver 字符串。仅按 `MAJOR.MINOR.PATCH` 三段数字比较，忽略
-/// 预发布后缀；解析失败的段当作 0 处理（最坏情况下"无更新"）。
+/// comparetwo semver string. only by `MAJOR.MINOR.PATCH` three segment numeric comparison, ignore
+/// Pre-release suffix; a segment that fails to parse is treated as 0 process (in the worst case"no update").
 fn compare_semver(current: &str, latest: &str) -> std::cmp::Ordering {
     parse_semver_core(current).cmp(&parse_semver_core(latest))
 }
 
-/// 解析 semver 三段数字，解析失败的段作 0；用于 latest tag 的稳定排序。
+/// parse semver Three numeric segments; a segment that fails to parse is treated 0; used for latest tag the stable sort.
 fn parse_semver_core(value: &str) -> [u32; 3] {
     let core = value
         .trim_start_matches('v')
@@ -296,20 +296,20 @@ fn parse_semver_core(value: &str) -> [u32; 3] {
     out
 }
 
-/// 当前构建类型。在线更新走"下载 GitHub Releases 二进制 + 进程退出由
-/// docker restart policy 接管重启"的方案。
+/// The current build type. Online update goes through"download GitHub Releases binary + enterprocess exitby
+/// docker restart policy take overrestart"ofplan.
 const BUILD_TYPE: &str = "binary";
 
-/// 暂存路径：下载到 `<exe>.staged`，原子替换前再 mv 到 `<exe>`。
-/// 暂存路径：下载到 `<exe>.staged-<version>`，原子替换前再 mv 到 `<exe>`。
-/// 文件名中带版本号，便于 apply 复用 pull 已下载的二进制（命中时跳过重新下载）。
+/// staging path: download to `<exe>.staged`, before the atomic replacement again mv to `<exe>`.
+/// staging path: download to `<exe>.staged-<version>`, before the atomic replacement again mv to `<exe>`.
+/// The file name carries the version number, convenient for apply reuse pull The already downloaded binary (skips re-download on a hit).
 fn staged_binary_path(exe: &std::path::Path, version: &str) -> std::path::PathBuf {
     let mut s = exe.as_os_str().to_os_string();
     s.push(format!(".staged-{}", version.trim().trim_start_matches('v')));
     std::path::PathBuf::from(s)
 }
 
-/// 清理目标版本之外的所有 staged 文件，避免之前下载的旧版本残留干扰。
+/// Cleans all except the target version. staged file, avoiding interference from a previously downloaded old version.
 fn cleanup_other_staged(exe: &std::path::Path, keep_version: &str) {
     let dir = match exe.parent() {
         Some(d) => d,
@@ -340,10 +340,10 @@ fn cleanup_other_staged(exe: &std::path::Path, keep_version: &str) {
     }
 }
 
-/// 将单个凭据映射为嵌套 `Account` 结构
+/// Maps a single credential into a nested `Account` struct
 ///
-/// API Key 凭据无 refreshToken，导出格式无对应字段，跳过。
-/// 空字符串字段会被过滤，保持导出 JSON 整洁。
+/// API Key credential none refreshToken, the export format has no corresponding field, skipped.
+/// Empty string fields are filtered to keep the export JSON tidy.
 fn credential_to_export_account(cred: KiroCredentials) -> Option<ExportedAccount> {
     let refresh_token = cred
         .refresh_token
@@ -358,7 +358,7 @@ fn credential_to_export_account(cred: KiroCredentials) -> Option<ExportedAccount
             .filter(|s| !s.is_empty())
     }
 
-    // authMethod 规范化："idc" → "IdC"，其余按 social 处理
+    // authMethod normalize:"idc" → "IdC", restby social handle
     let auth_method = non_empty(cred.auth_method.clone()).map(|m| {
         if m.eq_ignore_ascii_case("idc")
             || m.eq_ignore_ascii_case("builder-id")
@@ -372,7 +372,7 @@ fn credential_to_export_account(cred: KiroCredentials) -> Option<ExportedAccount
     let is_idc = auth_method.as_deref() == Some("IdC");
 
     let provider = non_empty(cred.provider.clone());
-    // idp 与 provider 同义；缺失时按认证方式回退到合法的身份提供商
+    // idp and provider Synonymous; when missing, falls back to a valid identity provider based on the auth method.
     let idp = provider
         .clone()
         .unwrap_or_else(|| if is_idc { "BuilderId" } else { "Google" }.to_string());
@@ -383,7 +383,7 @@ fn credential_to_export_account(cred: KiroCredentials) -> Option<ExportedAccount
         "active".to_string()
     };
 
-    // expiresAt → 毫秒时间戳（解析失败或缺失时为 0）
+    // expiresAt → Millisecond timestamp (on parse failure or when missing it is 0)
     let expires_at_ms = cred
         .expires_at
         .as_deref()
@@ -391,7 +391,7 @@ fn credential_to_export_account(cred: KiroCredentials) -> Option<ExportedAccount
         .map(|dt| dt.timestamp_millis())
         .unwrap_or(0);
 
-    // 订阅：最小可用结构（type + 原始 title）
+    // Subscription: minimal usable structure (type + raw title)
     let subscription = serde_json::json!({
         "type": subscription_type_from_title(cred.subscription_title.as_deref()),
         "title": cred.subscription_title,
@@ -404,7 +404,7 @@ fn credential_to_export_account(cred: KiroCredentials) -> Option<ExportedAccount
         "lastUpdated": now_ms,
     });
 
-    // 仅导出真实 profileArn，跳过 BuilderID 占位符
+    // onlyexportreal profileArn, skip BuilderID placeholder
     let profile_arn = cred.effective_profile_arn().map(str::to_string);
 
     let credentials = ExportedCredentials {
@@ -440,7 +440,7 @@ fn credential_to_export_account(cred: KiroCredentials) -> Option<ExportedAccount
     })
 }
 
-/// 由订阅标题推断 `SubscriptionType`（粗粒度，导入方刷新后会自行校正）
+/// inferred from the subscription title `SubscriptionType`(coarse grained, the importer self corrects after a refresh)
 fn subscription_type_from_title(title: Option<&str>) -> &'static str {
     let Some(title) = title else { return "Free" };
     let u = title.to_uppercase();
@@ -457,8 +457,8 @@ fn subscription_type_from_title(title: Option<&str>) -> &'static str {
     }
 }
 
-/// GitHub Release 仓库名（owner/repo）。
-/// 在线更新所需的版本号、changelog、二进制资产都从这里取。
+/// GitHub Release repositoryname(owner/repo).
+/// The version number needed for online update,changelog, binary assets are all taken from here.
 const GITHUB_RELEASES_REPO: &str = "ZyphrZero/kiro.rs";
 
 impl AdminService {
@@ -490,7 +490,7 @@ impl AdminService {
             usage_recorder: None,
         };
 
-        // 后台任务：每 5 分钟清理过期的登录会话，防止内存泄漏
+        // background task: every 5 Cleans expired login sessions every minute to prevent memory leaks.
         {
             let idc = Arc::clone(&svc.idc_sessions);
             let social = Arc::clone(&svc.social_sessions);
@@ -508,12 +508,12 @@ impl AdminService {
         svc
     }
 
-    /// 暴露 TokenManager 给 handlers（分组管理需要 count / rename / remove 凭据 groups 字段）
+    /// expose TokenManager give handlers(group management needs count / rename / remove credential groups field)
     pub fn token_manager(&self) -> &Arc<MultiTokenManager> {
         &self.token_manager
     }
 
-    /// 注入日志治理句柄（trace 存储 + 用量记录器），用于运行时改保留期/开关。
+    /// inject the log governance handle (trace store + usage recorder), used to change the retention period at runtime./switch.
     pub fn with_log_governance(
         mut self,
         trace_store: Option<crate::admin::trace_db::SharedTraceStore>,
@@ -524,12 +524,12 @@ impl AdminService {
         self
     }
 
-    /// 获取所有凭据状态
+    /// get all credential statuses
     pub fn get_all_credentials(&self) -> CredentialsStatusResponse {
         let snapshot = self.token_manager.snapshot();
         let default_endpoint = self.token_manager.config().default_endpoint.clone();
 
-        // 一次性快照余额缓存，避免 N 次加锁
+        // A one shot snapshot of the balance cache, avoiding N times lock
         let balance_snapshot: HashMap<u64, CachedBalance> = {
             let cache = self.balance_cache.lock();
             cache.clone()
@@ -576,7 +576,7 @@ impl AdminService {
             })
             .collect();
 
-        // 按优先级排序（数字越小优先级越高）
+        // Sorts by priority (a smaller number means higher priority).
         credentials.sort_by_key(|c| c.priority);
 
         CredentialsStatusResponse {
@@ -587,11 +587,11 @@ impl AdminService {
         }
     }
 
-    /// 导出凭据为兼容 JSON（嵌套 `Account` 格式）
+    /// export the credential as compatible JSON(nested `Account` format)
     ///
-    /// 返回的结构体含 refreshToken、accessToken、clientSecret 等敏感字段，
-    /// 调用方需自行保证传输与存储安全；按 priority 升序排序，与 UI 列表一致。
-    /// `id_filter` 为 None 时导出全部凭据；为 Some 时仅导出集合内的 ID。
+    /// the returned struct contains refreshToken,accessToken,clientSecret and other sensitive fields,
+    /// The caller must ensure transport and storage security by itself; by priority ascending sort, with UI listconsistent.
+    /// `id_filter` as None export all credentials when; as Some only export those in the set when ID.
     pub fn export_credentials(
         &self,
         id_filter: Option<&HashSet<u64>>,
@@ -616,10 +616,10 @@ impl AdminService {
         }
     }
 
-    /// 一键禁用所有"已超额"的凭据（remaining ≤ 0 或 usage_percentage ≥ 100）
+    /// one click disable all"over quota"ofcredential (remaining ≤ 0 or usage_percentage ≥ 100)
     ///
-    /// 数据来源是 `balance_cache`，所以前端在调用前最好先触发一次"查询信息"
-    /// 或等待后台调度器完成首次刷新。返回 (禁用数量, 跳过数量, 已超额未禁用名单)。
+    /// datasourceis `balance_cache`, so the frontend had better trigger one first before calling."queryinfo"
+    /// or waits for the background scheduler to complete the first refresh. Returns (disablecount, skipcount, overage but not disabled list).
     pub fn disable_quota_exceeded(&self) -> QuotaExceededResult {
         let snapshot = self.token_manager.snapshot();
         let current_id = snapshot.current_id;
@@ -654,7 +654,7 @@ impl AdminService {
                     }
                 }
                 Err(e) => {
-                    tracing::warn!("一键超额：禁用凭据 #{} 失败: {}", entry.id, e);
+                    tracing::warn!("one click overage: disable credentials #{} failed: {}", entry.id, e);
                     skipped_ids.push(entry.id);
                 }
             }
@@ -670,9 +670,9 @@ impl AdminService {
         }
     }
 
-    /// 设置凭据禁用状态
+    /// set the credential disabled state
     pub fn set_disabled(&self, id: u64, disabled: bool) -> Result<(), AdminServiceError> {
-        // 先获取当前凭据 ID，用于判断是否需要切换
+        // first get the current credential ID, used to decide whether a switch is needed.
         let snapshot = self.token_manager.snapshot();
         let current_id = snapshot.current_id;
 
@@ -680,21 +680,21 @@ impl AdminService {
             .set_disabled(id, disabled)
             .map_err(|e| self.classify_error(e, id))?;
 
-        // 只有禁用的是当前凭据时才尝试切换到下一个
+        // Only when the disabled one is the current credential does it try to switch to the next.
         if disabled && id == current_id {
             let _ = self.token_manager.switch_to_next();
         }
         Ok(())
     }
 
-    /// 设置凭据优先级
+    /// set the credential priority
     pub fn set_priority(&self, id: u64, priority: u32) -> Result<(), AdminServiceError> {
         self.token_manager
             .set_priority(id, priority)
             .map_err(|e| self.classify_error(e, id))
     }
 
-    /// 重置失败计数并重新启用
+    /// Resets the failure count and re-enables.
     pub fn reset_and_enable(&self, id: u64) -> Result<(), AdminServiceError> {
         self.token_manager
             .reset_and_enable(id)
@@ -713,24 +713,24 @@ impl AdminService {
             .map_err(|e| self.classify_error(e, id.unwrap_or(0)))
     }
 
-    /// 获取凭据余额（带缓存）
+    /// Gets the credential balance (with cache).
     pub async fn get_balance(&self, id: u64) -> Result<BalanceResponse, AdminServiceError> {
-        // 先查缓存
+        // query firstcache
         {
             let cache = self.balance_cache.lock();
             if let Some(cached) = cache.get(&id) {
                 let now = Utc::now().timestamp() as f64;
                 if (now - cached.cached_at) < BALANCE_CACHE_TTL_SECS as f64 {
-                    tracing::debug!("凭据 #{} 余额命中缓存", id);
+                    tracing::debug!("credential #{} balance hit the cache", id);
                     return Ok(cached.data.clone());
                 }
             }
         }
 
-        // 缓存未命中或已过期，从上游获取
+        // Cache miss or expired; fetches from upstream.
         let balance = self.fetch_balance(id).await?;
 
-        // 更新缓存
+        // updatecache
         {
             let mut cache = self.balance_cache.lock();
             cache.insert(
@@ -746,7 +746,7 @@ impl AdminService {
         Ok(balance)
     }
 
-    /// 从上游获取余额（无缓存）
+    /// Fetches the balance from upstream (no cache).
     async fn fetch_balance(&self, id: u64) -> Result<BalanceResponse, AdminServiceError> {
         let usage = self
             .token_manager
@@ -756,10 +756,10 @@ impl AdminService {
 
         let current_usage = usage.current_usage();
         let usage_limit = usage.usage_limit();
-        // 允许 remaining 显示为负值：开启超额后实际使用可能超过限额，
-        // 直接保留差值便于在 UI 中体现"已欠多少"。
+        // allow remaining Shown as a negative value: after enabling overage, actual usage may exceed the limit,
+        // directly keep the difference for convenience in UI reflected in"alreadyhow much is owed".
         let remaining = usage_limit - current_usage;
-        // usage_percentage 同理保留真实值，超额时 > 100%。
+        // usage_percentage Similarly keeps the real value; when over the limit > 100%.
         let usage_percentage = if usage_limit > 0.0 {
             current_usage / usage_limit * 100.0
         } else {
@@ -783,7 +783,7 @@ impl AdminService {
         })
     }
 
-    /// 获取指定凭据当前可用的模型列表（按需实时查询上游，不缓存）
+    /// Gets the currently available model list for the given credential (queries upstream in real time on demand, no cache).
     pub async fn get_available_models(
         &self,
         id: u64,
@@ -808,10 +808,10 @@ impl AdminService {
         Ok(AvailableModelsResponse { id, models })
     }
 
-    /// 批量刷新所有非禁用凭据的余额（用于后台调度）
+    /// Batch refreshes the balance of all non disabled credentials (for background scheduling).
     ///
-    /// 串行执行以避免对上游产生瞬时高并发，每次成功的查询都会更新内存缓存
-    /// 与磁盘缓存。失败的条目不会清空旧缓存，调用方可在下次轮询时重试。
+    /// Runs serially to avoid momentary high concurrency toward upstream; each successful query updates the in-memory cache.
+    /// and disk cache. A failed entry does not clear the old cache; the caller may retry on the next poll.
     pub async fn refresh_all_balances(&self) -> (usize, usize) {
         let snapshot = self.token_manager.snapshot();
         let mut success = 0_usize;
@@ -836,11 +836,11 @@ impl AdminService {
                     success += 1;
                 }
                 Err(e) => {
-                    tracing::warn!("后台刷新凭据 #{} 余额失败: {}", entry.id, e);
+                    tracing::warn!("background refresh the credential #{} balancefailed: {}", entry.id, e);
                     failure += 1;
                 }
             }
-            // 节流，避免上游限流
+            // throttle, to avoid upstream throttling
             tokio::time::sleep(std::time::Duration::from_millis(400)).await;
         }
 
@@ -850,21 +850,21 @@ impl AdminService {
         (success, failure)
     }
 
-    /// 启动余额后台刷新调度器
+    /// Starts the balance background refresh scheduler.
     ///
-    /// - 启动后立刻执行一次刷新
-    /// - 之后按 `interval` 周期循环刷新
-    /// - 调用方持有 `Arc<Self>` 即可，任务在后台 tokio runtime 上运行
+    /// - Performs one refresh right after startup.
+    /// - then sort by `interval` periodic loop refresh
+    /// - callsideholdhas `Arc<Self>` suffices, the task in the background tokio runtime run on
     pub fn start_balance_refresher(self: &Arc<Self>, interval: std::time::Duration) {
         let svc = Arc::clone(self);
         tokio::spawn(async move {
-            // 启动后稍等片刻，让上游/Token Manager 准备就绪
+            // Waits a moment after startup to let upstream/Token Manager ready
             tokio::time::sleep(std::time::Duration::from_secs(3)).await;
             loop {
                 let started = std::time::Instant::now();
                 let (ok, err) = svc.refresh_all_balances().await;
                 tracing::info!(
-                    "余额后台刷新完成：成功 {}，失败 {}，耗时 {:.1}s",
+                    "Balance background refresh completed: success {}, failed {}, elapsed {:.1}s",
                     ok,
                     err,
                     started.elapsed().as_secs_f32()
@@ -874,21 +874,21 @@ impl AdminService {
         });
     }
 
-    /// 启动代理池后台健康检查调度器
+    /// Starts the proxy pool background health check scheduler.
     ///
-    /// - 启动后稍等片刻再执行首次探测
-    /// - 之后按 `interval` 周期循环，对所有已启用代理并发探测
-    /// - 连续探测失败达阈值的代理由 `check_all` 内部自动禁用
+    /// - Waits a moment after startup before the first probe.
+    /// - then sort by `interval` Periodic loop, concurrently probes all enabled proxies.
+    /// - A proxy whose consecutive probe failures reach the threshold is by `check_all` internal auto disable
     pub fn start_proxy_health_checker(self: &Arc<Self>, interval: std::time::Duration) {
         let svc = Arc::clone(self);
         tokio::spawn(async move {
-            // 启动后稍等片刻，让网络/代理就绪
+            // Waits a moment after startup to let the network/proxyready
             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
             loop {
                 let started = std::time::Instant::now();
                 let summary = svc.proxy_pool.check_all().await;
                 tracing::info!(
-                    "代理池健康检查完成：健康 {}，异常 {}，本轮自动禁用 {}，耗时 {:.1}s",
+                    "Proxy pool health check completed: healthy {}, exception {}, auto disabled this round {}, elapsed {:.1}s",
                     summary.healthy,
                     summary.unhealthy,
                     summary.auto_disabled,
@@ -899,19 +899,19 @@ impl AdminService {
         });
     }
 
-    /// 启动无人值守自动更新调度器。
+    /// Starts the unattended auto update scheduler.
     ///
-    /// 任务始终运行，每分钟唤醒一次：
-    /// - `update_auto_apply` 关闭时只是记录"未到点"，不做任何远端调用。
-    /// - 开启时，比较当前本地时间与 `update_auto_apply_time`，命中目标分钟
-    ///   就触发一次 `apply_image_update`。同一目标版本只会被自动应用一次。
+    /// The task always runs, waking once per minute:
+    /// - `update_auto_apply` when closed just record"not yet due", does not make any remote call.
+    /// - When enabled, compares the current local time with `update_auto_apply_time`, hit the target minute
+    ///   thentriggeronce `apply_image_update`. The same target version is auto applied only once.
     pub fn start_auto_update_scheduler(self: &Arc<Self>) {
         let svc = Arc::clone(self);
         tokio::spawn(async move {
-            // 给 Docker socket / compose 元数据探测留点准备时间
+            // give Docker socket / compose Leaves some preparation time for metadata probing.
             tokio::time::sleep(std::time::Duration::from_secs(30)).await;
 
-            // 同一分钟避免重复触发；记录最近一次应用过的"日期 + 版本"
+            // Within the same minute avoids duplicate triggers; records the most recently applied one."date + version"
             let mut last_run_marker: Option<String> = None;
             let mut last_applied_version: Option<String> = None;
 
@@ -941,23 +941,23 @@ impl AdminService {
                                     != Some(info.latest_version.as_str())
                             {
                                 tracing::info!(
-                                    "自动更新：到达计划时间 {}，发现新版本 {}（当前 {}），开始应用",
+                                    "Auto update: the scheduled time is reached. {}, found a new version {}(current {}), begin applying",
                                     runtime.auto_apply_time,
                                     info.latest_version,
                                     info.current_version
                                 );
                             match svc.apply_image_update().await {
                                     Ok(res) => {
-                                        tracing::info!("自动更新完成：{}", res.message);
+                                        tracing::info!("auto update complete:{}", res.message);
                                         last_applied_version = Some(info.latest_version);
                                     }
                                     Err(e) => {
-                                        tracing::warn!("自动更新失败：{}", e);
+                                        tracing::warn!("auto update failed:{}", e);
                                     }
                                 }
                             } else {
                                 tracing::info!(
-                                    "自动更新：到达计划时间 {}，但当前已是最新版本（{}）",
+                                    "Auto update: the scheduled time is reached. {}, but the current version is already the latest ({})",
                                     runtime.auto_apply_time,
                                     info.current_version
                                 );
@@ -965,52 +965,52 @@ impl AdminService {
                         }
                     } else {
                         tracing::warn!(
-                            "自动更新时间配置无效：{}，跳过本轮检查",
+                            "The auto update time config is invalid:{}, skip this round of check",
                             runtime.auto_apply_time
                         );
                     }
                 }
 
-                // 30 秒粒度足以可靠命中目标分钟，又不会在系统时间漂移下错过
+                // 30 Second granularity is enough to reliably hit the target minute without missing it under system clock drift.
                 tokio::time::sleep(std::time::Duration::from_secs(30)).await;
             }
         });
     }
 
-    /// 添加新凭据
+    /// addnew credential
     pub async fn add_credential(
         &self,
         req: AddCredentialRequest,
     ) -> Result<AddCredentialResponse, AdminServiceError> {
-        // 默认获取余额（保持单条添加 / 登录路径的既有行为：加完即可见订阅等级）
+        // Fetches the balance by default (keeps single add / The existing behavior of the login path: the subscription tier is visible right after adding.
         self.add_credential_inner(req, true).await
     }
 
-    /// 添加凭据的核心实现。
+    /// The core implementation for adding a credential.
     ///
-    /// - `fetch_balance = true`：添加后主动拉取余额（含订阅等级 / 邮箱）并写入缓存，
-    ///   既是"加完即可见"，也作为 API Key 的有效性校验（即"验活"）。
-    /// - `fetch_balance = false`：跳过余额拉取，仅落库（"直接导入"路径），
-    ///   订阅信息留待首次请求时按需获取。
+    /// - `fetch_balance = true`: actively fetches the balance after adding (including subscription tier). / email) and write into the cache,
+    ///   both"visible once added",alsoas API Key the validity check (that is"validate").
+    /// - `fetch_balance = false`: skips the balance fetch, only persists ("directlyimport"path),
+    ///   Subscription info is fetched on demand at the first request.
     async fn add_credential_inner(
         &self,
         req: AddCredentialRequest,
         fetch_balance: bool,
     ) -> Result<AddCredentialResponse, AdminServiceError> {
-        // 校验端点名：未指定则默认合法，指定则必须已注册
+        // Validates the endpoint name: unspecified is valid by default, specified must already be registered.
         if let Some(ref name) = req.endpoint {
             if !self.known_endpoints.contains(name) {
                 let mut known: Vec<&str> =
                     self.known_endpoints.iter().map(|s| s.as_str()).collect();
                 known.sort();
                 return Err(AdminServiceError::InvalidCredential(format!(
-                    "未知端点 \"{}\"，已注册端点: {:?}",
+                    "unknownendpoint \"{}\", registered endpoint: {:?}",
                     name, known
                 )));
             }
         }
 
-        // 构建凭据对象
+        // build the credential object
         let email = req.email.clone();
         let new_cred = KiroCredentials {
             id: None,
@@ -1029,61 +1029,61 @@ impl AdminService {
             api_region: req.api_region,
             machine_id: req.machine_id,
             email: req.email,
-            subscription_title: None, // 将在首次获取使用额度时自动更新
+            subscription_title: None, // Will auto update on the first fetch of the usage quota.
             proxy_url: req.proxy_url,
             proxy_username: req.proxy_username,
             proxy_password: req.proxy_password,
-            disabled: false, // 新添加的凭据默认启用
+            disabled: false, // A newly added credential is enabled by default.
             kiro_api_key: req.kiro_api_key,
             endpoint: req.endpoint,
             groups: req.groups,
             source_channel: req.source_channel,
         };
 
-        // 调用 token_manager 添加凭据
+        // call token_manager addcredential
         let credential_id = self
             .token_manager
             .add_credential(new_cred)
             .await
             .map_err(|e| self.classify_add_error(e))?;
 
-        // 主动获取余额（含订阅等级 / 邮箱）并写入缓存，添加后立即可见，
-        // 同时避免首次请求时 Free 账号绕过 Opus 模型过滤。
-        // 仅验活路径需要；"直接导入"路径跳过以省掉这次上游往返。
+        // Actively fetches the balance (including subscription tier). / email) and writes to the cache, visible right after adding,
+        // while avoiding on the first request Free account bypass Opus modelfilter.
+        // only the activation check path needs;"directlyimport"The path is skipped to save this upstream round trip.
         if fetch_balance {
             if let Err(e) = self.get_balance(credential_id).await {
-                tracing::warn!("添加凭据后刷新余额失败（不影响凭据添加）: {}", e);
+                tracing::warn!("Refreshing the balance failed after adding the credential (does not affect the credential addition).: {}", e);
             }
         }
 
         Ok(AddCredentialResponse {
             success: true,
-            message: format!("凭据添加成功，ID: {}", credential_id),
+            message: format!("credential added successfully,ID: {}", credential_id),
             credential_id,
             email,
         })
     }
 
-    /// 批量导入的单条处理。
+    /// Single item handling for batch import.
     ///
-    /// - `verify = true`（验活路径）：add（内部 refresh + 缓存 balance）→ 显式取余额验活
-    ///   → 失败回滚删除。镜像前端旧流程的"add → getCredentialBalance → 失败回滚"。
-    /// - `verify = false`（直接导入路径）：仅 add 落库，不取余额、不回滚。
+    /// - `verify = true`(activation check path):add(internal refresh + cache balance)→ explicitly get the balance for activation check
+    ///   → Rolls back the delete on failure. Mirrors the old frontend flow"add → getCredentialBalance → failedrollback".
+    /// - `verify = false`(direct import path): only add Persists, does not fetch the balance and does not roll back.
     ///
-    /// 全部在服务端完成，便于在 `buffer_unordered` 下有界并发。
+    /// All done on the server, convenient for `buffer_unordered` bounded concurrency under.
     pub async fn import_one_credential(
         &self,
         req: AddCredentialRequest,
         verify: bool,
     ) -> ImportItemResult {
-        // 1. add：去重 / 未知端点 / token 刷新失败在此暴露，未插入即无需回滚。
-        //    verify=false 时跳过内部余额拉取。
+        // 1. add: dedup / unknownendpoint / token A refresh failure surfaces here; since it was not inserted, no rollback is needed.
+        //    verify=false skips the internal balance fetch.
         let resp = match self.add_credential_inner(req, verify).await {
             Ok(r) => r,
             Err(e) => {
                 let msg = e.to_string();
                 let is_duplicate =
-                    msg.contains("凭据已存在") || msg.contains("重复");
+                    msg.contains("credentialalready exists") || msg.contains("duplicate");
                 return ImportItemResult {
                     status: if is_duplicate {
                         ImportStatus::Duplicate
@@ -1099,7 +1099,7 @@ impl AdminService {
             }
         };
 
-        // 2. 直接导入：add 成功即完成，不做余额验活、不回滚。
+        // 2. directlyimport:add Completes on success; does not do balance liveness check and does not roll back.
         if !verify {
             return ImportItemResult {
                 status: ImportStatus::Imported,
@@ -1111,8 +1111,8 @@ impl AdminService {
             };
         }
 
-        // 3. 验活路径：显式取余额验活（OAuth 正常路径命中 add 内缓存；
-        //    API Key 无 token 刷新，余额拉取即真正的验活，失败则回滚）。
+        // 3. Liveness path: explicitly fetches the balance for liveness (OAuth normal path hit add insidecache;
+        //    API Key none token refresh; fetching the balance is the real liveness check, and on failure it rolls back).
         match self.get_balance(resp.credential_id).await {
             Ok(balance) => ImportItemResult {
                 status: ImportStatus::Verified,
@@ -1125,12 +1125,12 @@ impl AdminService {
             Err(e) => {
                 let msg = e.to_string();
                 tracing::warn!(
-                    "批量导入凭据 #{} 验活失败，回滚删除: {}",
+                    "batch import credentials #{} activation check failed, roll back and delete: {}",
                     resp.credential_id,
                     msg
                 );
-                // 回滚：直接删除（delete_credential 会清理 balance 缓存与 trace）。
-                // 不先 disable——delete 是整条移除，无 enabled 守卫，足够原子。
+                // rollback: delete directly (delete_credential will clean balance cache and trace).
+                // not first disable——delete is a whole entry removal, no enabled guard, atomic enough.
                 let rolled_back = self.delete_credential(resp.credential_id).is_ok();
                 ImportItemResult {
                     status: ImportStatus::Failed,
@@ -1144,7 +1144,7 @@ impl AdminService {
         }
     }
 
-    /// 更新凭据的可编辑字段（email、proxy 等）
+    /// Updates the editable fields of the credential (email,proxy etc.)
     pub fn update_credential(
         &self,
         id: u64,
@@ -1167,13 +1167,13 @@ impl AdminService {
             .map_err(|e| self.classify_error(e, id))
     }
 
-    /// 删除凭据
+    /// deletecredential
     pub fn delete_credential(&self, id: u64) -> Result<(), AdminServiceError> {
         self.token_manager
             .delete_credential(id)
             .map_err(|e| self.classify_delete_error(e, id))?;
 
-        // 清理已删除凭据的余额缓存
+        // Cleans the balance cache of deleted credentials.
         {
             let mut cache = self.balance_cache.lock();
             cache.remove(&id);
@@ -1187,9 +1187,9 @@ impl AdminService {
         Ok(())
     }
 
-    /// 从磁盘加载最新配置并应用更新，再写回磁盘。
+    /// Loads the latest config from disk, applies the update, then writes back to disk.
     ///
-    /// 每次读最新文件再写，避免多次调用之间字段互相覆盖。
+    /// Reads the latest file each time before writing, avoiding fields overwriting each other across calls.
     fn update_config_file(&self, updater: impl FnOnce(&mut Config)) {
         let base = self.token_manager.config();
         let Some(path) = base.config_path() else {
@@ -1199,19 +1199,19 @@ impl AdminService {
             Ok(mut fresh) => {
                 updater(&mut fresh);
                 if let Err(e) = fresh.save() {
-                    tracing::warn!("保存配置文件失败: {}", e);
+                    tracing::warn!("failed to save the configuration file: {}", e);
                 }
             }
-            Err(e) => tracing::warn!("读取配置文件失败（跳过持久化）: {}", e),
+            Err(e) => tracing::warn!("Reading the config file failed (skips persistence).: {}", e),
         }
     }
 
-    /// 获取全局代理 URL
+    /// get the global proxy URL
     pub fn get_global_proxy(&self) -> Option<String> {
         self.token_manager.proxy().map(|p| p.url.clone())
     }
 
-    /// 设置全局代理 URL（None 表示清除）并持久化到配置文件
+    /// set the global proxy URL(None means clear) and persists to the config file.
     pub fn set_global_proxy(&self, url: Option<String>) -> Result<(), AdminServiceError> {
         if let Some(ref u) = url {
             let valid_prefix = u.starts_with("http://")
@@ -1220,7 +1220,7 @@ impl AdminService {
                 || u.starts_with("socks4://");
             if !valid_prefix {
                 return Err(AdminServiceError::InvalidCredential(
-                    "代理 URL 格式无效，需以 http://、https://、socks5:// 或 socks4:// 开头"
+                    "proxy URL the format is invalid, needs to http://,https://,socks5:// or socks4:// start"
                         .to_string(),
                 ));
             }
@@ -1229,41 +1229,41 @@ impl AdminService {
         let proxy = url.as_deref().map(ProxyConfig::new);
         self.token_manager.set_global_proxy(proxy);
 
-        // 从磁盘加载最新 config 再写，避免覆盖其他字段的并发修改
+        // load the latest from disk config then writes, avoiding overwriting concurrent changes to other fields.
         let url_for_save = url;
         self.update_config_file(move |c| c.proxy_url = url_for_save);
         Ok(())
     }
 
-    /// 持久化新的登录API密钥（adminApiKey）到配置文件（内存中的 key 由 handler 层负责更新）
+    /// persist the new loginAPIkey (adminApiKey) to the config file (the in-memory key by handler the layer is responsible for updating)
     pub fn persist_admin_key(&self, new_key: &str) {
         let key = new_key.to_string();
         self.update_config_file(move |c| c.admin_api_key = Some(key));
     }
 
-    /// 持久化新的 apiKey（系统密钥轮换后同步 config.json，保证下次启动不重复导入）
+    /// persistnewof apiKey(sync after system key rotation config.json, ensuring no duplicate import on the next startup)
     pub fn persist_api_key(&self, new_key: &str) {
         let key = new_key.to_string();
         self.update_config_file(move |c| c.api_key = Some(key));
     }
 
-    /// 获取在线更新配置（GitHub Token 只返回是否已配置）
+    /// get the online update configuration (GitHub Token only return whether it is configured)
     pub fn get_update_config(&self) -> UpdateConfigResponse {
         self.update_config.lock().response()
     }
 
-    /// 更新在线更新配置。
+    /// update the online update configuration.
     pub fn set_update_config(
         &self,
         req: SetUpdateConfigRequest,
     ) -> Result<UpdateConfigResponse, AdminServiceError> {
-        // 在写入运行时之前先校验时间格式，并规范化成两位补零的 HH:MM
+        // Validates the time format before writing to runtime, and normalizes it to zero padded two digit HH:MM
         let normalized_time = match req.auto_apply_time.as_deref() {
             Some(value) => Some(normalize_auto_apply_time(value)?),
             None => None,
         };
 
-        // GitHub Token：空字符串表示清除，None 表示保持原值
+        // GitHub Token: an empty string means clear,None means keep the original value
         let token_update: Option<Option<String>> = req.github_token.as_ref().map(|raw| {
             let trimmed = raw.trim();
             if trimmed.is_empty() {
@@ -1301,9 +1301,9 @@ impl AdminService {
         Ok(self.get_update_config())
     }
 
-    /// 下载新版二进制并通过校验和验证（对应前端「拉取镜像」按钮）。
-    /// 不替换当前可执行文件，便于用户在正式应用前先确认下载成功。
-    /// 下载产物保存到 `<exe>.staged-<version>`，下次 apply 命中同版本时复用。
+    /// Downloads the new binary and verifies it via checksum (corresponds to the frontend pull image button).
+    /// Does not replace the current executable, so the user can confirm a successful download before applying.
+    /// save the download artifact to `<exe>.staged-<version>`, next time apply reuse when hitting the same version.
     pub async fn pull_update_image(&self) -> Result<ImageUpdateResponse, AdminServiceError> {
         let (proxy, token) = {
             let runtime = self.update_config.lock();
@@ -1317,7 +1317,7 @@ impl AdminService {
         let version = self.resolve_target_version(false).await?;
         let staged = staged_binary_path(&exe, &version);
 
-        // 已经下载过同版本时直接复用，避免重复网络请求
+        // When the same version was already downloaded, reuses it directly to avoid duplicate network requests.
         let reused = staged.exists();
         if !reused {
             super::binary_update::download_release_binary(
@@ -1328,16 +1328,16 @@ impl AdminService {
             )
             .await?;
         }
-        // 清理其它版本的旧 staged 文件，避免占用磁盘
+        // clean up other versions of the old staged file, to avoid occupying disk
         cleanup_other_staged(&exe, &version);
 
         Ok(ImageUpdateResponse {
             success: true,
             message: if reused {
-                format!("v{} 已下载并校验，可直接执行「更新并重启」", version)
+                format!("v{} Downloaded and verified; the update and restart can be run directly.", version)
             } else {
                 format!(
-                    "已下载并校验 v{} 二进制，可直接执行「更新并重启」",
+                    "downloaded and validated v{} binary; the update and restart can be run directly.",
                     version
                 )
             },
@@ -1352,9 +1352,9 @@ impl AdminService {
         })
     }
 
-    /// 下载新版二进制并替换当前可执行文件，随后让进程退出由
-    /// `restart: unless-stopped` 接管重启（对应前端「更新并重启」按钮）。
-    /// 若 pull 已经把目标版本下载到 `<exe>.staged-<version>`，跳过重复下载。
+    /// Downloads the new binary and replaces the current executable, then lets the process exit so that
+    /// `restart: unless-stopped` takes over the restart (corresponds to the frontend update and restart button).
+    /// if pull has already downloaded the target version to `<exe>.staged-<version>`, skip the duplicate download.
     pub async fn apply_image_update(&self) -> Result<ImageUpdateResponse, AdminServiceError> {
         let (proxy, token) = {
             let runtime = self.update_config.lock();
@@ -1380,7 +1380,7 @@ impl AdminService {
         }
         cleanup_other_staged(&exe, &version);
 
-        // 记录当前版本作为「上一版本」，供前端展示「回退」按钮
+        // Records the current version as the previous version, for the frontend to show the rollback button.
         let previous_version = env!("CARGO_PKG_VERSION").to_string();
         super::binary_update::install_binary(&exe, &staged)?;
 
@@ -1403,7 +1403,7 @@ impl AdminService {
         Ok(ImageUpdateResponse {
             success: true,
             message: format!(
-                "已替换为 v{}，进程将在 2 秒后退出，由容器重启策略接管",
+                "alreadyreplace with v{},enterprocesswillin 2 exits after some seconds, taken over by the container restart policy.",
                 version
             ),
             output: Some(format!(
@@ -1417,7 +1417,7 @@ impl AdminService {
         })
     }
 
-    /// 把可执行文件回退到 `<exe>.backup`，再重启进程。
+    /// roll back the executable file to `<exe>.backup`, then restart the process.
     pub async fn rollback_image_update(&self) -> Result<ImageUpdateResponse, AdminServiceError> {
         let previous_label = self
             .update_config
@@ -1428,17 +1428,17 @@ impl AdminService {
             .filter(|v| !v.is_empty())
             .ok_or_else(|| {
                 AdminServiceError::InvalidCredential(
-                    "尚未记录可回退的版本，请先执行一次在线更新".to_string(),
+                    "No rollback version has been recorded yet; please perform an online update first.".to_string(),
                 )
             })?
             .to_string();
 
         let exe = super::binary_update::current_executable()?;
         super::binary_update::restore_backup(&exe)?;
-        // 回退后清掉所有 staged：用户已表态"上一次更新是错的"，残留只会误导
+        // clear all after rollback staged: the user has expressed a position"the last update was wrong", the residue will only mislead
         cleanup_other_staged(&exe, "");
 
-        // 回退视为撤销最近一次更新：清空 previous_version 和 last_applied_at
+        // Rollback is treated as undoing the last update: clears previous_version and last_applied_at
         {
             let mut runtime = self.update_config.lock();
             runtime.previous_version = None;
@@ -1454,7 +1454,7 @@ impl AdminService {
         Ok(ImageUpdateResponse {
             success: true,
             message: format!(
-                "已回退到 {}，进程将在 2 秒后退出，由容器重启策略接管",
+                "alreadyfallbackto {},enterprocesswillin 2 exits after some seconds, taken over by the container restart policy.",
                 previous_label
             ),
             output: Some(format!("rolled back to: {}", previous_label)),
@@ -1463,13 +1463,13 @@ impl AdminService {
         })
     }
 
-    /// 返回 GitHub Releases 上的最新可用版本号（无 `v` 前缀）。
-    /// 失败时返回 `InternalError`，调用方应直接返回给前端。
-    /// 返回 GitHub Releases 上的最新可用版本号（无 `v` 前缀）。
-    /// 失败时返回 `InternalError`，调用方应直接返回给前端。
+    /// return GitHub Releases The latest available version number on it (no `v` prefix).
+    /// failedreturn when `InternalError`, the caller should return it directly to the frontend.
+    /// return GitHub Releases The latest available version number on it (no `v` prefix).
+    /// failedreturn when `InternalError`, the caller should return it directly to the frontend.
     ///
-    /// `require_update` 为 true 时，若当前版本已经是最新（无更新可用），
-    /// 直接返回错误而不是返回相同版本号——避免 apply 流程下载并替换同一版本。
+    /// `require_update` as true when the current version is already the latest (no update available),
+    /// Returns an error directly instead of returning the same version number.——avoid apply flow downloads and replaces the same version.
     async fn resolve_target_version(
         &self,
         require_update: bool,
@@ -1480,22 +1480,22 @@ impl AdminService {
         }
         if info.latest_version.is_empty() {
             return Err(AdminServiceError::InternalError(
-                "无法解析最新版本号（GitHub Releases 返回空）".to_string(),
+                "Cannot parse the latest version number (GitHub Releases returnempty)".to_string(),
             ));
         }
         if require_update && !info.has_update {
             return Err(AdminServiceError::InvalidCredential(format!(
-                "当前已是最新版本 v{}，无需更新",
+                "already the latest version v{}, no needupdate",
                 info.current_version
             )));
         }
         Ok(info.latest_version)
     }
 
-    /// 检查 GitHub Releases 上是否存在新版本。
+    /// check GitHub Releases whether a new version exists on.
     ///
-    /// `force=false` 时优先返回 30 分钟内的缓存结果；`force=true` 时强制查询
-    /// 远端。查询失败但有旧缓存时，返回旧缓存并附带 warning。
+    /// `force=false` whenpriorityreturn 30 cached result within minutes;`force=true` whenforcequery
+    /// remote. When the query fails but an old cache exists, returns the old cache along with warning.
     pub async fn check_update(&self, force: bool) -> UpdateCheckInfo {
         if !force {
             if let Some(cached) = self.update_check_cache.lock().clone() {
@@ -1519,7 +1519,7 @@ impl AdminService {
                 info
             }
             Err(err) => {
-                let warning = format!("检查更新失败：{}", err);
+                let warning = format!("failed to check for updates:{}", err);
                 if let Some(cached) = self.update_check_cache.lock().clone() {
                     let mut info = cached.info.clone();
                     info.cached = true;
@@ -1562,21 +1562,21 @@ impl AdminService {
             }
         }
         let resp = req.send().await.map_err(|e| {
-            AdminServiceError::InternalError(format!("请求 GitHub API 失败: {}", e))
+            AdminServiceError::InternalError(format!("request GitHub API failed: {}", e))
         })?;
 
         if !resp.status().is_success() {
             let status = resp.status();
             let body = resp.text().await.unwrap_or_default();
             return Err(AdminServiceError::InternalError(format!(
-                "GitHub API 返回 {}: {}",
+                "GitHub API return {}: {}",
                 status,
                 body.chars().take(200).collect::<String>()
             )));
         }
 
         let release: GitHubRelease = resp.json().await.map_err(|e| {
-            AdminServiceError::InternalError(format!("解析 GitHub release 失败: {}", e))
+            AdminServiceError::InternalError(format!("parse GitHub release failed: {}", e))
         })?;
 
         let current = env!("CARGO_PKG_VERSION").to_string();
@@ -1599,16 +1599,16 @@ impl AdminService {
         })
     }
 
-    /// 查询 GitHub API 当前限流配额。
+    /// query GitHub API the current throttle quota.
     ///
-    /// `req.github_token` 不为空时使用该 token 验证（用于"保存前先试一下"），
-    /// 否则使用配置中已保存的 `config.github_token`，再缺则匿名查询。
-    /// `/rate_limit` 端点本身不消耗任何配额。
+    /// `req.github_token` use it when not empty token verify(used for"try it before saving"),
+    /// Otherwise uses the one saved in config. `config.github_token`, if still missing then anonymous query.
+    /// `/rate_limit` The endpoint itself consumes no quota.
     pub async fn check_rate_limit(
         &self,
         req: CheckRateLimitRequest,
     ) -> GitHubRateLimitInfo {
-        // 优先用入参 token；空字符串视作"尝试匿名"；缺省回退到已保存 token
+        // prefer useinput parameter token; an empty string is treated as"attempt anonymous"; default falls back to the saved token
         let token = req
             .github_token
             .as_deref()
@@ -1638,7 +1638,7 @@ impl AdminService {
                     used: 0,
                     reset: 0,
                     login: None,
-                    warning: Some(format!("构造 HTTP 客户端失败: {}", e)),
+                    warning: Some(format!("construct HTTP clientfailed: {}", e)),
                 };
             }
         };
@@ -1664,7 +1664,7 @@ impl AdminService {
                     used: 0,
                     reset: 0,
                     login: None,
-                    warning: Some(format!("请求 GitHub API 失败: {}", e)),
+                    warning: Some(format!("request GitHub API failed: {}", e)),
                 };
             }
         };
@@ -1680,7 +1680,7 @@ impl AdminService {
                 used: 0,
                 reset: 0,
                 login: None,
-                warning: Some("GitHub Token 无效或已过期".to_string()),
+                warning: Some("GitHub Token invalid or expired".to_string()),
             };
         }
         if !status.is_success() {
@@ -1694,7 +1694,7 @@ impl AdminService {
                 reset: 0,
                 login: None,
                 warning: Some(format!(
-                    "GitHub API 返回 {}: {}",
+                    "GitHub API return {}: {}",
                     status,
                     body.chars().take(200).collect::<String>()
                 )),
@@ -1712,13 +1712,13 @@ impl AdminService {
                     used: 0,
                     reset: 0,
                     login: None,
-                    warning: Some(format!("解析 GitHub 响应失败: {}", e)),
+                    warning: Some(format!("parse GitHub responsefailed: {}", e)),
                 };
             }
         };
 
-        // /rate_limit 返回结构：{ resources: { core: { limit, remaining, used, reset } }, rate: {...} }
-        // 其中 `core` 是 REST API 整体配额，最贴合在线更新的实际消耗
+        // /rate_limit returnstruct:{ resources: { core: { limit, remaining, used, reset } }, rate: {...} }
+        // where `core` is REST API The overall quota, closest to the actual consumption of an online update.
         let core = payload
             .get("resources")
             .and_then(|r| r.get("core"))
@@ -1731,7 +1731,7 @@ impl AdminService {
         let used = core.and_then(|c| c.get("used")).and_then(|v| v.as_u64()).unwrap_or(0);
         let reset = core.and_then(|c| c.get("reset")).and_then(|v| v.as_u64()).unwrap_or(0);
 
-        // 同时尝试拿 token 对应的用户名；失败不影响主结果
+        // samewhentry to acquire token The corresponding username; failure does not affect the main result.
         let login = if authenticated {
             self.fetch_github_login(&client, token.as_deref()).await
         } else {
@@ -1775,22 +1775,22 @@ impl AdminService {
             .map(|s| s.to_string())
     }
 
-    /// 获取负载均衡模式
+    /// get the load balancing mode
     pub fn get_load_balancing_mode(&self) -> LoadBalancingModeResponse {
         LoadBalancingModeResponse {
             mode: self.token_manager.get_load_balancing_mode(),
         }
     }
 
-    /// 设置负载均衡模式
+    /// set the load balancing mode
     pub fn set_load_balancing_mode(
         &self,
         req: SetLoadBalancingModeRequest,
     ) -> Result<LoadBalancingModeResponse, AdminServiceError> {
-        // 验证模式值
+        // verifymodevalue
         if req.mode != "priority" && req.mode != "balanced" {
             return Err(AdminServiceError::InvalidCredential(
-                "mode 必须是 'priority' 或 'balanced'".to_string(),
+                "mode must be 'priority' or 'balanced'".to_string(),
             ));
         }
 
@@ -1801,7 +1801,7 @@ impl AdminService {
         Ok(LoadBalancingModeResponse { mode: req.mode })
     }
 
-    /// 获取账号级风控故障转移配置
+    /// Gets the account level throttle failover config.
     pub fn get_account_throttle_config(&self) -> AccountThrottleConfigResponse {
         AccountThrottleConfigResponse {
             failover: self.token_manager.get_account_throttle_failover(),
@@ -1809,14 +1809,14 @@ impl AdminService {
         }
     }
 
-    /// 更新账号级风控故障转移配置
+    /// Updates the account level throttle failover config.
     pub fn set_account_throttle_config(
         &self,
         req: SetAccountThrottleConfigRequest,
     ) -> Result<AccountThrottleConfigResponse, AdminServiceError> {
         if req.failover.is_none() && req.cooldown_secs.is_none() {
             return Err(AdminServiceError::InvalidCredential(
-                "至少提供 failover 或 cooldownSecs 一个字段".to_string(),
+                "at leastprovide failover or cooldownSecs afield".to_string(),
             ));
         }
 
@@ -1827,7 +1827,7 @@ impl AdminService {
         Ok(self.get_account_throttle_config())
     }
 
-    /// 读取日志治理配置（trace 开关 / trace 保留天数 / usage 保留天数）
+    /// read the log governance configuration (trace switch / trace retaindaycount / usage retaindaycount)
     pub fn get_log_governance_config(&self) -> LogGovernanceConfigResponse {
         let cfg = self.token_manager.config();
         LogGovernanceConfigResponse {
@@ -1849,8 +1849,8 @@ impl AdminService {
         }
     }
 
-    /// 更新日志治理配置：改运行时原子值 + 持久化到 config.json。
-    /// 任一字段缺省表示不修改。
+    /// Updates the log governance config: changes the runtime atomic value. + persistto config.json.
+    /// An omitted field means no change.
     pub fn set_log_governance_config(
         &self,
         req: SetLogGovernanceConfigRequest,
@@ -1860,11 +1860,11 @@ impl AdminService {
             && req.usage_log_retention_days.is_none()
         {
             return Err(AdminServiceError::InvalidCredential(
-                "至少提供 traceEnabled / traceRetentionDays / usageLogRetentionDays 一个字段"
+                "at leastprovide traceEnabled / traceRetentionDays / usageLogRetentionDays afield"
                     .to_string(),
             ));
         }
-        // 校验范围：保留天数 1..=365
+        // validation range: retention days 1..=365
         for (name, v) in [
             ("traceRetentionDays", req.trace_retention_days),
             ("usageLogRetentionDays", req.usage_log_retention_days),
@@ -1872,14 +1872,14 @@ impl AdminService {
             if let Some(d) = v {
                 if !(1..=365).contains(&d) {
                     return Err(AdminServiceError::InvalidCredential(format!(
-                        "{} 必须在 1..=365 内: {}",
+                        "{} must be in 1..=365 inside: {}",
                         name, d
                     )));
                 }
             }
         }
 
-        // 先改运行时原子值
+        // first change the runtime atomic value
         if let Some(enabled) = req.trace_enabled {
             if let Some(s) = &self.trace_store {
                 s.set_enabled(enabled);
@@ -1896,9 +1896,9 @@ impl AdminService {
             }
         }
 
-        // 持久化到 config.json
+        // persistto config.json
         if let Err(e) = self.persist_log_governance_config(&req) {
-            tracing::warn!("持久化日志治理配置失败（运行时已生效）: {}", e);
+            tracing::warn!("Persisting the log governance config failed (already effective at runtime).: {}", e);
         }
 
         Ok(self.get_log_governance_config())
@@ -1912,12 +1912,12 @@ impl AdminService {
         let config_path = match self.token_manager.config().config_path() {
             Some(p) => p.to_path_buf(),
             None => {
-                tracing::warn!("配置文件路径未知，日志治理配置仅在当前进程生效");
+                tracing::warn!("The config file path is unknown; log governance config takes effect only in the current process.");
                 return Ok(());
             }
         };
         let mut config = crate::model::config::Config::load(&config_path)
-            .with_context(|| format!("重新加载配置失败: {}", config_path.display()))?;
+            .with_context(|| format!("failed to reload the configuration: {}", config_path.display()))?;
         if let Some(v) = req.trace_enabled {
             config.trace_enabled = v;
         }
@@ -1929,11 +1929,11 @@ impl AdminService {
         }
         config
             .save()
-            .with_context(|| format!("持久化日志治理配置失败: {}", config_path.display()))?;
+            .with_context(|| format!("Persisting the log governance config failed.: {}", config_path.display()))?;
         Ok(())
     }
 
-    /// 更新指定凭据的 refreshToken（仅限已禁用凭据）
+    /// update the specified credential refreshToken(disabled credentials only)
     pub fn update_refresh_token(
         &self,
         id: u64,
@@ -1943,13 +1943,13 @@ impl AdminService {
             .update_refresh_token(id, req.refresh_token, req.access_token, req.expires_at)
             .map_err(|e| {
                 let msg = e.to_string();
-                if msg.contains("不存在") {
+                if msg.contains("does not exist") {
                     AdminServiceError::NotFound { id }
-                } else if msg.contains("只能为已禁用")
-                    || msg.contains("refreshToken 重复")
-                    || msg.contains("已被截断")
-                    || msg.contains("refreshToken 为空")
-                    || msg.contains("缺少 refreshToken")
+                } else if msg.contains("can only be disabled")
+                    || msg.contains("refreshToken duplicate")
+                    || msg.contains("alreadybytruncate")
+                    || msg.contains("refreshToken is empty")
+                    || msg.contains("missing refreshToken")
                 {
                     AdminServiceError::InvalidCredential(msg)
                 } else {
@@ -1958,9 +1958,9 @@ impl AdminService {
             })
     }
 
-    /// 一键开启所有"可开启超额且当前未开启"凭据的超额
-    /// 数据来源是 balance_cache（5 分钟有效）；若缓存缺失或 capable 状态未知则乐观尝试，
-    /// 由上游 setUserPreference 接口本身决定是否成功（不支持的订阅会返回 4xx 失败）。
+    /// one click enable all"Overage can be enabled and is currently not enabled."credentialofoverage
+    /// datasourceis balance_cache(5 minutes valid); if the cache is missing or capable If the state is unknown, optimistically tries,
+    /// by upstream setUserPreference The interface itself decides whether it succeeds (an unsupported subscription returns 4xx failed).
     pub async fn enable_overage_for_all_capable(&self) -> EnableOverageAllResult {
         let snapshot = self.token_manager.snapshot();
         let cache_snapshot: HashMap<u64, CachedBalance> = {
@@ -1969,7 +1969,7 @@ impl AdminService {
         };
         let now_ts = Utc::now().timestamp() as f64;
 
-        // 选出需要操作的 ID 列表
+        // select those that need operation ID list
         let mut targets: Vec<u64> = Vec::new();
         let mut skipped: Vec<u64> = Vec::new();
         for entry in snapshot.entries.iter() {
@@ -1982,17 +1982,17 @@ impl AdminService {
             });
 
             match cached {
-                // 缓存命中：明确不可开启，跳过
+                // Cache hit: explicitly cannot be enabled, skipped.
                 Some(c) if c.data.overage_capable == Some(false) => {
                     skipped.push(entry.id);
                     continue;
                 }
-                // 缓存命中：明确已开启，跳过
+                // Cache hit: explicitly already enabled, skipped.
                 Some(c) if c.data.overage_enabled == Some(true) => {
                     skipped.push(entry.id);
                     continue;
                 }
-                // 其它（缓存缺失 / 状态未知 / 明确可开启未开启）— 乐观尝试
+                // others (cache miss / stateunknown / clearly can enable but not enabled)— optimistic attempt
                 _ => targets.push(entry.id),
             }
         }
@@ -2005,17 +2005,17 @@ impl AdminService {
             match self.token_manager.set_user_preference_for(id, "ENABLED").await {
                 Ok(()) => {
                     enabled_ids.push(id);
-                    // 失效本地缓存
+                    // invalidate the local cache
                     let mut cache = self.balance_cache.lock();
                     cache.remove(&id);
                 }
                 Err(e) => {
-                    tracing::warn!("一键开启超额：凭据 #{} 失败: {}", id, e);
+                    tracing::warn!("one click enable overage: credentials #{} failed: {}", id, e);
                     failed_ids.push(id);
                     failure_messages.push(e.to_string());
                 }
             }
-            // 节流
+            // throttle
             tokio::time::sleep(std::time::Duration::from_millis(300)).await;
         }
 
@@ -2031,7 +2031,7 @@ impl AdminService {
         }
     }
 
-    /// 强制刷新指定凭据的 Token
+    /// force refresh the specified credential Token
     pub async fn force_refresh_token(&self, id: u64) -> Result<(), AdminServiceError> {
         self.token_manager
             .force_refresh_token_for(id)
@@ -2039,8 +2039,8 @@ impl AdminService {
             .map_err(|e| self.classify_balance_error(e, id))
     }
 
-    /// 设置凭据的"超额"开关（ENABLED / DISABLED）
-    /// 成功后会主动失效本地余额缓存，让下次列表刷新展示最新 overage 状态
+    /// setcredentialof"overage"switch (ENABLED / DISABLED)
+    /// On success it actively invalidates the local balance cache so the next list refresh shows the latest. overage state
     pub async fn set_overage(&self, id: u64, enabled: bool) -> Result<(), AdminServiceError> {
         let status = if enabled { "ENABLED" } else { "DISABLED" };
         self.token_manager
@@ -2048,25 +2048,25 @@ impl AdminService {
             .await
             .map_err(|e| self.classify_balance_error(e, id))?;
 
-        // 让本地缓存的 overage 状态失效（下次刷新时重新拉）
+        // let the local cache overage The state is invalidated (re-pulled on the next refresh).
         {
             let mut cache = self.balance_cache.lock();
             cache.remove(&id);
         }
         self.save_balance_cache();
 
-        // 异步触发一次新的余额查询（不阻塞响应）
+        // Asynchronously triggers a new balance query (does not block the response).
         let svc_handle = self.token_manager.clone();
         tokio::spawn(async move {
             if let Err(e) = svc_handle.get_usage_limits_for(id).await {
-                tracing::warn!("超额状态变更后预热余额失败 #{}: {}", id, e);
+                tracing::warn!("Warming the balance failed after the overage state changed. #{}: {}", id, e);
             }
         });
 
         Ok(())
     }
 
-    // ============ 余额缓存持久化 ============
+    // ============ balance cache persistence ============
 
     fn load_balance_cache_from(cache_path: &Option<PathBuf>) -> HashMap<u64, CachedBalance> {
         let path = match cache_path {
@@ -2079,11 +2079,11 @@ impl AdminService {
             Err(_) => return HashMap::new(),
         };
 
-        // 文件中使用字符串 key 以兼容 JSON 格式
+        // use a string in the file key for compat JSON format
         let map: HashMap<String, CachedBalance> = match serde_json::from_str(&content) {
             Ok(m) => m,
             Err(e) => {
-                tracing::warn!("解析余额缓存失败，将忽略: {}", e);
+                tracing::warn!("Parsing the balance cache failed; will ignore it.: {}", e);
                 return HashMap::new();
             }
         };
@@ -2092,7 +2092,7 @@ impl AdminService {
         map.into_iter()
             .filter_map(|(k, v)| {
                 let id = k.parse::<u64>().ok()?;
-                // 丢弃超过 TTL 的条目
+                // discardexceeds TTL entry
                 if (now - v.cached_at) < BALANCE_CACHE_TTL_SECS as f64 {
                     Some((id, v))
                 } else {
@@ -2108,7 +2108,7 @@ impl AdminService {
             None => return,
         };
 
-        // 持有锁期间完成序列化和写入，防止并发损坏
+        // Completes serialization and writing while holding the lock, preventing concurrent corruption.
         let cache = self.balance_cache.lock();
         let map: HashMap<String, &CachedBalance> =
             cache.iter().map(|(k, v)| (k.to_string(), v)).collect();
@@ -2116,16 +2116,16 @@ impl AdminService {
         match serde_json::to_string_pretty(&map) {
             Ok(json) => {
                 if let Err(e) = std::fs::write(path, json) {
-                    tracing::warn!("保存余额缓存失败: {}", e);
+                    tracing::warn!("failed to save the balance cache: {}", e);
                 }
             }
-            Err(e) => tracing::warn!("序列化余额缓存失败: {}", e),
+            Err(e) => tracing::warn!("failed to serialize the balance cache: {}", e),
         }
     }
 
-    // ============ 代理池管理 ============
+    // ============ proxypool management ============
 
-    /// 获取代理池列表（含凭据引用计数）
+    /// Gets the proxy pool list (including credential reference counts).
     pub fn get_proxy_pool(&self) -> ProxyPoolResponse {
         let proxies = self.proxy_pool.list();
         let credentials = {
@@ -2161,7 +2161,7 @@ impl AdminService {
         }
     }
 
-    /// 添加代理到池中
+    /// add a proxy to the pool
     pub fn add_proxy(
         &self,
         url: String,
@@ -2185,7 +2185,7 @@ impl AdminService {
         })
     }
 
-    /// 批量添加代理
+    /// batch add proxies
     pub fn batch_add_proxies(
         &self,
         req: BatchAddProxyRequest,
@@ -2209,11 +2209,11 @@ impl AdminService {
         (result, errors)
     }
 
-    /// 删除代理池中的代理
+    /// delete a proxy from the proxy pool
     pub fn delete_proxy(&self, id: u64) -> Result<(), AdminServiceError> {
         self.proxy_pool.delete(id).map_err(|e| {
             let msg = e.to_string();
-            if msg.contains("不存在") {
+            if msg.contains("does not exist") {
                 AdminServiceError::NotFound { id }
             } else {
                 AdminServiceError::InternalError(msg)
@@ -2221,14 +2221,14 @@ impl AdminService {
         })
     }
 
-    /// 设置代理启用/禁用状态
+    /// set the proxy enabled/disablestate
     pub fn set_proxy_enabled(&self, id: u64, enabled: bool) -> Result<(), AdminServiceError> {
         self.proxy_pool
             .set_enabled(id, enabled)
             .map_err(|_| AdminServiceError::NotFound { id })
     }
 
-    /// 将代理池中的代理分配给指定凭据
+    /// Allocates a proxy from the pool to the given credential.
     pub fn assign_proxy_to_credential(
         &self,
         credential_id: u64,
@@ -2243,29 +2243,29 @@ impl AdminService {
                     }
                     GetUrlResult::Disabled => {
                         return Err(AdminServiceError::InvalidCredential(format!(
-                            "代理 #{} 已被禁用，请先启用后再分配",
+                            "proxy #{} It is disabled; please enable it before allocating.",
                             proxy_id
                         )));
                     }
                 };
                 Some(url)
             }
-            None => None, // 清除代理
+            None => None, // clearproxy
         };
 
         self.token_manager
             .update_credential(
                 credential_id,
-                None,            // email 不修改
-                Some(proxy_url), // 设置或清除 proxy_url（Some(None) = 清除，Some(Some(url)) = 设置）
-                None,            // proxy_username 不修改
-                None,            // proxy_password 不修改
-                None,            // groups 不修改
-                None,            // source_channel 不修改
+                None,            // email do not modify
+                Some(proxy_url), // setorclear proxy_url(Some(None) = clear,Some(Some(url)) = set)
+                None,            // proxy_username do not modify
+                None,            // proxy_password do not modify
+                None,            // groups do not modify
+                None,            // source_channel do not modify
             )
             .map_err(|e| {
                 let msg = e.to_string();
-                if msg.contains("不存在") {
+                if msg.contains("does not exist") {
                     AdminServiceError::NotFound { id: credential_id }
                 } else {
                     AdminServiceError::InternalError(msg)
@@ -2273,7 +2273,7 @@ impl AdminService {
             })
     }
 
-    /// 即时探测单个代理的连通性（供 UI「测试」按钮调用）
+    /// Instantly probes a single proxy connectivity (for UIcalled by the test button)
     pub async fn check_proxy(&self, id: u64) -> Result<ProxyCheckResponse, AdminServiceError> {
         let entry = self
             .proxy_pool
@@ -2290,7 +2290,7 @@ impl AdminService {
         })
     }
 
-    /// 触发全部代理的健康检查
+    /// Triggers the health check of all proxies.
     pub async fn check_all_proxies(&self) -> ProxyCheckAllResponse {
         let summary = self.proxy_pool.check_all().await;
         ProxyCheckAllResponse {
@@ -2300,10 +2300,10 @@ impl AdminService {
         }
     }
 
-    /// 将可用代理（已启用且非 Unhealthy）按轮询方式批量分配给凭据
+    /// Takes the available proxies (enabled and not Unhealthy) batch allocates to credentials in round robin.
     ///
-    /// - `credential_ids` 为 None 时对全部凭据分配
-    /// - 无可用代理时返回错误
+    /// - `credential_ids` as None assign to all credentials when
+    /// - Returns an error when no proxy is available.
     pub fn assign_proxies_round_robin(
         &self,
         credential_ids: Option<Vec<u64>>,
@@ -2311,7 +2311,7 @@ impl AdminService {
         let urls = self.proxy_pool.assignable_urls();
         if urls.is_empty() {
             return Err(AdminServiceError::InvalidCredential(
-                "没有可用代理（需已启用且健康检查未失败）".to_string(),
+                "No available proxy (must be enabled and not failed the health check).".to_string(),
             ));
         }
 
@@ -2344,50 +2344,50 @@ impl AdminService {
         })
     }
 
-    // ============ 错误分类 ============
+    // ============ errorclassify ============
 
-    /// 分类简单操作错误（set_disabled, set_priority, reset_and_enable）
+    /// classify simple operation errors (set_disabled, set_priority, reset_and_enable)
     fn classify_error(&self, e: anyhow::Error, id: u64) -> AdminServiceError {
         let msg = e.to_string();
-        if msg.contains("不存在") {
+        if msg.contains("does not exist") {
             AdminServiceError::NotFound { id }
         } else {
             AdminServiceError::InternalError(msg)
         }
     }
 
-    /// 分类余额查询错误（可能涉及上游 API 调用）
+    /// Classifies balance query errors (may involve upstream). API call)
     fn classify_balance_error(&self, e: anyhow::Error, id: u64) -> AdminServiceError {
         let msg = e.to_string();
 
-        // 1. 凭据不存在
-        if msg.contains("不存在") {
+        // 1. credentialdoes not exist
+        if msg.contains("does not exist") {
             return AdminServiceError::NotFound { id };
         }
 
-        // 2. API Key 凭据不支持刷新：客户端请求错误，映射为 400
-        if msg.contains("API Key 凭据不支持刷新") {
+        // 2. API Key The credential does not support refresh: a client request error, mapped to 400
+        if msg.contains("API Key the credential does not support refresh") {
             return AdminServiceError::InvalidCredential(msg);
         }
 
-        // 3. 上游明确指出凭据缺少或携带了错误的 Profile ARN，属于导入凭据不完整/无效。
+        // 3. Upstream explicitly indicates the credential is missing or carries a wrong Profile ARN, belongs to an incomplete imported credential./invalid.
         if msg.contains("Invalid profileArn") {
             return AdminServiceError::InvalidCredential(
-                "凭据缺少或包含无效 profileArn，无法查询余额；请重新登录获取 profileArn，或导入包含 profileArn 的完整凭据"
+                "the credential is missing or contains invalid profileArn, cannot query the balance; please log in again to obtain it. profileArn, or import containing profileArn ofcompletecredential"
                     .to_string(),
             );
         }
 
-        // 3. 上游服务错误特征：HTTP 响应错误或网络错误
-        let is_upstream_error = msg.contains("获取使用额度失败") ||
-            // HTTP 响应错误（来自 refresh_*_token 的错误消息）
-            msg.contains("凭证已过期或无效") ||
-            msg.contains("权限不足") ||
-            msg.contains("已被限流") ||
-            msg.contains("服务器错误") ||
-            msg.contains("Token 刷新失败") ||
-            msg.contains("暂时不可用") ||
-            // 网络错误（reqwest 错误格式）
+        // 3. upstream service error characteristics:HTTP response error or network error
+        let is_upstream_error = msg.contains("failed to get the usage quota") ||
+            // HTTP response error (from refresh_*_token the error message)
+            msg.contains("the credential has expired or is invalid") ||
+            msg.contains("permissionnotenough") ||
+            msg.contains("alreadybylimitstream") ||
+            msg.contains("servicecomponenterror") ||
+            msg.contains("Token refreshfailed") ||
+            msg.contains("temporarilywhennotavailable") ||
+            // network error(reqwest errorformat)
             msg.contains("error sending request") ||
             msg.contains("error trying to connect") ||
             msg.contains("connection") ||
@@ -2401,28 +2401,28 @@ impl AdminService {
         if is_upstream_error {
             AdminServiceError::UpstreamError(msg)
         } else {
-            // 4. 默认归类为内部错误（本地验证失败、配置错误等）
-            // 包括：缺少 refreshToken、refreshToken 已被截断、无法生成 machineId 等
+            // 4. Defaults to classifying as an internal error (local validation failure, config error, and so on).
+            // including:missing refreshToken,refreshToken has been truncated, cannot generate machineId etc.
             AdminServiceError::InternalError(msg)
         }
     }
 
-    /// 分类添加凭据错误
+    /// classify add credential errors
     fn classify_add_error(&self, e: anyhow::Error) -> AdminServiceError {
         let msg = e.to_string();
 
-        // 凭据验证失败（refreshToken 无效、格式错误等）
-        let is_invalid_credential = msg.contains("缺少 refreshToken")
-            || msg.contains("refreshToken 为空")
-            || msg.contains("refreshToken 已被截断")
-            || msg.contains("凭据已存在")
-            || msg.contains("refreshToken 重复")
-            || msg.contains("kiroApiKey 重复")
-            || msg.contains("缺少 kiroApiKey")
-            || msg.contains("kiroApiKey 为空")
-            || msg.contains("凭证已过期或无效")
-            || msg.contains("权限不足")
-            || msg.contains("已被限流");
+        // credential validation failed (refreshToken invalid, format error, etc)
+        let is_invalid_credential = msg.contains("missing refreshToken")
+            || msg.contains("refreshToken is empty")
+            || msg.contains("refreshToken alreadybytruncate")
+            || msg.contains("credentialalready exists")
+            || msg.contains("refreshToken duplicate")
+            || msg.contains("kiroApiKey duplicate")
+            || msg.contains("missing kiroApiKey")
+            || msg.contains("kiroApiKey is empty")
+            || msg.contains("the credential has expired or is invalid")
+            || msg.contains("permissionnotenough")
+            || msg.contains("alreadybylimitstream");
 
         if is_invalid_credential {
             AdminServiceError::InvalidCredential(msg)
@@ -2436,13 +2436,13 @@ impl AdminService {
         }
     }
 
-    // ── Social 登录（Portal PKCE OAuth）────────────────────────────────────────
+    // ── Social login (Portal PKCE OAuth)────────────────────────────────────────
 
-    /// 发起 Social 登录，返回 portal URL 供用户在浏览器打开
+    /// initiate Social login, return portal URL for the user to open in a browser
     ///
-    /// 回调模式由 `config.callbackBaseUrl` 决定：
-    /// - 已配置 → 远程模式：redirect_uri 使用公网地址，由本服务的 `/auth/callback` GET 路由接收回调
-    /// - 未配置 → 本地模式：启动临时 TCP 回调服务器（浏览器与服务端须同机）
+    /// callbackmodeby `config.callbackBaseUrl` decide:
+    /// - configured → remotemode:redirect_uri Uses the public address, by this service `/auth/callback` GET the route receives the callback
+    /// - not configured → local mode: start a temporary TCP Callback server (browser and server must be on the same machine).
     pub async fn start_social_login(
         &self,
         req: StartSocialLoginRequest,
@@ -2461,13 +2461,13 @@ impl AdminService {
         let (code_verifier, code_challenge) = social::generate_pkce();
         let state = uuid::Uuid::new_v4().to_string();
 
-        // 回调模式：配置了 callbackBaseUrl → 远程模式（公网回调路由自动接收）；
-        // 否则本地模式（启动临时 TCP 端口，仅本机浏览器可达）。
+        // callback mode: configured callbackBaseUrl → Remote mode (the public callback route auto receives);
+        // Otherwise local mode (starts a temporary TCP port, reachable only by the local browser).
         let remote_base = self.resolve_callback_base(req.callback_base_url.as_deref());
         let (redirect_uri, server_handle, remote_callback_tx, rx) = match remote_base.clone() {
             Some(base) => {
                 let (tx, rx) = tokio::sync::oneshot::channel::<social::OAuthCallbackData>();
-                // 远程模式：暂存 Sender，由公网 GET 回调路由投递回调数据
+                // remote mode: stage Sender, bypublic network GET The callback route delivers the callback data.
                 (
                     base,
                     None,
@@ -2526,14 +2526,14 @@ impl AdminService {
         })
     }
 
-    /// 轮询一次 Social 登录状态
+    /// pollonce Social loginstate
     pub async fn poll_social_login(
         &self,
         session_id: &str,
     ) -> Result<PollIdcLoginResponse, AdminServiceError> {
         use tokio::sync::oneshot::error::TryRecvError;
 
-        // 一次加锁同时完成：过期检查 + 非阻塞回调接收，消除 TOCTOU
+        // Completes within a single lock: the expiry check + Non blocking callback reception, eliminating TOCTOU
         enum PollOutcome {
             Expired,
             Closed,
@@ -2570,7 +2570,7 @@ impl AdminService {
             PollOutcome::Closed => {
                 self.social_sessions.lock().remove(session_id);
                 return Err(AdminServiceError::InternalError(
-                    "Social 登录回调服务器已关闭，请重新发起登录".to_string(),
+                    "Social The login callback server has closed; please start login again.".to_string(),
                 ));
             }
             PollOutcome::Received(callback) => {
@@ -2579,15 +2579,15 @@ impl AdminService {
         }
     }
 
-    /// 内部：完成 Social 登录的 token 兑换和凭据创建（供轮询回调和手动完成共用）
+    /// insidepart:doneinto Social login token Redemption and credential creation (shared by polling callback and manual completion).
     ///
-    /// 调用前须确认 session 存在且未过期。会在内部做 state CSRF 校验。
+    /// must confirm before calling session exists and is not expired. Does internally state CSRF validate.
     async fn do_complete_social_login(
         &self,
         session_id: &str,
         callback: social::OAuthCallbackData,
     ) -> Result<PollIdcLoginResponse, AdminServiceError> {
-        // 先做 CSRF 校验（不移除 session，校验失败时保持 session 可继续轮询）
+        // do first CSRF validate (do not remove session, keep when validation fails session cancontinuepoll)
         {
             let sessions = self.social_sessions.lock();
             let s = sessions
@@ -2595,17 +2595,17 @@ impl AdminService {
                 .ok_or(AdminServiceError::NotFound { id: 0 })?;
             if callback.state != s.state {
                 tracing::warn!(
-                    "Social 登录 state 不匹配（期望 {}, 收到 {}），已拒绝",
+                    "Social login state mismatch(expected {}, received {}),alreadyreject",
                     s.state,
                     callback.state
                 );
                 return Err(AdminServiceError::InternalError(
-                    "OAuth state 不匹配，请重新发起登录".to_string(),
+                    "OAuth state does not match; please start login again.".to_string(),
                 ));
             }
         }
 
-        // 移除 session（含 code_verifier 等敏感数据）
+        // remove session(including code_verifier etc.sensitivedata)
         let session = self
             .social_sessions
             .lock()
@@ -2614,7 +2614,7 @@ impl AdminService {
 
         let config = self.token_manager.config();
 
-        // 构建完整的 redirect_uri（与 IDE 行为一致）
+        // buildcompleteof redirect_uri(with IDE consistent behavior)
         let full_redirect_uri = if callback.login_option.is_empty() {
             format!("{}{}", session.redirect_uri, callback.path)
         } else {
@@ -2637,16 +2637,16 @@ impl AdminService {
         .await
         .map_err(|e| AdminServiceError::InternalError(e.to_string()))?;
 
-        // 重新登录模式：更新已有凭据而非创建新凭据
+        // Re-login mode: updates an existing credential rather than creating a new one.
         if let Some(target_id) = session.relogin_target_id {
             let refresh_token = token.refresh_token.ok_or_else(|| {
                 AdminServiceError::InternalError(
-                    "Social 登录未返回 refreshToken，无法更新凭据".to_string(),
+                    "Social loginnot yetreturn refreshToken, cannot update the credential".to_string(),
                 )
             })?;
             self.do_relogin_update(target_id, refresh_token)
                 .map_err(|e| AdminServiceError::InternalError(e.to_string()))?;
-            tracing::info!("Social 重新登录成功，凭据 #{} Token 已更新", target_id);
+            tracing::info!("Social re login succeeded, the credential #{} Token updated", target_id);
             return Ok(PollIdcLoginResponse::Success {
                 credential_id: target_id,
             });
@@ -2670,16 +2670,16 @@ impl AdminService {
             .await
             .map_err(|e| AdminServiceError::InternalError(e.to_string()))?;
 
-        // 主动刷新余额（含订阅等级 / 邮箱）并写入缓存，登录后立即可见
+        // Actively refreshes the balance (including subscription tier). / email) and writes to the cache, visible right after login.
         if let Err(e) = self.get_balance(credential_id).await {
-            tracing::warn!("Social 登录后刷新余额失败（不影响登录）: {}", e);
+            tracing::warn!("Social Refreshing the balance failed after login (does not affect login).: {}", e);
         }
 
-        tracing::info!("Social 登录成功，已添加凭据 #{}", credential_id);
+        tracing::info!("Social Login succeeded; the credential has been added. #{}", credential_id);
         Ok(PollIdcLoginResponse::Success { credential_id })
     }
 
-    /// 手动完成 Social 登录：远程访问时从浏览器地址栏粘贴的回调 URL 中提取参数，直接完成 token 兑换
+    /// manually finishedinto Social Login: the callback pasted from the browser address bar during remote access. URL extract parameters from, complete directly token redeem
     pub async fn complete_social_login(
         &self,
         session_id: &str,
@@ -2688,7 +2688,7 @@ impl AdminService {
         login_option: String,
         path: String,
     ) -> Result<PollIdcLoginResponse, AdminServiceError> {
-        // 过期检查
+        // expiredcheck
         {
             let sessions = self.social_sessions.lock();
             let s = sessions
@@ -2708,11 +2708,11 @@ impl AdminService {
         self.do_complete_social_login(session_id, callback).await
     }
 
-    /// 解析远程回调 base，优先级：`config.callbackBaseUrl`（显式覆盖 / 逃生口）> 请求自带 base > None（本地模式）。
+    /// parseremotecallback base,priority:`config.callbackBaseUrl`(explicit override / escape hatch)> requestbuilt in base > None(local mode).
     ///
-    /// 返回 None 表示回落本地模式（都未提供 / 提供的值非法时记 warn）。
+    /// return None means falling back to local mode (neither provided / when the provided value is illegal record warn).
     fn resolve_callback_base(&self, req_base: Option<&str>) -> Option<String> {
-        // 优先用 config 显式配置；否则用前端按当前访问地址派生的请求值
+        // prefer use config explicitly configured; otherwise uses the request value the frontend derives from the current access address.
         let raw = self
             .token_manager
             .config()
@@ -2726,7 +2726,7 @@ impl AdminService {
         }
         if !(trimmed.starts_with("http://") || trimmed.starts_with("https://")) {
             tracing::warn!(
-                "callbackBaseUrl 非法（须以 http:// 或 https:// 开头），回落本地回调模式: {}",
+                "callbackBaseUrl invalid(mustto http:// or https:// start), falls back to local callback mode.: {}",
                 raw
             );
             return None;
@@ -2734,17 +2734,17 @@ impl AdminService {
         Some(trimmed.to_string())
     }
 
-    /// 公网 GET 回调路由调用：按 OAuth state 定位会话并投递回调数据。
+    /// public network GET callback route call: by OAuth state Locates the session and delivers the callback data.
     ///
-    /// 命中且未过期 → 投递进会话 oneshot channel（由 poll_social_login 统一完成 token 兑换）；
-    /// 不存在 / 已过期 / 非远程会话 → 返回相应结果，由调用方渲染提示页。
+    /// hitandnot expired → deliverentersession oneshot channel(by poll_social_login unifydoneinto token redeem);
+    /// does not exist / expired / nonremotesession → Returns the corresponding result; the caller renders the hint page.
     pub fn deliver_remote_social_callback(
         &self,
         state: &str,
         data: social::OAuthCallbackData,
     ) -> RemoteCallbackOutcome {
         let sessions = self.social_sessions.lock();
-        // 找到 state 匹配的会话（state 每会话随机，提供 CSRF 保护）
+        // find state matchofsession(state random per session, provide CSRF protect)
         let session_id = sessions
             .iter()
             .find_map(|(id, s)| (s.state == state).then_some(id.clone()));
@@ -2752,15 +2752,15 @@ impl AdminService {
         let Some(session_id) = session_id else {
             return RemoteCallbackOutcome::NotFound;
         };
-        let session = sessions.get(&session_id).expect("刚查到的会话必然存在");
+        let session = sessions.get(&session_id).expect("the session just found must exist");
         if Utc::now() >= session.expires_at {
             return RemoteCallbackOutcome::Expired;
         }
         let tx_slot = match session.remote_callback_tx.as_ref() {
             Some(slot) => slot,
-            None => return RemoteCallbackOutcome::NotFound, // 本地模式会话：不应由公网路由投递
+            None => return RemoteCallbackOutcome::NotFound, // Local mode session: should not be delivered by the public route.
         };
-        // 释放外层锁后再投递（send 不阻塞，但避免持锁发送）
+        // release the outer lock before dispatching (send Does not block, but avoids sending while holding the lock.
         let tx = tx_slot.lock().take();
         drop(sessions);
         match tx {
@@ -2768,7 +2768,7 @@ impl AdminService {
                 if tx.send(data).is_ok() {
                     RemoteCallbackOutcome::Delivered
                 } else {
-                    // 接收端已消失（会话被并发完成/移除）→ 视为已处理
+                    // The receiver has disappeared (the session was concurrently completed)./removed)→ viewasalreadyhandle
                     RemoteCallbackOutcome::AlreadyCompleted
                 }
             }
@@ -2776,12 +2776,12 @@ impl AdminService {
         }
     }
 
-    /// 分类删除凭据错误
+    /// classify delete credential errors
     fn classify_delete_error(&self, e: anyhow::Error, id: u64) -> AdminServiceError {
         let msg = e.to_string();
-        if msg.contains("不存在") {
+        if msg.contains("does not exist") {
             AdminServiceError::NotFound { id }
-        } else if msg.contains("只能删除已禁用的凭据") || msg.contains("请先禁用凭据")
+        } else if msg.contains("can only delete disabled credentials") || msg.contains("please firstdisablecredential")
         {
             AdminServiceError::InvalidCredential(msg)
         } else {
@@ -2789,9 +2789,9 @@ impl AdminService {
         }
     }
 
-    // ── IdC 设备授权登录 ──────────────────────────────────────────────────────
+    // ── IdC device authorization login ──────────────────────────────────────────────────────
 
-    /// 发起 IdC 设备授权，返回验证码和 URL
+    /// initiate IdC Device authorization, returns the verification code and URL
     pub async fn start_idc_login(
         &self,
         req: StartIdcLoginRequest,
@@ -2799,7 +2799,7 @@ impl AdminService {
         let config = self.token_manager.config();
         let global_proxy = self.token_manager.proxy();
 
-        // 代理：优先用请求级，否则回退全局
+        // Proxy: prefers the request level, otherwise falls back to global.
         let proxy = req
             .proxy_url
             .as_deref()
@@ -2808,12 +2808,12 @@ impl AdminService {
 
         let start_url = req.start_url.as_deref().unwrap_or(BUILDER_ID_START_URL);
 
-        // 1. 注册 OIDC 客户端
+        // 1. register OIDC client
         let reg = idc::register_client(&req.region, start_url, config, proxy.as_ref())
             .await
             .map_err(|e| AdminServiceError::InternalError(e.to_string()))?;
 
-        // 2. 发起设备授权
+        // 2. initiatedevice authorization
         let device = idc::start_device_authorization(
             &req.region,
             start_url,
@@ -2828,14 +2828,14 @@ impl AdminService {
         let expires_at = Utc::now() + Duration::seconds(device.expires_in);
         let session_id = Uuid::new_v4().to_string();
 
-        // 身份提供商：默认 Start URL 为 AWS Builder ID，自定义 Start URL 为企业 IAM Identity Center
+        // identity provider: default Start URL as AWS Builder ID,fromdefine Start URL is enterprise IAM Identity Center
         let provider = if start_url == BUILDER_ID_START_URL {
             "BuilderId"
         } else {
             "Enterprise"
         };
 
-        // 构建登录成功后写入的凭据模板
+        // Builds the credential template written after a successful login.
         let cred_template = KiroCredentials {
             auth_method: Some("idc".to_string()),
             provider: Some(provider.to_string()),
@@ -2874,7 +2874,7 @@ impl AdminService {
         })
     }
 
-    /// 轮询一次 IdC 登录状态
+    /// pollonce IdC loginstate
     pub async fn poll_idc_login(
         &self,
         session_id: &str,
@@ -2931,19 +2931,19 @@ impl AdminService {
             idc::PollResult::Success(token) => {
                 self.idc_sessions.lock().remove(session_id);
 
-                // 重新登录模式：更新已有凭据而非创建新凭据
+                // Re-login mode: updates an existing credential rather than creating a new one.
                 if let Some(target_id) = relogin_target_id {
                     if let Some(refresh_token) = token.refresh_token {
                         self.do_relogin_update(target_id, refresh_token)
                             .map_err(|e| AdminServiceError::InternalError(e.to_string()))?;
                     }
-                    tracing::info!("IdC 重新登录成功，凭据 #{} Token 已更新", target_id);
+                    tracing::info!("IdC re login succeeded, the credential #{} Token updated", target_id);
                     return Ok(PollIdcLoginResponse::Success {
                         credential_id: target_id,
                     });
                 }
 
-                // 写入凭据
+                // writecredential
                 let mut new_cred = cred_template;
                 new_cred.access_token = Some(token.access_token);
                 new_cred.refresh_token = token.refresh_token;
@@ -2957,36 +2957,36 @@ impl AdminService {
                     .await
                     .map_err(|e| AdminServiceError::InternalError(e.to_string()))?;
 
-                // 主动刷新余额（含订阅等级 / 邮箱）并写入缓存，登录后立即可见
+                // Actively refreshes the balance (including subscription tier). / email) and writes to the cache, visible right after login.
                 if let Err(e) = self.get_balance(credential_id).await {
-                    tracing::warn!("IdC 登录后刷新余额失败（不影响登录）: {}", e);
+                    tracing::warn!("IdC Refreshing the balance failed after login (does not affect login).: {}", e);
                 }
 
-                tracing::info!("IdC 设备授权登录成功，已添加凭据 #{}", credential_id);
+                tracing::info!("IdC Device authorization login succeeded; the credential has been added. #{}", credential_id);
                 Ok(PollIdcLoginResponse::Success { credential_id })
             }
         }
     }
 
-    /// 内部：重新登录完成后更新已有凭据的 Token（禁用→更新→重置→启用）
+    /// Internal: after re-login completes, updates the existing credential Token(disable→update→reset→enabled)
     fn do_relogin_update(&self, target_id: u64, refresh_token: String) -> anyhow::Result<()> {
-        // 先禁用（update_refresh_token 要求凭据处于禁用状态）
+        // firstdisable(update_refresh_token requires the credential to be in the disabled state)
         self.token_manager.set_disabled(target_id, true)?;
-        // 更新 refreshToken（同时清空 accessToken 和 expiresAt，系统会在下次使用时自动刷新）
+        // update refreshToken(samewhenclearempty accessToken and expiresAt, the system auto refreshes on next use)
         self.token_manager
             .update_refresh_token(target_id, refresh_token, None, None)?;
-        // 重置失败计数并重新启用
+        // Resets the failure count and re-enables.
         self.token_manager.reset_and_enable(target_id)?;
         Ok(())
     }
 
-    /// 发起 Social 重新登录（更新已有凭据的 Token 而非创建新凭据）
+    /// initiate Social Re-login (updates the existing credential Token rather than creating a new credential)
     pub async fn start_social_relogin(
         &self,
         target_id: u64,
         req: StartSocialLoginRequest,
     ) -> Result<StartSocialLoginResponse, AdminServiceError> {
-        // 验证目标凭据存在
+        // validate the target credential exists
         {
             let snapshot = self.token_manager.snapshot();
             if !snapshot.entries.iter().any(|e| e.id == target_id) {
@@ -3008,7 +3008,7 @@ impl AdminService {
         let (code_verifier, code_challenge) = social::generate_pkce();
         let state = uuid::Uuid::new_v4().to_string();
 
-        // 回调模式同 start_social_login：远程模式走公网回调路由，本地模式走临时端口
+        // callbackmodesame start_social_login: remote mode uses the public callback route, local mode uses a temporary port.
         let remote_base = self.resolve_callback_base(req.callback_base_url.as_deref());
         let (redirect_uri, server_handle, remote_callback_tx, rx) = match remote_base.clone() {
             Some(base) => {
@@ -3058,13 +3058,13 @@ impl AdminService {
         })
     }
 
-    /// 发起 IdC 重新登录（更新已有凭据的 Token 而非创建新凭据）
+    /// initiate IdC Re-login (updates the existing credential Token rather than creating a new credential)
     pub async fn start_idc_relogin(
         &self,
         target_id: u64,
         req: StartIdcLoginRequest,
     ) -> Result<StartIdcLoginResponse, AdminServiceError> {
-        // 验证目标凭据存在
+        // validate the target credential exists
         {
             let snapshot = self.token_manager.snapshot();
             if !snapshot.entries.iter().any(|e| e.id == target_id) {
@@ -3151,25 +3151,25 @@ mod tests {
         cred.region = Some("us-east-1".to_string());
         cred.email = Some("e@example.com".to_string());
         cred.expires_at = Some("2026-06-06T00:00:00Z".to_string());
-        // 占位符 profileArn 应在导出时被剥离
+        // placeholder profileArn should be stripped during export
         cred.profile_arn = Some(
             crate::kiro::model::credentials::BUILDER_ID_PROFILE_ARN.to_string(),
         );
 
-        let acc = credential_to_export_account(cred).expect("应生成账号");
+        let acc = credential_to_export_account(cred).expect("shouldgenerateaccount");
 
-        // 嵌套 credentials 结构
+        // nested credentials struct
         assert_eq!(acc.credentials.refresh_token.as_deref(), Some("rt-123"));
         assert_eq!(acc.credentials.client_id.as_deref(), Some("cid"));
-        // authMethod 规范化为 "IdC"
+        // authMethod normalizeas "IdC"
         assert_eq!(acc.credentials.auth_method.as_deref(), Some("IdC"));
-        // expiresAt 解析为毫秒时间戳
+        // expiresAt parse into a millisecond timestamp
         assert!(acc.credentials.expires_at > 0);
-        // idp 取 provider
+        // idp take provider
         assert_eq!(acc.idp, "Enterprise");
-        // 占位符 profileArn 被跳过
+        // placeholder profileArn skipped
         assert_eq!(acc.profile_arn, None);
-        // 必填的 csrfToken 输出空串
+        // required csrfToken outputemptystring
         assert_eq!(acc.credentials.csrf_token, "");
     }
 
@@ -3178,7 +3178,7 @@ mod tests {
         let mut cred = KiroCredentials::default();
         cred.kiro_api_key = Some("ksk_abc".to_string());
         cred.auth_method = Some("api_key".to_string());
-        // 无 refreshToken → 跳过
+        // none refreshToken → skip
         assert!(credential_to_export_account(cred).is_none());
     }
 

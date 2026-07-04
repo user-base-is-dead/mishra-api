@@ -1,4 +1,4 @@
-//! Anthropic API Handler 函数
+//! Anthropic API Handler function
 
 use std::convert::Infallible;
 use std::time::Instant;
@@ -37,13 +37,13 @@ use super::types::{
 };
 use super::websearch;
 
-/// 请求结束时记录用量的钩子
+/// The hook that records usage at request end.
 ///
-/// 在 handler 入口构造，调用 [`Self::record`] 时把当次请求的 input/output token、
-/// 命中的上游凭据 ID、状态写入：
-/// - `usage_log.YYYY-MM-DD.jsonl`（持久化历史）
-/// - 内存聚合器（仪表盘趋势）
-/// - 客户端 Key 计数（按 Key 累计）
+/// in handler entry construction, call [`Self::record`] when take this request input/output token,
+/// the hit upstream credential ID,statewrite:
+/// - `usage_log.YYYY-MM-DD.jsonl`(persist history)
+/// - In-memory aggregator (dashboard trend).
+/// - client Key countcount(by Key cumulative)
 #[derive(Clone)]
 pub(crate) struct UsageRecordHook {
     pub recorder: Option<SharedRecorder>,
@@ -114,13 +114,13 @@ impl UsageRecordHook {
     }
 }
 
-/// 单次请求的链路追踪器
+/// trace tracker for a single request
 ///
-/// 在 handler 入口构造，作为 [`TraceSink`] 传入 provider；provider 在重试循环里
-/// 每跳调用 [`on_attempt`](TraceSink::on_attempt) 累积一条 [`TraceAttempt`]。
-/// 请求结束时调用 [`Self::finalize`] 组装 [`TraceRecord`] 并写入 SQLite。
+/// in handler entry construction, as [`TraceSink`] pass in provider;provider inretry loopin
+/// each hopcall [`on_attempt`](TraceSink::on_attempt) accumulateoneentry [`TraceAttempt`].
+/// called at the end of the request [`Self::finalize`] assemble [`TraceRecord`] and write SQLite.
 ///
-/// `store` 为 None（未启用 Admin / trace）时所有方法都是空操作，零开销。
+/// `store` as None(not enabled Admin / trace) all methods are no ops, with zero overhead.
 pub(crate) struct RequestTracer {
     store: Option<SharedTraceStore>,
     trace_id: String,
@@ -130,12 +130,12 @@ pub(crate) struct RequestTracer {
     model: String,
     is_stream: bool,
     started_at: Instant,
-    /// 首个上游 chunk 到达时刻（仅流式标记；取第一次）
+    /// firstitemupstream chunk Arrival moment (streaming mark only; takes the first).
     first_token_at: parking_lot::Mutex<Option<Instant>>,
     attempts: parking_lot::Mutex<Vec<TraceAttempt>>,
 }
 
-/// 本次请求的用量快照（落入 trace 行，与 usage_log 同源）
+/// The usage snapshot of this request (placed into trace line, with usage_log same origin)
 #[derive(Clone, Copy, Default)]
 pub(crate) struct TraceUsage {
     pub input_tokens: u64,
@@ -146,7 +146,7 @@ pub(crate) struct TraceUsage {
 }
 
 impl TraceUsage {
-    /// 错误早退等无用量场景
+    /// scenarios with no usage such as early error exit
     pub fn zero() -> Self {
         Self::default()
     }
@@ -174,7 +174,7 @@ impl RequestTracer {
         }
     }
 
-    /// 标记首个上游 chunk 到达（幂等，仅记录第一次）
+    /// markfirstitemupstream chunk arrives (idempotent, records only the first time).
     pub fn mark_first_token(&self) {
         let mut slot = self.first_token_at.lock();
         if slot.is_none() {
@@ -182,7 +182,7 @@ impl RequestTracer {
         }
     }
 
-    /// 组装并落库一条完整链路。store 为 None 时不做任何事。
+    /// Assembles and persists one complete chain.store as None does nothing when.
     pub fn finalize(
         &self,
         final_status: &str,
@@ -193,7 +193,7 @@ impl RequestTracer {
     ) {
         let Some(store) = &self.store else { return };
         let attempts = std::mem::take(&mut *self.attempts.lock());
-        // 最终凭据：最后一跳的命中凭据（成功跳即命中凭据，失败跳即最后尝试的凭据）
+        // Final credential: the hit credential of the last hop (a success hop is the hit credential, a failed hop is the last attempted credential).
         let final_credential_id = attempts.last().map(|a| a.credential_id).unwrap_or(0);
         let first_token_ms = self
             .first_token_at
@@ -231,8 +231,8 @@ impl TraceSink for RequestTracer {
     }
 }
 
-/// 取追踪器里最后一跳的 outcome（用于把 provider 的失败分类提升到 record.error_type）。
-/// 返回 'static str（outcome 常量），无 attempt 时返回 None。
+/// take the last hop in the tracker outcome(used fortake provider the failure classification is elevated to record.error_type).
+/// return 'static str(outcome constant),none attempt return when None.
 fn last_attempt_outcome(tracer: &RequestTracer) -> Option<&'static str> {
     let last = tracer.attempts.lock().last()?.outcome.clone();
     Some(match last.as_str() {
@@ -291,13 +291,13 @@ fn count_image_budget(payload: &super::types::MessagesRequest) -> ImageBudget {
     }
 }
 
-/// 将 KiroProvider 错误映射为 HTTP 响应
+/// will KiroProvider errormappingas HTTP response
 pub(super) fn map_provider_error(err: Error) -> Response {
     let err_str = err.to_string();
 
-    // 上下文窗口满了（对话历史累积超出模型上下文窗口限制）
+    // The context window is full (accumulated conversation history exceeds the model context window limit).
     if err_str.contains("CONTENT_LENGTH_EXCEEDS_THRESHOLD") {
-        tracing::warn!(error = %err, "上游拒绝请求：上下文窗口已满（不应重试）");
+        tracing::warn!(error = %err, "Upstream rejected the request: the context window is full (should not retry).");
         return (
             StatusCode::BAD_REQUEST,
             Json(ErrorResponse::new(
@@ -308,9 +308,9 @@ pub(super) fn map_provider_error(err: Error) -> Response {
             .into_response();
     }
 
-    // 单次输入太长（请求体本身超出上游限制）
+    // A single input is too long (the request body itself exceeds the upstream limit).
     if err_str.contains("Input is too long") {
-        tracing::warn!(error = %err, "上游拒绝请求：输入过长（不应重试）");
+        tracing::warn!(error = %err, "Upstream rejected the request: input too long (should not retry).");
         return (
             StatusCode::BAD_REQUEST,
             Json(ErrorResponse::new(
@@ -344,18 +344,18 @@ pub(super) fn map_provider_error(err: Error) -> Response {
             .into_response();
     }
 
-    tracing::error!("Kiro API 调用失败: {}", err);
+    tracing::error!("Kiro API callfailed: {}", err);
     (
         StatusCode::BAD_GATEWAY,
         Json(ErrorResponse::new(
             "api_error",
-            format!("上游 API 调用失败: {}", err),
+            format!("upstream API callfailed: {}", err),
         )),
     )
         .into_response()
 }
 
-/// 计算 Anthropic usage 口径的 input_tokens
+/// compute Anthropic usage basis input_tokens
 fn resolve_usage_input_tokens(
     fallback_total_input_tokens: i32,
     context_total_input_tokens: Option<i32>,
@@ -514,7 +514,7 @@ fn available_models() -> Vec<Model> {
 
 /// GET /v1/models
 ///
-/// 返回可用的模型列表
+/// return the available model list
 pub async fn get_models() -> impl IntoResponse {
     tracing::info!("Received GET /v1/models request");
 
@@ -528,7 +528,7 @@ pub async fn get_models() -> impl IntoResponse {
 
 /// POST /v1/messages
 ///
-/// 创建消息（对话）
+/// create a message (conversation)
 pub async fn post_messages(
     State(state): State<AppState>,
     Extension(key_ctx): Extension<KeyContext>,
@@ -554,11 +554,11 @@ pub async fn post_messages(
         );
     }
     let hook = UsageRecordHook::from_state(&state, key_ctx.key_id, payload.model.clone());
-    // 检查 KiroProvider 是否可用
+    // check KiroProvider iswhetheravailable
     let provider = match &state.kiro_provider {
         Some(p) => p.clone(),
         None => {
-            tracing::error!("KiroProvider 未配置");
+            tracing::error!("KiroProvider not configured");
             hook.record(0, 0, 0, 0, 0, 0.0, "error");
             return (
                 StatusCode::SERVICE_UNAVAILABLE,
@@ -571,14 +571,14 @@ pub async fn post_messages(
         }
     };
 
-    // 检测模型名是否包含 "thinking" 后缀，若包含则覆写 thinking 配置
+    // detect whether the model name contains "thinking" suffix, if included then override thinking config
     override_thinking_from_model_name(&mut payload);
 
-    // 检查是否为 WebSearch 请求
+    // checkwhether is WebSearch request
     if websearch::has_web_search_tool(&payload) {
-        tracing::info!("检测到 WebSearch 工具，路由到 WebSearch 处理");
+        tracing::info!("detected WebSearch tool,routeto WebSearch handle");
 
-        // 估算输入 tokens
+        // estimateinput tokens
         let input_tokens = token::count_all_tokens(
             payload.model.clone(),
             payload.system.clone(),
@@ -587,7 +587,7 @@ pub async fn post_messages(
         ) as i32;
 
         let resp = websearch::handle_websearch_request(provider, &payload, input_tokens).await;
-        // WebSearch 路径走 MCP 端点，没有 credential_id 上下文，统一记 0
+        // WebSearch path goes MCP endpoint,none credential_id context, uniformly record 0
         let status = if resp.status().is_success() { "success" } else { "error" };
         hook.record(0, input_tokens, 0, 0, 0, 0.0, status);
         return resp;
@@ -602,19 +602,19 @@ pub async fn post_messages(
             .await;
     }
 
-    // 转换请求
+    // convertrequest
     let conversion_result = match convert_request(&payload) {
         Ok(result) => result,
         Err(e) => {
             let (error_type, message) = match &e {
                 ConversionError::UnsupportedModel(model) => {
-                    ("invalid_request_error", format!("模型不支持: {}", model))
+                    ("invalid_request_error", format!("modelnot supported: {}", model))
                 }
                 ConversionError::EmptyMessages => {
-                    ("invalid_request_error", "消息列表为空".to_string())
+                    ("invalid_request_error", "messagelistis empty".to_string())
                 }
             };
-            tracing::warn!("请求转换失败: {}", e);
+            tracing::warn!("requestconvertfailed: {}", e);
             hook.record(0, 0, 0, 0, 0, 0.0, "error");
             return (
                 StatusCode::BAD_REQUEST,
@@ -635,13 +635,13 @@ pub async fn post_messages(
     let request_body = match serde_json::to_string(&kiro_request) {
         Ok(body) => body,
         Err(e) => {
-            tracing::error!("序列化请求失败: {}", e);
+            tracing::error!("failed to serialize the request: {}", e);
             hook.record(0, 0, 0, 0, 0, 0.0, "error");
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ErrorResponse::new(
                     "internal_error",
-                    format!("序列化请求失败: {}", e),
+                    format!("failed to serialize the request: {}", e),
                 )),
             )
                 .into_response();
@@ -650,7 +650,7 @@ pub async fn post_messages(
 
     tracing::debug!("Kiro request body: {}", request_body);
 
-    // 估算输入 tokens
+    // estimateinput tokens
     let total_input_tokens = token::count_all_tokens(
         payload.model.clone(),
         payload.system.clone(),
@@ -658,7 +658,7 @@ pub async fn post_messages(
         payload.tools.clone(),
     ) as i32;
 
-    // 检查是否启用了thinking
+    // check whether it is enabledthinking
     let thinking_enabled = payload
         .thinking
         .as_ref()
@@ -668,8 +668,8 @@ pub async fn post_messages(
     let tool_name_map = conversion_result.tool_name_map;
     let known_tool_names = conversion_result.known_tool_names;
 
-    // CacheMeter：根据 cache_control 断点查 / 写中转层提示词缓存。
-    // 返回 estimate 口径的覆盖量；真实 input/cache 互斥分摊在拿到 total 真值时进行。
+    // CacheMeter: based on cache_control breakpoint check / write the relay layer prompt cache.
+    // return estimate the coverage amount of the measure; real input/cache mutually exclusive apportionment when obtaining total truthywhenenterline.
     let cache_usage = state
         .cache_meter
         .as_ref()
@@ -677,7 +677,7 @@ pub async fn post_messages(
         .unwrap_or_default();
 
     if payload.stream {
-        // 流式响应
+        // streamingresponse
         let tracer = std::sync::Arc::new(RequestTracer::new(
             &state,
             RequestTraceOptions {
@@ -701,7 +701,7 @@ pub async fn post_messages(
         )
         .await
     } else {
-        // 非流式响应：仅在配置开启时提取 thinking 块
+        // Non streaming response: extracts only when enabled in config. thinking block
         let extract_thinking = state.extract_thinking && thinking_enabled;
         let tracer = std::sync::Arc::new(RequestTracer::new(
             &state,
@@ -728,7 +728,7 @@ pub async fn post_messages(
     }
 }
 
-/// 处理流式请求
+/// handlestreaming request
 async fn handle_stream_request(
     provider: std::sync::Arc<crate::kiro::provider::KiroProvider>,
     request_body: &str,
@@ -742,12 +742,12 @@ async fn handle_stream_request(
     tracer: std::sync::Arc<RequestTracer>,
     group: Option<String>,
 ) -> Response {
-    // 调用 Kiro API（支持多凭据故障转移）
+    // call Kiro API(supports multi credential failover)
     let call_result = match provider.call_api_stream(request_body, Some(tracer.as_ref()), group.as_deref()).await {
         Ok(resp) => resp,
         Err(e) => {
             hook.record(0, input_tokens, 0, 0, 0, 0.0, "error");
-            // 重试链路全部失败、未开始返回内容：error_type 取最后一跳分类
+            // The whole retry chain failed and no content began to return:error_type take the last hop classification
             tracer.finalize("error", last_attempt_outcome(&tracer), Some(&e.to_string()), None, TraceUsage::zero());
             return map_provider_error(e);
         }
@@ -755,17 +755,17 @@ async fn handle_stream_request(
     let response = call_result.response;
     let credential_id = call_result.credential_id;
 
-    // 创建流处理上下文
+    // create a stream processing context
     let mut ctx = StreamContext::new_with_thinking(model, input_tokens, thinking_enabled, tool_name_map, known_tool_names);
     ctx.cache_usage = cache_usage;
 
-    // 生成初始事件
+    // generateinitialevent
     let initial_events = ctx.generate_initial_events();
 
-    // 创建 SSE 流
+    // create SSE stream
     let stream = create_sse_stream(response, ctx, initial_events, hook, credential_id, tracer);
 
-    // 返回 SSE 响应
+    // return SSE response
     Response::builder()
         .status(StatusCode::OK)
         .header(header::CONTENT_TYPE, "text/event-stream")
@@ -775,15 +775,15 @@ async fn handle_stream_request(
         .unwrap()
 }
 
-/// Ping 事件间隔（25秒）
+/// Ping eventinterval(25seconds)
 const PING_INTERVAL_SECS: u64 = 25;
 
-/// 创建 ping 事件的 SSE 字符串
+/// create ping event SSE string
 fn create_ping_sse() -> Bytes {
     Bytes::from("event: ping\ndata: {\"type\": \"ping\"}\n\n")
 }
 
-/// 创建 SSE 事件流
+/// create SSE event stream
 fn create_sse_stream(
     response: reqwest::Response,
     ctx: StreamContext,
@@ -792,14 +792,14 @@ fn create_sse_stream(
     credential_id: u64,
     tracer: std::sync::Arc<RequestTracer>,
 ) -> impl Stream<Item = Result<Bytes, Infallible>> {
-    // 先发送初始事件
+    // send the initial event first
     let initial_stream = stream::iter(
         initial_events
             .into_iter()
             .map(|e| Ok(Bytes::from(e.to_sse_string()))),
     );
 
-    // 然后处理 Kiro 响应流，同时每25秒发送 ping 保活
+    // soafterhandle Kiro the response stream, at the same time each25send per second ping keep alive
     let body_stream = response.bytes_stream();
 
     let processing_stream = stream::unfold(
@@ -809,17 +809,17 @@ fn create_sse_stream(
                 return None;
             }
 
-            // 使用 select! 同时等待数据和 ping 定时器
+            // use select! wait for both data and ping timer
             tokio::select! {
-                // 处理数据流
+                // handledatastream
                 chunk_result = body_stream.next() => {
                     match chunk_result {
                         Some(Ok(chunk)) => {
                             tracer.mark_first_token();
                             sent_bytes += chunk.len() as u64;
-                            // 解码事件
+                            // decodeevent
                             if let Err(e) = decoder.feed(&chunk) {
-                                tracing::warn!("缓冲区溢出: {}", e);
+                                tracing::warn!("buffer overflow: {}", e);
                             }
 
                             let mut events = Vec::new();
@@ -832,12 +832,12 @@ fn create_sse_stream(
                                         }
                                     }
                                     Err(e) => {
-                                        tracing::warn!("解码事件失败: {}", e);
+                                        tracing::warn!("decodeeventfailed: {}", e);
                                     }
                                 }
                             }
 
-                            // 转换为 SSE 字节流
+                            // convert to SSE byte stream
                             let bytes: Vec<Result<Bytes, Infallible>> = events
                                 .into_iter()
                                 .map(|e| Ok(Bytes::from(e.to_sse_string())))
@@ -846,11 +846,11 @@ fn create_sse_stream(
                             Some((stream::iter(bytes), (body_stream, ctx, decoder, false, ping_interval, hook, credential_id, tracer, sent_bytes)))
                         }
                         Some(Err(e)) => {
-                            tracing::error!("读取响应流失败: {}", e);
-                            // 发送最终事件并结束（记为 error）
+                            tracing::error!("failed to read the response stream: {}", e);
+                            // Sends the final event and ends (recorded as error)
                             let final_events = ctx.generate_final_events();
                             record_stream_usage(&hook, &ctx, credential_id, "error");
-                            // 已开始返回内容后上游断流：标记为 interrupted，带已发送字节数
+                            // Upstream stream broke after content began returning: marked as interrupted, with the number of bytes already sent
                             tracer.finalize(
                                 "interrupted",
                                 Some(outcome::STREAM_INTERRUPTED),
@@ -865,7 +865,7 @@ fn create_sse_stream(
                             Some((stream::iter(bytes), (body_stream, ctx, decoder, true, ping_interval, hook, credential_id, tracer, sent_bytes)))
                         }
                         None => {
-                            // 流结束，发送最终事件
+                            // the stream ends, send the final event
                             let final_events = ctx.generate_final_events();
                             record_stream_usage(&hook, &ctx, credential_id, "success");
                             tracer.finalize("success", None, None, None, stream_trace_usage(&ctx));
@@ -877,9 +877,9 @@ fn create_sse_stream(
                         }
                     }
                 }
-                // 发送 ping 保活
+                // send ping keep alive
                 _ = ping_interval.tick() => {
-                    tracing::trace!("发送 ping 保活事件");
+                    tracing::trace!("send ping keep aliveevent");
                     let bytes: Vec<Result<Bytes, Infallible>> = vec![Ok(create_ping_sse())];
                     Some((stream::iter(bytes), (body_stream, ctx, decoder, false, ping_interval, hook, credential_id, tracer, sent_bytes)))
                 }
@@ -891,14 +891,14 @@ fn create_sse_stream(
     initial_stream.chain(processing_stream)
 }
 
-/// 从 StreamContext 提取最终用量并写入 hook
+/// from StreamContext extract the final usage and write into hook
 fn record_stream_usage(
     hook: &UsageRecordHook,
     ctx: &StreamContext,
     credential_id: u64,
     status: &str,
 ) {
-    // 互斥分摊后的 (input, cache_creation, cache_read)，与 trace 上报口径一致。
+    // mutually exclusive allocationafterof (input, cache_creation, cache_read), with trace the reporting measure is consistent.
     let (input, cache_creation, cache_read) = ctx.resolved_usage();
     hook.record(
         credential_id,
@@ -911,7 +911,7 @@ fn record_stream_usage(
     );
 }
 
-/// 从 StreamContext 提取用量，转成 trace 行用量（与 record_stream_usage 同源）
+/// from StreamContext extract the usage, convert into trace lineusage(with record_stream_usage same origin)
 fn stream_trace_usage(ctx: &StreamContext) -> TraceUsage {
     let (input, cache_creation, cache_read) = ctx.resolved_usage();
     TraceUsage {
@@ -925,7 +925,7 @@ fn stream_trace_usage(ctx: &StreamContext) -> TraceUsage {
 
 use super::converter::get_context_window_size;
 
-/// 处理非流式请求
+/// handle non streaming requests
 async fn handle_non_stream_request(
     provider: std::sync::Arc<crate::kiro::provider::KiroProvider>,
     request_body: &str,
@@ -933,15 +933,15 @@ async fn handle_non_stream_request(
     input_tokens: i32,
     thinking_enabled: bool,
     tool_name_map: std::collections::HashMap<String, String>,
-    // 非流式路径直接处理结构化 Event::ToolUse，不经过 <invoke> 文本嗅探，
-    // 因此这里不需要工具表校验；保留参数以对齐调用方签名。
+    // The non streaming path handles structured directly. Event::ToolUse,notafter <invoke> text sniffing,
+    // So no tool table validation is needed here; the parameter is kept to align with the caller signature.
     _known_tool_names: std::collections::HashSet<String>,
     hook: UsageRecordHook,
     cache_usage: super::cache_metering::CacheUsage,
     tracer: std::sync::Arc<RequestTracer>,
     group: Option<String>,
 ) -> Response {
-    // 调用 Kiro API（支持多凭据故障转移）
+    // call Kiro API(supports multi credential failover)
     let call_result = match provider.call_api(request_body, Some(tracer.as_ref()), group.as_deref()).await {
         Ok(resp) => resp,
         Err(e) => {
@@ -953,11 +953,11 @@ async fn handle_non_stream_request(
     let response = call_result.response;
     let credential_id = call_result.credential_id;
 
-    // 读取响应体
+    // readresponse body
     let body_bytes = match response.bytes().await {
         Ok(bytes) => bytes,
         Err(e) => {
-            tracing::error!("读取响应体失败: {}", e);
+            tracing::error!("failed to read the response body: {}", e);
             hook.record(credential_id, input_tokens, 0, 0, 0, 0.0, "error");
             tracer.finalize(
                 "interrupted",
@@ -970,17 +970,17 @@ async fn handle_non_stream_request(
                 StatusCode::BAD_GATEWAY,
                 Json(ErrorResponse::new(
                     "api_error",
-                    format!("读取响应失败: {}", e),
+                    format!("readresponsefailed: {}", e),
                 )),
             )
                 .into_response();
         }
     };
 
-    // 解析事件流
+    // parse eventstream
     let mut decoder = EventStreamDecoder::new();
     if let Err(e) = decoder.feed(&body_bytes) {
-        tracing::warn!("缓冲区溢出: {}", e);
+        tracing::warn!("buffer overflow: {}", e);
     }
 
     let mut text_content = String::new();
@@ -990,13 +990,13 @@ async fn handle_non_stream_request(
     let mut tool_uses: Vec<serde_json::Value> = Vec::new();
     let mut has_tool_use = false;
     let mut stop_reason = "end_turn".to_string();
-    // 从 contextUsageEvent 计算的实际输入 tokens
+    // from contextUsageEvent the computed actual input tokens
     let mut context_input_tokens: Option<i32> = None;
-    // meteringEvent 上报的 credit 计费量（上游真实下发）；
-    // input/cache_* 的互斥分摊在拿到 total 真值后由 cache_usage 完成。
+    // meteringEvent reported credit Billing amount (truly delivered by upstream);
+    // input/cache_* the mutually exclusive apportionment when obtaining total truthyafterby cache_usage done.
     let mut credits: f64 = 0.0;
 
-    // 收集工具调用的增量 JSON
+    // collect the increments of the tool call JSON
     let mut tool_json_buffers: std::collections::HashMap<String, String> =
         std::collections::HashMap::new();
 
@@ -1028,20 +1028,20 @@ async fn handle_non_stream_request(
                         Event::ToolUse(tool_use) => {
                             has_tool_use = true;
 
-                            // 累积工具的 JSON 输入
+                            // accumulatetool JSON input
                             let buffer = tool_json_buffers
                                 .entry(tool_use.tool_use_id.clone())
                                 .or_insert_with(String::new);
                             buffer.push_str(&tool_use.input);
 
-                            // 如果是完整的工具调用，添加到列表
+                            // If it is a complete tool call, adds it to the list.
                             if tool_use.stop {
                                 let input: serde_json::Value = if buffer.is_empty() {
                                     serde_json::json!({})
                                 } else {
                                     serde_json::from_str(buffer).unwrap_or_else(|e| {
                                         tracing::warn!(
-                                            "工具输入 JSON 解析失败: {}, tool_use_id: {}",
+                                            "toolinput JSON parsefailed: {}, tool_use_id: {}",
                                             e,
                                             tool_use.tool_use_id
                                         );
@@ -1063,24 +1063,24 @@ async fn handle_non_stream_request(
                             }
                         }
                         Event::ContextUsage(context_usage) => {
-                            // 从上下文使用百分比计算实际的 input_tokens
+                            // Computes the actual one from the context usage percentage. input_tokens
                             let window_size = get_context_window_size(model);
                             let actual_input_tokens =
                                 (context_usage.context_usage_percentage * (window_size as f64)
                                     / 100.0) as i32;
                             context_input_tokens = Some(actual_input_tokens);
-                            // 上下文使用量达到 100% 时，设置 stop_reason 为 model_context_window_exceeded
+                            // the context usage reaches 100% when,set stop_reason as model_context_window_exceeded
                             if context_usage.context_usage_percentage >= 100.0 {
                                 stop_reason = "model_context_window_exceeded".to_string();
                             }
                             tracing::debug!(
-                                "收到 contextUsageEvent: {}%, 计算 input_tokens: {}",
+                                "received contextUsageEvent: {}%, compute input_tokens: {}",
                                 context_usage.context_usage_percentage,
                                 actual_input_tokens
                             );
                         }
                         Event::Metering(metering) => {
-                            // 上游只下发 credit；token / cache 字段不存在
+                            // upstreamonly dispatch credit;token / cache fielddoes not exist
                             credits += metering.usage;
                             tracing::debug!("metering credits +{:.6}", metering.usage);
                         }
@@ -1094,17 +1094,17 @@ async fn handle_non_stream_request(
                 }
             }
             Err(e) => {
-                tracing::warn!("解码事件失败: {}", e);
+                tracing::warn!("decodeeventfailed: {}", e);
             }
         }
     }
 
-    // 确定 stop_reason
+    // determine stop_reason
     if has_tool_use && stop_reason == "end_turn" {
         stop_reason = "tool_use".to_string();
     }
 
-    // 构建响应内容
+    // buildresponse content
     let mut content = build_non_stream_content(
         thinking_enabled,
         text_content,
@@ -1114,16 +1114,16 @@ async fn handle_non_stream_request(
     );
     content.extend(tool_uses);
 
-    // 估算输出 tokens（上游不下发 token，全部走估算）
+    // estimateoutput tokens(upstreamdo not dispatch token, all go through estimation)
     let output_tokens = token::estimate_output_tokens(&content);
 
-    // 输入 tokens：contextUsage 真实值优先，否则用客户端估算
+    // input tokens:contextUsage The real value takes precedence; otherwise uses the client estimate.
     let total_input_tokens = resolve_usage_input_tokens(input_tokens, context_input_tokens);
-    // 互斥分摊：input + cache_creation + cache_read == total
+    // mutually exclusive allocation:input + cache_creation + cache_read == total
     let (final_input_tokens, cache_creation_tokens, cache_read_tokens) =
         cache_usage.split_against_total(total_input_tokens);
 
-    // 构建 Anthropic 响应
+    // build Anthropic response
     let response_body = json!({
         "id": format!("msg_{}", Uuid::new_v4().to_string().replace('-', "")),
         "type": "message",
@@ -1184,7 +1184,7 @@ fn build_non_stream_content(
                     .unwrap_or_else(|| super::stream::THINKING_SIGNATURE_PLACEHOLDER.to_string()),
             }));
         } else {
-            // 从完整文本中提取 thinking 块，兼容旧的 <thinking> 文本路径。
+            // extract from the complete text thinking block,compatibleold <thinking> textpath.
             let (thinking, remaining_text) =
                 super::stream::extract_thinking_from_complete_text(&text_content);
 
@@ -1231,11 +1231,11 @@ fn build_non_stream_content(
     content
 }
 
-/// 检测模型名是否包含 "thinking" 后缀，若包含则覆写 thinking 配置
+/// detect whether the model name contains "thinking" suffix, if included then override thinking config
 ///
-/// - Opus 4.6：覆写为 adaptive 类型
-/// - 其他模型：覆写为 enabled 类型
-/// - budget_tokens 固定为 20000
+/// - Opus 4.6:overwriteas adaptive type
+/// - other models: override to enabled type
+/// - budget_tokens fixed to 20000
 fn override_thinking_from_model_name(payload: &mut MessagesRequest) {
     let model_lower = payload.model.to_lowercase();
     if !model_lower.contains("thinking") {
@@ -1250,7 +1250,7 @@ fn override_thinking_from_model_name(payload: &mut MessagesRequest) {
     tracing::info!(
         model = %payload.model,
         thinking_type = thinking_type,
-        "模型名包含 thinking 后缀，覆写 thinking 配置"
+        "model namecontains thinking afteraffix,overwrite thinking config"
     );
 
     payload.thinking = Some(Thinking {
@@ -1267,7 +1267,7 @@ fn override_thinking_from_model_name(payload: &mut MessagesRequest) {
 
 /// POST /v1/messages/count_tokens
 ///
-/// 计算消息的 token 数量
+/// computemessage token count
 pub async fn count_tokens(
     Extension(_key_ctx): Extension<KeyContext>,
     JsonExtractor(payload): JsonExtractor<CountTokensRequest>,
@@ -1292,9 +1292,9 @@ pub async fn count_tokens(
 
 /// POST /cc/v1/messages
 ///
-/// Claude Code 兼容端点，与 /v1/messages 的区别在于：
-/// - 流式响应会等待 kiro 端返回 contextUsageEvent 后再发送 message_start
-/// - message_start 中的 input_tokens 是从 contextUsageEvent 计算的准确值
+/// Claude Code compatibleendpoint, with /v1/messages ofdifferenceinat:
+/// - the streaming response will wait kiro end returns contextUsageEvent afterthen send message_start
+/// - message_start in input_tokens is from contextUsageEvent computeofaccuratevalue
 pub async fn post_messages_cc(
     State(state): State<AppState>,
     Extension(key_ctx): Extension<KeyContext>,
@@ -1309,11 +1309,11 @@ pub async fn post_messages_cc(
     );
     let hook = UsageRecordHook::from_state(&state, key_ctx.key_id, payload.model.clone());
 
-    // 检查 KiroProvider 是否可用
+    // check KiroProvider iswhetheravailable
     let provider = match &state.kiro_provider {
         Some(p) => p.clone(),
         None => {
-            tracing::error!("KiroProvider 未配置");
+            tracing::error!("KiroProvider not configured");
             hook.record(0, 0, 0, 0, 0, 0.0, "error");
             return (
                 StatusCode::SERVICE_UNAVAILABLE,
@@ -1326,14 +1326,14 @@ pub async fn post_messages_cc(
         }
     };
 
-    // 检测模型名是否包含 "thinking" 后缀，若包含则覆写 thinking 配置
+    // detect whether the model name contains "thinking" suffix, if included then override thinking config
     override_thinking_from_model_name(&mut payload);
 
-    // 检查是否为 WebSearch 请求
+    // checkwhether is WebSearch request
     if websearch::has_web_search_tool(&payload) {
-        tracing::info!("检测到 WebSearch 工具，路由到 WebSearch 处理");
+        tracing::info!("detected WebSearch tool,routeto WebSearch handle");
 
-        // 估算输入 tokens
+        // estimateinput tokens
         let input_tokens = token::count_all_tokens(
             payload.model.clone(),
             payload.system.clone(),
@@ -1356,19 +1356,19 @@ pub async fn post_messages_cc(
             .await;
     }
 
-    // 转换请求
+    // convertrequest
     let conversion_result = match convert_request(&payload) {
         Ok(result) => result,
         Err(e) => {
             let (error_type, message) = match &e {
                 ConversionError::UnsupportedModel(model) => {
-                    ("invalid_request_error", format!("模型不支持: {}", model))
+                    ("invalid_request_error", format!("modelnot supported: {}", model))
                 }
                 ConversionError::EmptyMessages => {
-                    ("invalid_request_error", "消息列表为空".to_string())
+                    ("invalid_request_error", "messagelistis empty".to_string())
                 }
             };
-            tracing::warn!("请求转换失败: {}", e);
+            tracing::warn!("requestconvertfailed: {}", e);
             hook.record(0, 0, 0, 0, 0, 0.0, "error");
             return (
                 StatusCode::BAD_REQUEST,
@@ -1389,13 +1389,13 @@ pub async fn post_messages_cc(
     let request_body = match serde_json::to_string(&kiro_request) {
         Ok(body) => body,
         Err(e) => {
-            tracing::error!("序列化请求失败: {}", e);
+            tracing::error!("failed to serialize the request: {}", e);
             hook.record(0, 0, 0, 0, 0, 0.0, "error");
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ErrorResponse::new(
                     "internal_error",
-                    format!("序列化请求失败: {}", e),
+                    format!("failed to serialize the request: {}", e),
                 )),
             )
                 .into_response();
@@ -1404,7 +1404,7 @@ pub async fn post_messages_cc(
 
     tracing::debug!("Kiro request body: {}", request_body);
 
-    // 计算总 input tokens
+    // compute total input tokens
     let total_input_tokens = token::count_all_tokens(
         payload.model.clone(),
         payload.system.clone(),
@@ -1412,7 +1412,7 @@ pub async fn post_messages_cc(
         payload.tools.clone(),
     ) as i32;
 
-    // 检查是否启用了thinking
+    // check whether it is enabledthinking
     let thinking_enabled = payload
         .thinking
         .as_ref()
@@ -1422,7 +1422,7 @@ pub async fn post_messages_cc(
     let tool_name_map = conversion_result.tool_name_map;
     let known_tool_names = conversion_result.known_tool_names;
 
-    // CacheMeter：根据 cache_control 断点查 / 写中转层提示词缓存（estimate 口径）。
+    // CacheMeter: based on cache_control breakpoint check / write the relay layer prompt cache (estimate basis).
     let cache_usage = state
         .cache_meter
         .as_ref()
@@ -1430,7 +1430,7 @@ pub async fn post_messages_cc(
         .unwrap_or_default();
 
     if payload.stream {
-        // 流式响应（缓冲模式）
+        // streaming response (buffered mode)
         let tracer = std::sync::Arc::new(RequestTracer::new(
             &state,
             RequestTraceOptions {
@@ -1454,7 +1454,7 @@ pub async fn post_messages_cc(
         )
         .await
     } else {
-        // 非流式响应：仅在配置开启时提取 thinking 块
+        // Non streaming response: extracts only when enabled in config. thinking block
         let extract_thinking = state.extract_thinking && thinking_enabled;
         let tracer = std::sync::Arc::new(RequestTracer::new(
             &state,
@@ -1481,10 +1481,10 @@ pub async fn post_messages_cc(
     }
 }
 
-/// 处理流式请求（缓冲版本）
+/// Handles the streaming request (buffered version).
 ///
-/// 与 `handle_stream_request` 不同，此函数会缓冲所有事件直到流结束，
-/// 然后用从 contextUsageEvent 计算的正确 input_tokens 生成 message_start 事件。
+/// and `handle_stream_request` Different, this function buffers all events until the stream ends,
+/// soafterusefrom contextUsageEvent computeofcorrect input_tokens generate message_start event.
 async fn handle_stream_request_buffered(
     provider: std::sync::Arc<crate::kiro::provider::KiroProvider>,
     request_body: &str,
@@ -1498,7 +1498,7 @@ async fn handle_stream_request_buffered(
     tracer: std::sync::Arc<RequestTracer>,
     group: Option<String>,
 ) -> Response {
-    // 调用 Kiro API（支持多凭据故障转移）
+    // call Kiro API(supports multi credential failover)
     let call_result = match provider.call_api_stream(request_body, Some(tracer.as_ref()), group.as_deref()).await {
         Ok(resp) => resp,
         Err(e) => {
@@ -1510,7 +1510,7 @@ async fn handle_stream_request_buffered(
     let response = call_result.response;
     let credential_id = call_result.credential_id;
 
-    // 创建缓冲流处理上下文
+    // create a buffered stream processing context
     let mut ctx = BufferedStreamContext::new(
         model,
         fallback_input_tokens,
@@ -1520,10 +1520,10 @@ async fn handle_stream_request_buffered(
     );
     ctx.set_cache_usage(cache_usage);
 
-    // 创建缓冲 SSE 流
+    // createbuffer SSE stream
     let stream = create_buffered_sse_stream(response, ctx, hook, credential_id, tracer);
 
-    // 返回 SSE 响应
+    // return SSE response
     Response::builder()
         .status(StatusCode::OK)
         .header(header::CONTENT_TYPE, "text/event-stream")
@@ -1533,13 +1533,13 @@ async fn handle_stream_request_buffered(
         .unwrap()
 }
 
-/// 创建缓冲 SSE 事件流
+/// createbuffer SSE event stream
 ///
-/// 工作流程：
-/// 1. 等待上游流完成，期间只发送 ping 保活信号
-/// 2. 使用 StreamContext 的事件处理逻辑处理所有 Kiro 事件，结果缓存
-/// 3. 流结束后，用正确的 input_tokens 更正 message_start 事件
-/// 4. 一次性发送所有事件
+/// workflow:
+/// 1. Waits for the upstream stream to finish, sending only ping keep alivesignal
+/// 2. use StreamContext the event handling logic processes all Kiro event, the result is cached
+/// 3. after the stream ends, with the correct input_tokens correct message_start event
+/// 4. send all events at once
 fn create_buffered_sse_stream(
     response: reqwest::Response,
     ctx: BufferedStreamContext,
@@ -1568,50 +1568,50 @@ fn create_buffered_sse_stream(
 
             loop {
                 tokio::select! {
-                    // 使用 biased 模式，优先检查 ping 定时器
-                    // 避免在上游 chunk 密集时 ping 被"饿死"
+                    // use biased mode, check first ping timer
+                    // avoid inupstream chunk when dense ping by"starve"
                     biased;
 
-                    // 优先检查 ping 保活（等待期间唯一发送的数据）
+                    // prioritycheck ping Keep alive (the only data sent while waiting).
                     _ = ping_interval.tick() => {
-                        tracing::trace!("发送 ping 保活事件（缓冲模式）");
+                        tracing::trace!("send ping keep alive event (buffered mode)");
                         let bytes: Vec<Result<Bytes, Infallible>> = vec![Ok(create_ping_sse())];
                         return Some((stream::iter(bytes), (body_stream, ctx, decoder, false, ping_interval, hook, credential_id, tracer, sent_bytes)));
                     }
 
-                    // 然后处理数据流
+                    // then process the data stream
                     chunk_result = body_stream.next() => {
                         match chunk_result {
                             Some(Ok(chunk)) => {
                                 tracer.mark_first_token();
                                 sent_bytes += chunk.len() as u64;
-                                // 解码事件
+                                // decodeevent
                                 if let Err(e) = decoder.feed(&chunk) {
-                                    tracing::warn!("缓冲区溢出: {}", e);
+                                    tracing::warn!("buffer overflow: {}", e);
                                 }
 
                                 for result in decoder.decode_iter() {
                                     match result {
                                         Ok(frame) => {
                                             if let Ok(event) = Event::from_frame(frame) {
-                                                // 缓冲事件（复用 StreamContext 的处理逻辑）
+                                                // buffer the event (reuse StreamContext ofhandlelogic)
                                                 ctx.process_and_buffer(&event);
                                             }
                                         }
                                         Err(e) => {
-                                            tracing::warn!("解码事件失败: {}", e);
+                                            tracing::warn!("decodeeventfailed: {}", e);
                                         }
                                     }
                                 }
-                                // 继续读取下一个 chunk，不发送任何数据
+                                // continue reading the next chunk, do not send any data
                             }
                             Some(Err(e)) => {
-                                tracing::error!("读取响应流失败: {}", e);
-                                // 发生错误，完成处理并返回所有事件
+                                tracing::error!("failed to read the response stream: {}", e);
+                                // An error occurred; completes processing and returns all events.
                                 let all_events = ctx.finish_and_get_all_events();
                                 let (i, o, cc, cr, credits) = ctx.final_usage();
                                 hook.record(credential_id, i, o, cc, cr, credits, "error");
-                                // 缓冲模式 chunk 读取失败：上游中途断流
+                                // buffered mode chunk Read failed: the upstream stream broke midway.
                                 tracer.finalize(
                                     "interrupted",
                                     Some(outcome::STREAM_INTERRUPTED),
@@ -1632,7 +1632,7 @@ fn create_buffered_sse_stream(
                                 return Some((stream::iter(bytes), (body_stream, ctx, decoder, true, ping_interval, hook, credential_id, tracer, sent_bytes)));
                             }
                             None => {
-                                // 流结束，完成处理并返回所有事件（已更正 input_tokens）
+                                // The stream ends; completes processing and returns all events (already corrected input_tokens)
                                 let all_events = ctx.finish_and_get_all_events();
                                 let (i, o, cc, cr, credits) = ctx.final_usage();
                                 hook.record(credential_id, i, o, cc, cr, credits, "success");
@@ -1670,30 +1670,30 @@ mod tests {
 
     #[test]
     fn bedrock_client_validation_errors_map_to_400() {
-        // 客户端校验错误必须映射为 400（而非 5xx），否则会被 provider 当作上游
-        // 瞬态错误触发冷却，放大成 503 风暴。识别逻辑集中在 endpoint 层。
+        // A client validation error must be mapped to 400(rather than 5xx), otherwisewill be provider treat asupstream
+        // A transient error triggers cooldown, amplified into 503 storm. the recognition logic is centralized in endpoint layer.
         for needle in [
-            // 精确 reason（provider 错误串里嵌着上游 body）
-            "非流式 API 请求失败: 500 {\"reason\":\"TOOL_USE_RESULT_MISMATCH\"}",
-            // message 级特异短语（纯文本报文）
+            // exact reason(provider the error string embeds the upstream body)
+            "non streaming API requestfailed: 500 {\"reason\":\"TOOL_USE_RESULT_MISMATCH\"}",
+            // message level specific phrase (plain text message).
             "Expected toolResult blocks but found none",
         ] {
             let resp = map_provider_error(anyhow::anyhow!(needle.to_string()));
             assert_eq!(
                 resp.status(),
                 StatusCode::BAD_REQUEST,
-                "错误串 `{needle}` 应映射为 400"
+                "error string `{needle}` shouldmappingas 400"
             );
         }
     }
 
     #[test]
     fn generic_upstream_error_still_maps_to_502() {
-        // 回归：普通上游错误不应被新分支误伤，仍应是 502 BAD_GATEWAY。
+        // Regression: an ordinary upstream error should not be harmed by the new branch and should still be 502 BAD_GATEWAY.
         let resp = map_provider_error(anyhow::anyhow!("connection reset by peer"));
         assert_eq!(resp.status(), StatusCode::BAD_GATEWAY);
-        // 回归：宽泛的 ValidationException 不再被当作客户端校验错误而误判为 400，
-        // 仍按上游错误走 502（避免把可重试故障误杀）。
+        // regression:broad ValidationException No longer treated as a client validation error and misjudged as 400,
+        // still handle as an upstream error 502(avoids wrongly killing a retryable fault).
         let resp = map_provider_error(anyhow::anyhow!(
             "ValidationException: transient backend issue".to_string()
         ));

@@ -1,9 +1,9 @@
-//! AWS SSO OIDC 设备授权登录流程
+//! AWS SSO OIDC device authorization login flow
 //!
-//! 实现三步流程：
-//! 1. 注册 OIDC 客户端（register_client）
-//! 2. 发起设备授权，获取用户验证码（start_device_authorization）
-//! 3. 轮询令牌端点，等待用户完成授权（poll_token）
+//! implement a three step flow:
+//! 1. register OIDC client (register_client)
+//! 2. Initiates device authorization to obtain the user verification code (start_device_authorization)
+//! 3. Polls the token endpoint, waiting for the user to complete authorization (poll_token)
 
 use anyhow::Context;
 
@@ -14,23 +14,23 @@ use crate::kiro::model::token_refresh::{
 };
 use crate::model::config::Config;
 
-/// 设备授权轮询结果
+/// device authorization polling result
 #[derive(Debug)]
 pub enum PollResult {
-    /// 用户尚未完成授权，继续等待
+    /// The user has not completed authorization yet; keeps waiting.
     Pending,
-    /// 授权成功，返回 token
+    /// authorization succeeded, return token
     Success(CreateTokenResponse),
-    /// 设备码已过期，需重新发起
+    /// The device code has expired; it must be started again.
     Expired,
-    /// 其他错误
+    /// other error
     Error(anyhow::Error),
 }
 
-/// AWS Builder ID / IAM Identity Center 的默认 Start URL
+/// AWS Builder ID / IAM Identity Center default Start URL
 pub const BUILDER_ID_START_URL: &str = "https://view.awsapps.com/start";
 
-/// Kiro IDE 使用的 OIDC 作用域
+/// Kiro IDE used OIDC scope
 const KIRO_SCOPES: &[&str] = &[
     "codewhisperer:completions",
     "codewhisperer:analysis",
@@ -43,12 +43,12 @@ fn oidc_endpoint(region: &str) -> String {
     format!("https://oidc.{}.amazonaws.com", region)
 }
 
-/// 注册 OIDC 客户端
+/// register OIDC client
 ///
-/// 每次发起设备授权前调用，获得 clientId 和 clientSecret。
-/// 注册结果有过期时间（通常数天），但此处每次重新注册以保持简单。
-/// `start_url` 作为 issuerUrl 一并提交：Builder ID 为默认 Start URL，
-/// 企业 IAM Identity Center 为组织自己的 Start URL。
+/// Called before each device authorization to obtain clientId and clientSecret.
+/// The registration result has an expiry (usually a few days), but here it re-registers each time to keep things simple.
+/// `start_url` as issuerUrl togethercommit:Builder ID as default Start URL,
+/// enterprise IAM Identity Center asorganizes itselfof Start URL.
 pub async fn register_client(
     region: &str,
     start_url: &str,
@@ -76,20 +76,20 @@ pub async fn register_client(
         .json(&body)
         .send()
         .await
-        .context("注册 OIDC 客户端请求失败")?;
+        .context("register OIDC client request failed")?;
 
     let status = resp.status();
     if !status.is_success() {
         let body_text = resp.text().await.unwrap_or_default();
-        anyhow::bail!("注册 OIDC 客户端失败 {}: {}", status, body_text);
+        anyhow::bail!("register OIDC clientfailed {}: {}", status, body_text);
     }
 
     resp.json::<RegisterClientResponse>()
         .await
-        .context("解析注册响应失败")
+        .context("failed to parse the registration response")
 }
 
-/// 发起设备授权，返回供用户访问的验证码和 URL
+/// Initiates device authorization, returning the verification code for the user to access and URL
 pub async fn start_device_authorization(
     region: &str,
     start_url: &str,
@@ -114,22 +114,22 @@ pub async fn start_device_authorization(
         .json(&body)
         .send()
         .await
-        .context("发起设备授权请求失败")?;
+        .context("failed to initiate the device authorization request")?;
 
     let status = resp.status();
     if !status.is_success() {
         let body_text = resp.text().await.unwrap_or_default();
-        anyhow::bail!("发起设备授权失败 {}: {}", status, body_text);
+        anyhow::bail!("failed to initiate device authorization {}: {}", status, body_text);
     }
 
     resp.json::<StartDeviceAuthorizationResponse>()
         .await
-        .context("解析设备授权响应失败")
+        .context("failed to parse the device authorization response")
 }
 
-/// 轮询一次令牌端点
+/// poll the token endpoint once
 ///
-/// 返回 `PollResult`，由调用方决定是否继续轮询。
+/// return `PollResult`, the caller decides whether to keep polling.
 pub async fn poll_token(
     region: &str,
     client_id: &str,
@@ -177,16 +177,16 @@ pub async fn poll_token(
         Err(e) => return PollResult::Error(e.into()),
     };
 
-    // 解析标准 OIDC 错误码
+    // parse standard OIDC error code
     if let Ok(err_resp) = serde_json::from_str::<OidcErrorResponse>(&body_text) {
         match err_resp.error.as_str() {
             "authorization_pending" => return PollResult::Pending,
             "slow_down" => return PollResult::Pending,
             "expired_token" => return PollResult::Expired,
-            "access_denied" => return PollResult::Error(anyhow::anyhow!("用户拒绝了授权请求")),
+            "access_denied" => return PollResult::Error(anyhow::anyhow!("the user rejected the authorization request")),
             _ => {}
         }
     }
 
-    PollResult::Error(anyhow::anyhow!("轮询令牌失败 {}: {}", status, body_text))
+    PollResult::Error(anyhow::anyhow!("polltokenfailed {}: {}", status, body_text))
 }

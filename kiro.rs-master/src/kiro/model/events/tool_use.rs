@@ -1,6 +1,6 @@
-//! 工具使用事件
+//! tool useevent
 //!
-//! 处理 toolUseEvent 类型的事件
+//! handle toolUseEvent typeofevent
 
 use serde::Deserialize;
 
@@ -9,20 +9,20 @@ use crate::kiro::parser::frame::Frame;
 
 use super::base::EventPayload;
 
-/// 工具使用事件
+/// tool useevent
 ///
-/// 包含工具调用的流式数据
+/// Streaming data containing tool calls.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolUseEvent {
-    /// 工具名称
+    /// tool name
     pub name: String,
-    /// 工具调用 ID
+    /// tool call ID
     pub tool_use_id: String,
-    /// 工具输入数据 (JSON 字符串，可能是流式的部分数据)
+    /// toolinputdata (JSON string, possibly partial streaming data.)
     #[serde(default)]
     pub input: String,
-    /// 是否是最后一个块
+    /// whether it is the last block
     #[serde(default)]
     pub stop: bool,
 }

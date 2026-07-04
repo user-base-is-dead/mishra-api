@@ -1,37 +1,37 @@
-//! 对话类型定义
+//! forwordstypedefine
 //!
-//! 定义 Kiro API 中对话相关的类型，包括消息、历史记录等
+//! define Kiro API The conversation related types, including messages, history, and so on.
 
 use serde::{Deserialize, Serialize};
 
 use super::tool::{Tool, ToolResult, ToolUseEntry};
 
-/// 对话状态
+/// conversation state
 ///
-/// Kiro API 请求中的核心结构，包含当前消息和历史记录
+/// Kiro API The core structure in the request, containing the current message and history.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConversationState {
-    /// 代理延续 ID
+    /// proxy continuation ID
     #[serde(skip_serializing_if = "Option::is_none")]
     pub agent_continuation_id: Option<String>,
-    /// 代理任务类型（通常为 "vibe"）
+    /// proxy task type (usually "vibe")
     #[serde(skip_serializing_if = "Option::is_none")]
     pub agent_task_type: Option<String>,
-    /// 聊天触发类型（"MANUAL" 或 "AUTO"）
+    /// chat trigger type ("MANUAL" or "AUTO")
     #[serde(skip_serializing_if = "Option::is_none")]
     pub chat_trigger_type: Option<String>,
-    /// 当前消息
+    /// current message
     pub current_message: CurrentMessage,
-    /// 会话 ID
+    /// session ID
     pub conversation_id: String,
-    /// 历史消息列表
+    /// history messagelist
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub history: Vec<Message>,
 }
 
 impl ConversationState {
-    /// 创建新的对话状态
+    /// create a new conversation state
     pub fn new(conversation_id: impl Into<String>) -> Self {
         Self {
             agent_continuation_id: None,
@@ -43,72 +43,72 @@ impl ConversationState {
         }
     }
 
-    /// 设置代理延续 ID
+    /// setproxy continuation ID
     pub fn with_agent_continuation_id(mut self, id: impl Into<String>) -> Self {
         self.agent_continuation_id = Some(id.into());
         self
     }
 
-    /// 设置代理任务类型
+    /// set the proxy task type
     pub fn with_agent_task_type(mut self, task_type: impl Into<String>) -> Self {
         self.agent_task_type = Some(task_type.into());
         self
     }
 
-    /// 设置聊天触发类型
+    /// set the chat trigger type
     pub fn with_chat_trigger_type(mut self, trigger_type: impl Into<String>) -> Self {
         self.chat_trigger_type = Some(trigger_type.into());
         self
     }
 
-    /// 设置当前消息
+    /// setcurrent message
     pub fn with_current_message(mut self, message: CurrentMessage) -> Self {
         self.current_message = message;
         self
     }
 
-    /// 添加历史消息
+    /// addhistory message
     pub fn with_history(mut self, history: Vec<Message>) -> Self {
         self.history = history;
         self
     }
 }
 
-/// 当前消息容器
+/// current messagecontainer
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CurrentMessage {
-    /// 用户输入消息
+    /// userinputmessage
     pub user_input_message: UserInputMessage,
 }
 
 impl CurrentMessage {
-    /// 创建新的当前消息
+    /// create a new current message
     pub fn new(user_input_message: UserInputMessage) -> Self {
         Self { user_input_message }
     }
 }
 
-/// 用户输入消息
+/// userinputmessage
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserInputMessage {
-    /// 用户输入消息上下文（始终序列化，envState 是 CLI endpoint 必填字段）
+    /// User input message context (always serialized,envState is CLI endpoint requiredfield)
     pub user_input_message_context: UserInputMessageContext,
-    /// 消息内容
+    /// message content
     pub content: String,
-    /// 模型 ID
+    /// model ID
     pub model_id: String,
-    /// 图片列表
+    /// image list
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub images: Vec<KiroImage>,
-    /// 消息来源（通常为 "AI_EDITOR"）
+    /// message source (usually "AI_EDITOR")
     #[serde(skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
 
 impl UserInputMessage {
-    /// 创建新的用户输入消息
+    /// create a new user input message
     pub fn new(content: impl Into<String>, model_id: impl Into<String>) -> Self {
         Self {
             user_input_message_context: UserInputMessageContext::default(),
@@ -119,26 +119,26 @@ impl UserInputMessage {
         }
     }
 
-    /// 设置消息上下文
+    /// set the message context
     pub fn with_context(mut self, context: UserInputMessageContext) -> Self {
         self.user_input_message_context = context;
         self
     }
 
-    /// 添加图片
+    /// add image
     pub fn with_images(mut self, images: Vec<KiroImage>) -> Self {
         self.images = images;
         self
     }
 
-    /// 设置来源
+    /// set source
     pub fn with_origin(mut self, origin: impl Into<String>) -> Self {
         self.origin = Some(origin.into());
         self
     }
 }
 
-/// 环境状态（kiro-cli 始终发送此字段，CLI endpoint 要求）
+/// environmentstate(kiro-cli always send this field,CLI endpoint requirement)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EnvState {
@@ -158,18 +158,18 @@ impl Default for EnvState {
     }
 }
 
-/// 用户输入消息上下文
+/// user input message context
 ///
-/// 包含工具定义和工具执行结果
+/// Contains tool definitions and tool execution results.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserInputMessageContext {
-    /// 环境状态（kiro-cli 始终携带）
+    /// environmentstate(kiro-cli always carries)
     pub env_state: EnvState,
-    /// 工具执行结果列表
+    /// tool execution result list
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tool_results: Vec<ToolResult>,
-    /// 可用工具列表
+    /// availabletoollist
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tools: Vec<Tool>,
 }
@@ -189,38 +189,38 @@ fn is_empty_context(ctx: &UserInputMessageContext) -> bool {
 }
 
 impl UserInputMessageContext {
-    /// 创建新的消息上下文
+    /// create a new message context
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// 设置工具列表
+    /// settoollist
     pub fn with_tools(mut self, tools: Vec<Tool>) -> Self {
         self.tools = tools;
         self
     }
 
-    /// 设置工具结果
+    /// settoolresult
     pub fn with_tool_results(mut self, results: Vec<ToolResult>) -> Self {
         self.tool_results = results;
         self
     }
 }
 
-/// Kiro 图片
+/// Kiro image
 ///
-/// API 中使用的图片格式
+/// API the image format used in
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct KiroImage {
-    /// 图片格式（"jpeg", "png", "gif", "webp"）
+    /// imageformat ("jpeg", "png", "gif", "webp")
     pub format: String,
-    /// 图片数据源
+    /// imagedatasource
     pub source: KiroImageSource,
 }
 
 impl KiroImage {
-    /// 从 base64 数据创建图片
+    /// from base64 datacreateimage
     pub fn from_base64(format: impl Into<String>, data: impl Into<String>) -> Self {
         Self {
             format: format.into(),
@@ -229,35 +229,35 @@ impl KiroImage {
     }
 }
 
-/// Kiro 图片数据源
+/// Kiro imagedatasource
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KiroImageSource {
-    /// base64 编码的图片数据
+    /// base64 encoded image data
     pub bytes: String,
 }
 
-/// 历史消息
+/// history message
 ///
-/// 可以是用户消息或助手消息
+/// Can be a user message or an assistant message.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Message {
-    /// 用户消息
+    /// user message
     User(HistoryUserMessage),
-    /// 助手消息
+    /// assistant message
     Assistant(HistoryAssistantMessage),
 }
 
-/// 历史用户消息
+/// historyuser message
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HistoryUserMessage {
-    /// 用户输入消息
+    /// userinputmessage
     pub user_input_message: UserMessage,
 }
 
 impl HistoryUserMessage {
-    /// 创建新的历史用户消息
+    /// create a new history user message
     pub fn new(content: impl Into<String>, model_id: impl Into<String>) -> Self {
         Self {
             user_input_message: UserMessage::new(content, model_id),
@@ -265,27 +265,27 @@ impl HistoryUserMessage {
     }
 }
 
-/// 用户消息（历史记录中使用）
+/// User message (used in history).
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserMessage {
-    /// 消息内容
+    /// message content
     pub content: String,
-    /// 模型 ID
+    /// model ID
     pub model_id: String,
-    /// 消息来源
+    /// message source
     #[serde(skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
-    /// 图片列表
+    /// image list
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub images: Vec<KiroImage>,
-    /// 用户输入消息上下文（历史消息无工具时跳过）
+    /// User input message context (skipped when history messages have no tools).
     #[serde(default, skip_serializing_if = "is_empty_context")]
     pub user_input_message_context: UserInputMessageContext,
 }
 
 impl UserMessage {
-    /// 创建新的用户消息
+    /// create a new user message
     pub fn new(content: impl Into<String>, model_id: impl Into<String>) -> Self {
         Self {
             content: content.into(),
@@ -296,29 +296,29 @@ impl UserMessage {
         }
     }
 
-    /// 设置图片
+    /// set image
     pub fn with_images(mut self, images: Vec<KiroImage>) -> Self {
         self.images = images;
         self
     }
 
-    /// 设置上下文
+    /// setcontext
     pub fn with_context(mut self, context: UserInputMessageContext) -> Self {
         self.user_input_message_context = context;
         self
     }
 }
 
-/// 历史助手消息
+/// historyassistant message
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HistoryAssistantMessage {
-    /// 助手响应消息
+    /// assistant responsemessage
     pub assistant_response_message: AssistantMessage,
 }
 
 impl HistoryAssistantMessage {
-    /// 创建新的历史助手消息
+    /// create a new history assistant message
     pub fn new(content: impl Into<String>) -> Self {
         Self {
             assistant_response_message: AssistantMessage::new(content),
@@ -326,19 +326,19 @@ impl HistoryAssistantMessage {
     }
 }
 
-/// 助手消息（历史记录中使用）
+/// Assistant message (used in history).
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AssistantMessage {
-    /// 响应内容
+    /// response content
     pub content: String,
-    /// 工具使用列表
+    /// tool uselist
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tool_uses: Option<Vec<ToolUseEntry>>,
 }
 
 impl AssistantMessage {
-    /// 创建新的助手消息
+    /// create a new assistant message
     pub fn new(content: impl Into<String>) -> Self {
         Self {
             content: content.into(),
@@ -346,7 +346,7 @@ impl AssistantMessage {
         }
     }
 
-    /// 设置工具使用
+    /// settool use
     pub fn with_tool_uses(mut self, tool_uses: Vec<ToolUseEntry>) -> Self {
         self.tool_uses = Some(tool_uses);
         self

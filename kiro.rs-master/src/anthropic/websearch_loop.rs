@@ -5,7 +5,7 @@
 //! tool_use calls other than web_search (exec, etc.) are returned to the client as usual: they do not enter the loop and are not swallowed.
 //!
 //! Reuses: converter::convert_request (feedback), provider.call_api_stream, EventStreamDecoder,
-//! websearch::{create_mcp_request, call_mcp_api, parse_search_results, generate_search_summary}。
+//! websearch::{create_mcp_request, call_mcp_api, parse_search_results, generate_search_summary}.
 
 use std::convert::Infallible;
 use std::sync::Arc;

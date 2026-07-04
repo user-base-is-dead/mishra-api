@@ -1,4 +1,4 @@
-//! Anthropic API 路由配置
+//! Anthropic API routeconfig
 
 use axum::{
     Router,
@@ -18,12 +18,12 @@ use super::{
     cache_metering::SharedCacheMeter,
 };
 
-/// 请求体最大大小限制 (50MB)
+/// request body maximum size limit (50MB)
 const MAX_BODY_SIZE: usize = 50 * 1024 * 1024;
 
-/// 创建带有 KiroProvider 的 Anthropic API 路由
+/// createcarryhas KiroProvider of Anthropic API route
 ///
-/// 给嵌入到其他 Rust 项目的下游使用者预留的扩展点。
+/// giveembedtoother Rust An extension point reserved for downstream users of the project.
 #[allow(dead_code)]
 pub fn create_router_with_provider(
     kiro_provider: Option<KiroProvider>,
@@ -40,7 +40,7 @@ pub fn create_router_with_provider(
     )
 }
 
-/// 创建 Anthropic API 路由（供 main.rs 使用）
+/// create Anthropic API route (provide main.rs use)
 #[allow(clippy::too_many_arguments)]
 pub fn create_router(
     kiro_provider: Option<KiroProvider>,
@@ -59,7 +59,7 @@ pub fn create_router(
     state = state.with_cache_meter(cache_meter);
     state = state.with_trace_store(trace_store);
 
-    // 需要认证的 /v1 路由
+    // needauthof /v1 route
     let v1_routes = Router::new()
         .route("/models", get(get_models))
         .route("/messages", post(post_messages))
@@ -69,8 +69,8 @@ pub fn create_router(
             auth_middleware,
         ));
 
-    // 需要认证的 /cc/v1 路由（Claude Code 兼容端点）
-    // 与 /v1 的区别：流式响应会等待 contextUsageEvent 后再发送 message_start
+    // needauthof /cc/v1 route (Claude Code compatibleendpoint)
+    // and /v1 the difference: a streaming response waits. contextUsageEvent afterthen send message_start
     let cc_v1_routes = Router::new()
         .route("/messages", post(post_messages_cc))
         .route("/messages/count_tokens", post(count_tokens))

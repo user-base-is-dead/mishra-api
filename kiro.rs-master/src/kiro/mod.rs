@@ -1,4 +1,4 @@
-//! Kiro API 客户端模块
+//! Kiro API clientmodule
 
 pub mod auth;
 pub mod endpoint;

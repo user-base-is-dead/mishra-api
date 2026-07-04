@@ -1,10 +1,10 @@
-//! Kiro IDE 端点
+//! Kiro IDE endpoint
 //!
-//! 对应 Kiro IDE 客户端目前使用的 AWS CodeWhisperer 端点：
+//! correspond Kiro IDE the one the client currently uses AWS CodeWhisperer endpoint:
 //! - API: `https://q.{api_region}.amazonaws.com/generateAssistantResponse`
 //! - MCP: `https://q.{api_region}.amazonaws.com/mcp`
 //!
-//! 请求头使用 aws-sdk-js User-Agent 标识。请求体会在根对象上注入 `profileArn`。
+//! requestheaduse aws-sdk-js User-Agent identifier. The request body injects at the root object `profileArn`.
 
 use reqwest::RequestBuilder;
 use uuid::Uuid;
@@ -12,10 +12,10 @@ use uuid::Uuid;
 use super::{KiroEndpoint, RequestContext};
 use crate::kiro::kiro_version;
 
-/// Kiro IDE 端点名称
+/// Kiro IDE endpoint name
 pub const IDE_ENDPOINT_NAME: &str = "ide";
 
-/// Kiro IDE 端点
+/// Kiro IDE endpoint
 pub struct IdeEndpoint;
 
 impl IdeEndpoint {
@@ -112,7 +112,7 @@ impl KiroEndpoint for IdeEndpoint {
     }
 }
 
-/// 将 profile_arn 注入到请求体 JSON 根对象
+/// will profile_arn injecttorequest body JSON root object
 fn inject_profile_arn(request_body: &str, profile_arn: Option<&str>) -> String {
     if let Some(arn) = profile_arn {
         if let Ok(mut json) = serde_json::from_str::<serde_json::Value>(request_body) {
