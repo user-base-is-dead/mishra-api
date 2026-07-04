@@ -3,8 +3,8 @@ import { computed, ref } from 'vue'
 import adminComplianceAPI, { type AdminComplianceStatus } from '@/api/admin/compliance'
 import { getLocale } from '@/i18n'
 
-const FALLBACK_ZH_PHRASE = 'I have read, understood, and agree to the Mishra API Deployment and Operation Compliance Commitment'
-const FALLBACK_EN_PHRASE = 'I have read, understood, and agree to the Mishra API Deployment and Operation Compliance Commitment'
+const FALLBACK_ZH_PHRASE = 'I have read, understood, and agree to the Mishra Miron API Deployment and Operation Compliance Commitment'
+const FALLBACK_EN_PHRASE = 'I have read, understood, and agree to the Mishra Miron API Deployment and Operation Compliance Commitment'
 
 export const useAdminComplianceStore = defineStore('adminCompliance', () => {
   const status = ref<AdminComplianceStatus | null>(null)

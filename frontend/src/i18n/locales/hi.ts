@@ -1,4 +1,4 @@
-// Hindi locale for Mishra API.
+// Hindi locale for Mishra Miron API.
 // Uses English as the base (spread) so every key exists; the overrides below
 // translate the most visible UI (common actions + navigation + auth basics).
 // Any key not overridden falls back to English automatically (fallbackLocale='en').

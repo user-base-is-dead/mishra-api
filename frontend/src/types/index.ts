@@ -1,5 +1,5 @@
 /**
- * Core Type Definitions for Mishra API Frontend
+ * Core Type Definitions for Mishra Miron API Frontend
  */
 
 // ==================== Common Types ====================

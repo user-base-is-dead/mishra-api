@@ -183,7 +183,7 @@ import { PARENT_COMPANY } from '@/config/brand'
 
 const appStore = useAppStore()
 
-const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'Mishra API')
+const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'Mishra Miron API')
 const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
 
 const currentYear = computed(() => new Date().getFullYear())

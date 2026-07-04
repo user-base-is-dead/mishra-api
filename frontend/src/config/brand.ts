@@ -1,4 +1,4 @@
-// Mishra API — brand & social configuration
+// Mishra Miron API — brand & social configuration
 // Edit these values to update links everywhere across the site.
 
 export const PARENT_COMPANY = 'Miron'

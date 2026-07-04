@@ -1,5 +1,5 @@
 /**
- * Vue Router configuration for Mishra API frontend
+ * Vue Router configuration for Mishra Miron API frontend
  * Defines all application routes with lazy loading and navigation guards
  */
 

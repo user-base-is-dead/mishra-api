@@ -28,7 +28,7 @@ async function bootstrap() {
   appStore.initFromInjectedConfig()
 
   // Set document title immediately after config is loaded
-  if (appStore.siteName && appStore.siteName !== 'Mishra API') {
+  if (appStore.siteName && appStore.siteName !== 'Mishra Miron API') {
     document.title = `${appStore.siteName} - AI API Gateway`
   }
 
