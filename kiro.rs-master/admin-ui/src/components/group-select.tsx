@@ -37,7 +37,7 @@ function ManageGroupsHint() {
   )
 }
 
-/** single selectGroup:dropdown selects the currenthasGroup / do not bind.Used forClient key Key Bind group.
+/** single selectGroup:dropdown selects the currenthasGroup / do not bind.Used forClient key Bind group.
  *
  *  compared to before the changeofdifference:remove"+ New group"option(avoid typo drift).
  *  New groupplease go #/groups Managepage.

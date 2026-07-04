@@ -21,7 +21,7 @@ import type { GroupItem } from '@/types/api'
  * Group managementpage:CRUD registeredGroup.
  *
  * design point:
- * - Groupis an independent entity,Credential / Client key Key vianame reference
+ * - Groupis an independent entity,Credential / Client key vianame reference
  * - Renamego through cascade(the backend syncs automaticallyhasreference)
  * - DeleteDefaultrejecthasreferenceof,twotimesConfirmonly then allow force cascade cleanup
  * - Listshow eachgroupscurrentlyhow manycredentials / Key reference,Deleteclearly know the impact beforehand
@@ -118,7 +118,7 @@ export function GroupsPage() {
     } else {
       const ok = await confirm({
         title: `Force delete group ${g.name}?`,
-        description: `This group is currently ${g.credentialCount} credentials + ${g.clientKeyCount} put the client key Key references. Continuing cascades to clean up these references (credentials from groups removes this group from the list; the client key Key unbind). This action cannot be undone.`,
+        description: `This group is currently ${g.credentialCount} credentials + ${g.clientKeyCount} put the client key references. Continuing cascades to clean up these references (credentials from groups removes this group from the list; the client key unbind). This action cannot be undone.`,
         confirmText: 'Force delete',
         destructive: true,
       })
@@ -141,7 +141,7 @@ export function GroupsPage() {
             Group management
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Groups are credentials / Client key Key a shared independent entity; renaming / Deletion cascades in sync.
+            Groups are credentials / Client key a shared independent entity; renaming / Deletion cascades in sync.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -219,7 +219,7 @@ export function GroupsPage() {
           <DialogHeader>
             <DialogTitle>New group</DialogTitle>
             <DialogDescription>
-              Once registered, you can in the credential / Client key Key select this group in.
+              Once registered, you can in the credential / Client key select this group in.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -283,7 +283,7 @@ export function GroupsPage() {
             </div>
             {editTarget && (editTarget.credentialCount > 0 || editTarget.clientKeyCount > 0) && (
               <p className="text-xs text-amber-600">
-                currently {editTarget.credentialCount} Credential + {editTarget.clientKeyCount} Client key Key references; renaming syncs automatically.
+                currently {editTarget.credentialCount} Credential + {editTarget.clientKeyCount} Client key references; renaming syncs automatically.
               </p>
             )}
           </div>

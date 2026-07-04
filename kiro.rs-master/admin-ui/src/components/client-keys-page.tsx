@@ -195,9 +195,9 @@ export function ClientKeysPage() {
     <div>
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-semibold tracking-tight leading-tight">Client key Key</h1>
+          <h1 className="text-[28px] font-semibold tracking-tight leading-tight">Client key</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            distributed to downstream users/access key for the project. Each key Key Counted and disabled independently; if leaked you only need to replace one key.
+            distributed to downstream users/access key for the project. Each key Counted and disabled independently; if leaked you only need to replace one key.
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)} size="sm">
@@ -352,9 +352,9 @@ export function ClientKeysPage() {
       <Dialog open={createOpen} onOpenChange={(o) => !createKey.isPending && setCreateOpen(o)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>New client key Key</DialogTitle>
+            <DialogTitle>New client key</DialogTitle>
             <DialogDescription>
-              After creation the plaintext key Key Shown only once. Copy and save it to a safe place right away.
+              After creation the plaintext key Shown only once. Copy and save it to a safe place right away.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-3 py-2">

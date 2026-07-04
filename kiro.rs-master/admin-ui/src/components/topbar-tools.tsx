@@ -29,7 +29,7 @@ import { ImageUpdateDialog } from '@/components/image-update-dialog'
  * general toolbar on the right of the top bar:load balancing switch,Refresh,Online update,Settings(Key Manage).
  *
  * with the original Dashboard inoftool buttonetc.price,butGlobal Tab accessible to all.Refreshthe button willInvalid
- * Credential/Client key Key/count three kinds of queries,cover threeitems Tab ofprimary data source.
+ * Credential/Client key/count three kinds of queries,cover threeitems Tab ofprimary data source.
  */
 interface TopbarToolsProps {
   compact?: boolean

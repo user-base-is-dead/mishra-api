@@ -39,7 +39,7 @@ export async function updateGroup(
   return data
 }
 
-/** Delete group.`force=true` cascade cleanup of all at that timehasreference(Credential groups + Client key Key.group). */
+/** Delete group.`force=true` cascade cleanup of all at that timehasreference(Credential groups + Client key.group). */
 export async function deleteGroup(name: string, force = false): Promise<SuccessResponse> {
   const path = `/groups/${encodeURIComponent(name)}${force ? '?force=true' : ''}`
   const { data } = await api.delete<SuccessResponse>(path)

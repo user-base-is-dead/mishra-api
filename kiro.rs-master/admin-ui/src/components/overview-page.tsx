@@ -252,7 +252,7 @@ function StatsCards({
     },
     {
       icon: <KeyRound className="h-4 w-4" />,
-      label: 'Enabled client keys Key',
+      label: 'Enabled client keys',
       meta: 'Currently available entries',
       value: formatNumber(activeKeys),
       className: 'col-span-2 max-[360px]:col-span-1 lg:col-span-1',

@@ -412,7 +412,7 @@ export interface StatsTimeFilter {
 }
 
 export interface StatsFilter {
-  /** do not pass = All;other values = Client key Key id */
+  /** do not pass = All;other values = Client key id */
   keyId?: number
   /** byAccount groupfilter(only affects timeseries / by-credential,by-model notSupported) */
   group?: string
@@ -481,9 +481,9 @@ export interface TraceRecord {
   traceId: string
   ts: string
   keyId: number
-  /** masterApiKey = history master Calls(offline);clientKey = Client key Key */
+  /** masterApiKey = history master Calls(offline);clientKey = Client key */
   keySource: 'masterApiKey' | 'clientKey'
-  /** initiateRequestofClient key Key Name(master represents the primary apiKey;Managemember business Key canas null) */
+  /** initiateRequestofClient key Name(master represents the primary apiKey;Managemember business Key canas null) */
   keyName?: string | null
   model: string
   isStream: boolean
@@ -519,7 +519,7 @@ export interface TraceQuery {
   status?: string
   errorType?: string
   credentialId?: number
-  /** by initiatorRequestofClient key Key filter(0 = master apiKey) */
+  /** by initiatorRequestofClient key filter(0 = master apiKey) */
   keyId?: number
   /** theCredentialina certainjumpFailedpast(even if trace finalSuccess)——Used forCredentialFaileddetail */
   failedAttemptCredentialId?: number
@@ -555,7 +555,7 @@ export interface GroupItem {
   createdAt: string
   /** reference count:hashow manycredentialscarry thisgroups */
   credentialCount: number
-  /** reference count:hashow manyput the client key Key bind thisgroups */
+  /** reference count:hashow manyput the client key bind thisgroups */
   clientKeyCount: number
 }
 

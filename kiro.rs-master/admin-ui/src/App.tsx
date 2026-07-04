@@ -66,7 +66,7 @@ const TABS: {
   },
   {
     key: "keys",
-    label: "Client key Key",
+    label: "Client key",
     mobileLabel: "Key",
     icon: <KeyRound className="h-3.5 w-3.5" />,
   },
