@@ -24,7 +24,7 @@ import { startIdcLogin, pollIdcLogin } from '@/api/credentials'
 import type { StartIdcLoginResponse } from '@/types/api'
 import { extractErrorMessage } from '@/lib/utils'
 
-/** 预设 SSO 区域（分组 + 显示名），与 AWS 常用区域一致 */
+/** preset SSO Region(Group + Showname),and AWS commonRegionconsistent */
 const SSO_REGION_GROUPS: { group: string; items: [string, string][] }[] = [
   {
     group: 'US',
@@ -71,7 +71,7 @@ const SSO_REGION_GROUPS: { group: string; items: [string, string][] }[] = [
 
 const KNOWN_SSO_REGIONS = SSO_REGION_GROUPS.flatMap((g) => g.items.map(([v]) => v))
 
-/** SSO 区域选择：下拉预设区域 + 始终可输入的自定义文本框 */
+/** SSO Regionselect:dropdown presetRegion + always availableInputofCustomtext box */
 function RegionSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const selectValue = KNOWN_SSO_REGIONS.includes(value) ? value : 'custom'
@@ -102,8 +102,8 @@ function RegionSelect({ value, onChange }: { value: string; onChange: (v: string
             </SelectGroup>
           ))}
           <SelectGroup>
-            <SelectLabel>自定义</SelectLabel>
-            <SelectItem value="custom">-- 自定义输入 --</SelectItem>
+            <SelectLabel>Custom</SelectLabel>
+            <SelectItem value="custom">-- Custom input --</SelectItem>
           </SelectGroup>
         </SelectContent>
       </Select>
@@ -111,7 +111,7 @@ function RegionSelect({ value, onChange }: { value: string; onChange: (v: string
         ref={inputRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="例如: cn-north-1"
+        placeholder="For example: cn-north-1"
         className="w-36"
       />
     </div>
@@ -122,7 +122,7 @@ interface IdcLoginDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
-  /** 登录模式：'builder-id' 为 AWS Builder ID；'enterprise' 为企业 IAM Identity Center SSO */
+  /** Loginmode:'builder-id' as AWS Builder ID;'enterprise' asenterprise IAM Identity Center SSO */
   mode?: 'builder-id' | 'enterprise'
 }
 
@@ -141,14 +141,14 @@ export function IdcLoginDialog({ open, onOpenChange, onSuccess, mode = 'builder-
   const [credentialId, setCredentialId] = useState<number | null>(null)
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // 清理轮询定时器
+  // clear the polling timer
   useEffect(() => {
     return () => {
       if (pollTimerRef.current) clearTimeout(pollTimerRef.current)
     }
   }, [])
 
-  // 对话框关闭时重置状态
+  // dialogClosetimeResetStatus
   const handleOpenChange = (v: boolean) => {
     if (!v) {
       if (pollTimerRef.current) clearTimeout(pollTimerRef.current)
@@ -161,26 +161,26 @@ export function IdcLoginDialog({ open, onOpenChange, onSuccess, mode = 'builder-
     onOpenChange(v)
   }
 
-  /** 复制验证链接到剪贴板（无痕模式下让用户手动在无痕窗口打开） */
+  /** Copy validation linkto the clipboard(Incognitolet the user do it manually in this modeinIncognitowindow opens) */
   const copyVerificationUrl = async (resp: StartIdcLoginResponse) => {
     const url = resp.verificationUriComplete ?? resp.verificationUri
     try {
       await navigator.clipboard.writeText(url)
       setLinkCopied(true)
       setTimeout(() => setLinkCopied(false), 2000)
-      toast.success('登录链接已复制，请在无痕窗口粘贴打开')
+      toast.success('Login link copied. Paste and open it in an incognito window')
     } catch {
-      toast.error('复制失败，请手动复制链接')
+      toast.error('Copy failed. Please copy the link manually')
     }
   }
 
   const handleStart = async () => {
     if (!region.trim()) {
-      toast.error('请填写 SSO 区域')
+      toast.error('Please fill in SSO Region')
       return
     }
     if (isEnterprise && !startUrl.trim()) {
-      toast.error('请填写 SSO Start URL')
+      toast.error('Please fill in SSO Start URL')
       return
     }
     setIsStarting(true)
@@ -197,7 +197,7 @@ export function IdcLoginDialog({ open, onOpenChange, onSuccess, mode = 'builder-
       }
       schedulePoll(resp.sessionId, resp.pollInterval)
     } catch (e) {
-      toast.error('发起登录失败：' + extractErrorMessage(e))
+      toast.error('Start login failed:' + extractErrorMessage(e))
     } finally {
       setIsStarting(false)
     }
@@ -213,14 +213,14 @@ export function IdcLoginDialog({ open, onOpenChange, onSuccess, mode = 'builder-
           setCredentialId(result.credentialId)
           setStep('done')
           onSuccess()
-          toast.success(`登录成功，已添加凭据 #${result.credentialId}`)
+          toast.success(`Login succeeded, credential added #${result.credentialId}`)
         } else {
-          toast.error('授权已过期，请重新发起登录')
+          toast.error('Authorization expired. Please start login again')
           setStep('form')
           setSession(null)
         }
       } catch (e) {
-        toast.error('轮询状态失败：' + extractErrorMessage(e))
+        toast.error('Poll status failed:' + extractErrorMessage(e))
         schedulePoll(sessionId, interval)
       }
     }, interval * 1000)
@@ -229,7 +229,7 @@ export function IdcLoginDialog({ open, onOpenChange, onSuccess, mode = 'builder-
   const copyCode = () => {
     if (!session) return
     navigator.clipboard.writeText(session.userCode)
-    toast.success('验证码已复制')
+    toast.success('Verification code copied')
   }
 
   return (
@@ -237,12 +237,12 @@ export function IdcLoginDialog({ open, onOpenChange, onSuccess, mode = 'builder-
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {isEnterprise ? 'Enterprise IAM Identity Center SSO 登录' : 'AWS SSO / Builder ID 登录'}
+            {isEnterprise ? 'Enterprise IAM Identity Center SSO Login' : 'AWS SSO / Builder ID Login'}
           </DialogTitle>
           <DialogDescription>
             {isEnterprise
-              ? '填写组织的 SSO Start URL 与区域，通过设备授权流程添加企业凭据。'
-              : '通过 AWS Identity Center 设备授权流程添加凭据，无需手动导出 refreshToken。'}
+              ? 'Fill in the organization SSO Start URL and region, and add enterprise credentials through the device authorization flow.'
+              : 'via AWS Identity Center Add credentials via the device authorization flow, no manual export needed refreshToken.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -260,7 +260,7 @@ export function IdcLoginDialog({ open, onOpenChange, onSuccess, mode = 'builder-
               />
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="idc-region" className="text-sm font-medium">SSO 区域</label>
+              <label htmlFor="idc-region" className="text-sm font-medium">SSO Region</label>
               <RegionSelect value={region} onChange={setRegion} />
             </div>
           </div>
@@ -276,7 +276,7 @@ export function IdcLoginDialog({ open, onOpenChange, onSuccess, mode = 'builder-
               <label htmlFor="idc-start-url" className="text-sm font-medium">
                 SSO Start URL
                 <span className="ml-1 text-xs text-muted-foreground">
-                  （留空使用 AWS Builder ID）
+                  (leave empty to use AWS Builder ID)
                 </span>
               </label>
               <Input
@@ -287,7 +287,7 @@ export function IdcLoginDialog({ open, onOpenChange, onSuccess, mode = 'builder-
               />
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="idc-email" className="text-sm font-medium">邮箱（可选）</label>
+              <label htmlFor="idc-email" className="text-sm font-medium">Email (optional)</label>
               <Input
                 id="idc-email"
                 placeholder="user@example.com"
@@ -307,10 +307,10 @@ export function IdcLoginDialog({ open, onOpenChange, onSuccess, mode = 'builder-
               className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
             />
             <span className="text-sm">
-              <span className="font-medium">使用无痕窗口登录</span>
+              <span className="font-medium">Log in using an incognito window</span>
               <span className="mt-0.5 block text-xs text-muted-foreground">
-                发起后复制验证链接，自行用浏览器无痕/隐身窗口（Ctrl+Shift+N）打开，
-                避免与当前已登录的 AWS 账号串号。
+                After starting, copy the validation link and use an incognito browser yourself/Incognito window (Ctrl+Shift+N) to open,
+                to avoid conflicting with the currently logged-in AWS account mix-up.
               </span>
             </span>
           </label>
@@ -322,9 +322,9 @@ export function IdcLoginDialog({ open, onOpenChange, onSuccess, mode = 'builder-
               {incognito ? (
                 <>
                   <p className="text-sm text-muted-foreground">
-                    验证链接已复制。请新开一个
-                    <span className="font-medium text-foreground">无痕 / 隐身窗口</span>
-                    （Ctrl+Shift+N，Safari 为 ⌘+Shift+N），粘贴打开并完成授权。
+                    Validation link copied. Please open a new
+                    <span className="font-medium text-foreground">Incognito / Incognito window</span>
+                    (Ctrl+Shift+N,Safari as ⌘+Shift+N), paste to open and complete authorization.
                   </p>
                   <Button
                     size="sm"
@@ -336,12 +336,12 @@ export function IdcLoginDialog({ open, onOpenChange, onSuccess, mode = 'builder-
                     ) : (
                       <Copy className="h-3.5 w-3.5" />
                     )}
-                    {linkCopied ? '已复制' : '复制验证链接'}
+                    {linkCopied ? 'Copied' : 'Copy validation link'}
                   </Button>
                 </>
               ) : (
                 <>
-                  <p className="text-sm text-muted-foreground">在浏览器中访问以下地址并输入验证码</p>
+                  <p className="text-sm text-muted-foreground">Open the following address in your browser and enter the verification code</p>
                   <a
                     href={session.verificationUriComplete ?? session.verificationUri}
                     target="_blank"
@@ -364,7 +364,7 @@ export function IdcLoginDialog({ open, onOpenChange, onSuccess, mode = 'builder-
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              正在等待授权，请在浏览器中完成登录…
+              Waiting for authorization. Please complete the login in your browser…
             </div>
           </div>
         )}
@@ -372,9 +372,9 @@ export function IdcLoginDialog({ open, onOpenChange, onSuccess, mode = 'builder-
         {step === 'done' && (
           <div className="flex flex-col items-center gap-3 py-4">
             <CheckCircle className="h-10 w-10 text-green-500" />
-            <p className="text-sm font-medium">登录成功</p>
+            <p className="text-sm font-medium">Login succeeded</p>
             <p className="text-xs text-muted-foreground">
-              凭据 #{credentialId} 已添加并启用
+              Credential #{credentialId} Added and enabled
             </p>
           </div>
         )}
@@ -383,16 +383,16 @@ export function IdcLoginDialog({ open, onOpenChange, onSuccess, mode = 'builder-
           {step === 'form' && (
             <Button onClick={handleStart} disabled={isStarting}>
               {isStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              发起登录
+              Start login
             </Button>
           )}
           {step === 'waiting' && (
             <Button variant="outline" onClick={() => handleOpenChange(false)}>
-              取消
+              Cancel
             </Button>
           )}
           {step === 'done' && (
-            <Button onClick={() => handleOpenChange(false)}>关闭</Button>
+            <Button onClick={() => handleOpenChange(false)}>Close</Button>
           )}
         </DialogFooter>
       </DialogContent>

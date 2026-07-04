@@ -30,14 +30,14 @@ import {
 } from '@/components/ui/select'
 
 const RANGES: { label: string; value: StatsRange }[] = [
-  { label: '24 小时', value: '24h' },
-  { label: '7 天', value: '7d' },
-  { label: '30 天', value: '30d' },
+  { label: '24 hours', value: '24h' },
+  { label: '7 days', value: '7d' },
+  { label: '30 days', value: '30d' },
 ]
 
 const GRANULARITIES: { label: string; value: StatsGranularity }[] = [
-  { label: '按小时', value: 'hour' },
-  { label: '按天', value: 'day' },
+  { label: 'By hour', value: 'hour' },
+  { label: 'By day', value: 'day' },
 ]
 
 function toDateInputValue(d: Date): string {
@@ -67,10 +67,10 @@ function formatDateText(value: string): string {
 }
 
 function timeLabel(filter: StatsTimeFilter): string {
-  const suffix = filter.granularity === 'day' ? '按天' : '按小时'
+  const suffix = filter.granularity === 'day' ? 'By day' : 'By hour'
   if (filter.range) {
     const range = RANGES.find((r) => r.value === filter.range)?.label ?? filter.range
-    return `近 ${range} · ${suffix}`
+    return `recent ${range} · ${suffix}`
   }
   return `${formatDateText(filter.startDate ?? '')} - ${formatDateText(filter.endDate ?? '')} · ${suffix}`
 }
@@ -186,16 +186,16 @@ function useOverviewFilters() {
 }
 
 function selectedStatsKeyLabel(keyFilter: string, keys: ClientKeyItem[]): string {
-  if (keyFilter === 'all') return '全部入口 Key'
+  if (keyFilter === 'all') return 'All entries Key'
   return keys.find((k) => String(k.id) === keyFilter)?.name ?? `#${keyFilter}`
 }
 
 function PageHeader() {
   return (
     <div className="mb-6">
-      <h1 className="text-[28px] font-semibold tracking-tight leading-tight">概览</h1>
+      <h1 className="text-[28px] font-semibold tracking-tight leading-tight">Overview</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        中转站调用情况、Token 消耗趋势与上游凭据贡献
+        gateway call activity,Token consumption trend and upstream credential contribution
       </p>
     </div>
   )
@@ -236,29 +236,29 @@ function StatsCards({
   const cards = [
     {
       icon: <Activity className="h-4 w-4" />,
-      label: '调用',
+      label: 'Calls',
       value: formatNumber(stats.calls),
       extra: stats.errors > 0 ? (
-        <Badge variant="destructive">异常 {formatNumber(stats.errors)}</Badge>
+        <Badge variant="destructive">Error {formatNumber(stats.errors)}</Badge>
       ) : null,
     },
-    { icon: <Cpu className="h-4 w-4" />, label: '输入 Token', value: formatNumber(stats.inputTokens) },
-    { icon: <Cpu className="h-4 w-4" />, label: '输出 Token', value: formatNumber(stats.outputTokens) },
+    { icon: <Cpu className="h-4 w-4" />, label: 'Input Token', value: formatNumber(stats.inputTokens) },
+    { icon: <Cpu className="h-4 w-4" />, label: 'Output Token', value: formatNumber(stats.outputTokens) },
     {
       icon: <Coins className="h-4 w-4" />,
       label: 'Credit',
       value: formatCredits(stats.credits),
-      extra: <span className="text-[11px] text-muted-foreground">上游计费量</span>,
+      extra: <span className="text-[11px] text-muted-foreground">Upstream billing amount</span>,
     },
     {
       icon: <KeyRound className="h-4 w-4" />,
-      label: '启用的客户端 Key',
-      meta: '当前可用入口',
+      label: 'Enabled client keys Key',
+      meta: 'Currently available entries',
       value: formatNumber(activeKeys),
       className: 'col-span-2 max-[360px]:col-span-1 lg:col-span-1',
       extra: (
         <span className="text-[11px] text-muted-foreground">
-          上游 {formatNumber(activeCredentials)}
+          Upstream {formatNumber(activeCredentials)}
         </span>
       ),
     },
@@ -295,20 +295,20 @@ function KeyFilterCard({
       <CardContent className="p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium">统计筛选</div>
+            <div className="text-sm font-medium">Stats filter</div>
             <div className="truncate text-[12px] text-muted-foreground">
               {selectedLabel}
-              {groupFilter !== 'all' && ` · 分组：${groupFilter}`}
+              {groupFilter !== 'all' && ` · Group:${groupFilter}`}
             </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
-            {/* 入口 Key 筛选 */}
+            {/* Entry Key filter */}
             <Select value={keyFilter} onValueChange={onChange}>
               <SelectTrigger className="h-8 w-full sm:w-[180px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent align="end">
-                <SelectItem value="all">全部入口 Key</SelectItem>
+                <SelectItem value="all">All entries Key</SelectItem>
                 {keys.map((key) => (
                   <SelectItem key={key.id} value={String(key.id)}>
                     {key.name}
@@ -316,13 +316,13 @@ function KeyFilterCard({
                 ))}
               </SelectContent>
             </Select>
-            {/* 账号分组筛选 */}
+            {/* Account groupfilter */}
             <Select value={groupFilter} onValueChange={onGroupChange}>
               <SelectTrigger className="h-8 w-full sm:w-[180px]">
-                <SelectValue placeholder="全部分组" />
+                <SelectValue placeholder="All groups" />
               </SelectTrigger>
               <SelectContent align="end">
-                <SelectItem value="all">全部分组</SelectItem>
+                <SelectItem value="all">All groups</SelectItem>
                 {groupOptions.map((g) => (
                   <SelectItem key={g} value={g}>
                     {g}
@@ -395,9 +395,9 @@ function TrendCard({
 function TrendTitle({ granularity }: { granularity: StatsGranularity }) {
   return (
     <div>
-      <h2 className="text-base font-semibold tracking-tight">Token 使用趋势</h2>
+      <h2 className="text-base font-semibold tracking-tight">Token Usage trend</h2>
       <p className="text-[12px] text-muted-foreground">
-        {granularity === 'day' ? '按天' : '按小时'}聚合 · 输入/输出/缓存读写
+        {granularity === 'day' ? 'By day' : 'By hour'}Aggregate · Input/Output/Cache read/write
       </p>
     </div>
   )
@@ -502,7 +502,7 @@ function DateRangeInputs({
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 max-[374px]:grid-cols-1 lg:flex lg:items-center">
       <DateInput value={startDate} onChange={onStartDateChange} />
-      <span className="text-center text-xs text-muted-foreground max-[374px]:hidden">至</span>
+      <span className="text-center text-xs text-muted-foreground max-[374px]:hidden">to</span>
       <DateInput value={endDate} onChange={onEndDateChange} />
       <Button
         size="sm"
@@ -510,7 +510,7 @@ function DateRangeInputs({
         disabled={!startDate || !endDate || endDate < startDate}
         onClick={onApply}
       >
-        应用
+        Apply
       </Button>
     </div>
   )
@@ -562,13 +562,13 @@ function ModelPanel({
     <Card>
       <CardContent className="p-4 sm:p-5">
         <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-base font-semibold tracking-tight">按模型分布</h2>
+          <h2 className="text-base font-semibold tracking-tight">Distribution by model</h2>
           <span className="text-[11px] text-muted-foreground">{timeText}</span>
         </div>
         {groupFilterActive && (
           <p className="mb-3 rounded-md bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-600">
-            当前已启用「分组筛选」。模型分布暂未细分到分组维度，本卡片显示的是
-            <strong className="mx-0.5">不区分分组</strong>的模型聚合结果。
+            Group filter is enabled. Model distribution is not yet broken down by group, so this card shows
+            <strong className="mx-0.5">Not distinguished by group</strong>the aggregated model result.
           </p>
         )}
         <ModelPieChart data={data} />
@@ -584,10 +584,10 @@ function ModelTable({ data }: { data: ModelDistribution[] }) {
       <table className="min-w-[420px] w-full">
         <thead className="text-muted-foreground">
           <tr>
-            <th className="text-left font-medium pb-1">模型</th>
-            <th className="text-right font-medium">调用</th>
-            <th className="text-right font-medium">输入</th>
-            <th className="text-right font-medium">输出</th>
+            <th className="text-left font-medium pb-1">Model</th>
+            <th className="text-right font-medium">Calls</th>
+            <th className="text-right font-medium">Input</th>
+            <th className="text-right font-medium">Output</th>
           </tr>
         </thead>
         <tbody>
@@ -610,7 +610,7 @@ function CredentialPanel({ data }: { data: CredentialDistribution[] }) {
     <Card>
       <CardContent className="p-4 sm:p-5">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold tracking-tight">按上游凭据分布</h2>
+          <h2 className="text-base font-semibold tracking-tight">Distribution by upstream credential</h2>
           <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
             <Server className="h-3 w-3" />Top {Math.min(data.length, 12)}
           </span>

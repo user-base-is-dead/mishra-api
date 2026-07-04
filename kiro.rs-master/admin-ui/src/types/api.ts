@@ -1,4 +1,4 @@
-// 凭据状态响应
+// CredentialStatusresponse
 export interface CredentialsStatusResponse {
   total: number
   available: number
@@ -6,13 +6,13 @@ export interface CredentialsStatusResponse {
   credentials: CredentialStatusItem[]
 }
 
-// 单个凭据状态
+// singlecredentialsStatus
 export interface CredentialStatusItem {
   id: number
   priority: number
   disabled: boolean
   failureCount: number
-  /** 累计失败次数（所有失败类型，只增不减，仅手动重置归零） */
+  /** accumulateFailure count(placehasFailedtype,only increases never decreases,manual onlyResetreset to zero) */
   totalFailureCount: number
   isCurrent: boolean
   expiresAt: string | null
@@ -29,20 +29,20 @@ export interface CredentialStatusItem {
   proxyUrl?: string
   refreshFailureCount: number
   disabledReason?: string
-  /** 账号级风控冷却剩余秒数（>0 表示冷却中） */
+  /** Accountlevel throttleCooldownRemainingseconds(>0 representsCooldownin) */
   throttledRemainingSecs?: number
   endpoint: string
-  /** 账号所属分组（可属于多个分组） */
+  /** Accountbelongs toGroup(can belong to manygroups) */
   groups?: string[]
-  /** 账号来源渠道（纯备注） */
+  /** Account source channel(plainNote) */
   sourceChannel?: string
-  /** 后端缓存的最近一次余额（5 分钟内） */
+  /** backend cacheofmostrecentonetimesBalance(5 minutesinside) */
   balance?: BalanceResponse
-  /** 余额缓存的更新时间（Unix 秒） */
+  /** BalancecacheofupdateTime(Unix second) */
   balanceUpdatedAt?: number
 }
 
-// 余额响应
+// Balanceresponse
 export interface BalanceResponse {
   id: number
   subscriptionTitle: string | null
@@ -51,21 +51,21 @@ export interface BalanceResponse {
   remaining: number
   usagePercentage: number
   nextResetAt: number | null
-  /** 用户是否当前开启了超额 */
+  /** whether the user is currentlyEnabledoneOverage */
   overageEnabled?: boolean
-  /** 账号订阅是否可以开启超额 */
+  /** Accountwhether the subscription canEnable overage */
   overageCapable?: boolean
-  /** 上游 overageCapability 原始字符串，用于排查"未知"状态 */
+  /** Upstream overageCapability rawstring,Used fortroubleshoot"Unknown"Status */
   overageCapabilityRaw?: string
 }
 
-// 某凭据当前可用的模型列表响应
+// someCredentialcurrentAvailableofModelListresponse
 export interface AvailableModelsResponse {
   id: number
   models: AvailableModelItem[]
 }
 
-// 单个可用模型
+// singleitemsAvailable models
 export interface AvailableModelItem {
   modelId: string
   modelName?: string
@@ -73,13 +73,13 @@ export interface AvailableModelItem {
   maxInputTokens?: number
 }
 
-// 成功响应
+// Successresponse
 export interface SuccessResponse {
   success: boolean
   message: string
 }
 
-// 错误响应
+// Errorresponse
 export interface AdminErrorResponse {
   error: {
     type: string
@@ -87,7 +87,7 @@ export interface AdminErrorResponse {
   }
 }
 
-// 请求类型
+// Requesttype
 export interface SetDisabledRequest {
   disabled: boolean
 }
@@ -96,7 +96,7 @@ export interface SetPriorityRequest {
   priority: number
 }
 
-// 添加凭据请求
+// Add credentialRequest
 export interface AddCredentialRequest {
   refreshToken?: string
   accessToken?: string
@@ -121,7 +121,7 @@ export interface AddCredentialRequest {
   sourceChannel?: string
 }
 
-// 添加凭据响应
+// Add credentialresponse
 export interface AddCredentialResponse {
   success: boolean
   message: string
@@ -129,29 +129,29 @@ export interface AddCredentialResponse {
   email?: string
 }
 
-// 更新凭据请求（字段为 undefined 表示不修改，空字符串表示清除）
+// updateCredentialRequest(fieldas undefined means no change,emptystringrepresentsclear)
 export interface UpdateCredentialRequest {
   email?: string
   proxyUrl?: string
   proxyUsername?: string
   proxyPassword?: string
-  /** 账号所属分组（undefined 表示不修改，数组表示整体替换） */
+  /** Accountbelongs toGroup(undefined means no change,an array represents the wholeReplace) */
   groups?: string[]
-  /** 账号来源渠道（undefined 表示不修改，空串表示清除） */
+  /** Account source channel(undefined means no change,empty string meansclear) */
   sourceChannel?: string
 }
 
-// 更新 refreshToken 请求
+// update refreshToken Request
 export interface UpdateRefreshTokenRequest {
   refreshToken: string
   accessToken?: string
   expiresAt?: string
 }
 
-// 代理健康状态
+// ProxyhealthStatus
 export type ProxyHealth = 'unknown' | 'healthy' | 'unhealthy'
 
-// 代理池条目
+// Proxy poolitemsitem
 export interface ProxyPoolEntry {
   id: number
   url: string
@@ -165,29 +165,29 @@ export interface ProxyPoolEntry {
   autoDisabled: boolean
 }
 
-// 代理池列表响应
+// Proxy poolListresponse
 export interface ProxyPoolResponse {
   total: number
   proxies: ProxyPoolEntry[]
 }
 
-// 添加代理请求
+// AddProxyRequest
 export interface AddProxyRequest {
   url: string
   label?: string
 }
 
-// 批量添加代理请求
+// BulkAddProxyRequest
 export interface BatchAddProxyRequest {
   urls: string[]
 }
 
-// 分配代理给凭据请求
+// assignProxygiveCredentialRequest
 export interface AssignProxyRequest {
   proxyId?: number | null
 }
 
-// 批量添加代理响应
+// BulkAddProxyresponse
 export interface BatchAddProxyResponse {
   added: number
   errors: number
@@ -195,7 +195,7 @@ export interface BatchAddProxyResponse {
   errorMessages: string[]
 }
 
-// 单个代理健康检查响应
+// singleproxieshealth check response
 export interface ProxyCheckResponse {
   id: number
   health: ProxyHealth
@@ -205,25 +205,25 @@ export interface ProxyCheckResponse {
   autoDisabled: boolean
 }
 
-// 全量健康检查响应
+// full health check response
 export interface ProxyCheckAllResponse {
   healthy: number
   unhealthy: number
   autoDisabled: number
 }
 
-// 轮询批量分配请求
+// pollBulkassignRequest
 export interface AssignRoundRobinRequest {
   credentialIds?: number[] | null
 }
 
-// 轮询批量分配响应
+// pollBulkassignment response
 export interface AssignRoundRobinResponse {
   assigned: number
   proxyCount: number
 }
 
-// 全局代理配置
+// GlobalProxy config
 export interface GlobalProxyResponse {
   proxyUrl: string | null
 }
@@ -232,44 +232,44 @@ export interface SetGlobalProxyRequest {
   proxyUrl: string | null
 }
 
-// 在线更新配置
+// Online updateConfig
 export interface UpdateConfigResponse {
-  /** 上一次更新前正在运行的版本号（带 v 前缀）；存在时可调用回退接口 */
+  /** previoustimesbefore update it isinrunofVersion number(carry v prefix);storeincan at that timeCallsfallback endpoint */
   previousVersion?: string
-  /** 上一次成功完成在线更新的时间（RFC3339） */
+  /** previoustimesSuccesscompleteOnline updateofTime(RFC3339) */
   lastAppliedAt?: string
-  /** 是否已配置 GitHub Token（仅返回布尔，不回明文） */
+  /** whetherConfigured GitHub Token(onlyBackboolean,does not return plaintext) */
   githubTokenSet: boolean
-  /** 是否开启无人值守自动更新 */
+  /** whetherEnableUnattended auto-update */
   autoApply: boolean
-  /** 自动更新触发时间（本地时区，HH:MM 24 小时制） */
+  /** auto updateTrigger time (local time zone,HH:MM 24 hourscontrol) */
   autoApplyTime: string
 }
 
 export interface SetUpdateConfigRequest {
-  /** GitHub Personal Access Token；空字符串表示清除 */
+  /** GitHub Personal Access Token;emptystringrepresentsClear */
   githubToken?: string
   autoApply?: boolean
   autoApplyTime?: string
 }
 
-/** GitHub API 限流状态（含 token 验证结果） */
+/** GitHub API Rate limitStatus(including token Validateresult) */
 export interface GitHubRateLimitInfo {
-  /** 提供的 token 是否有效（无 token 时为 false 但仍能查到匿名限额） */
+  /** provideof token whetherhaseffect(none token timeas false but can still be foundAnonymousQuota) */
   valid: boolean
-  /** 是否带 token 调用（false = 匿名查询） */
+  /** whether it carries token Calls(false = Anonymousquery) */
   authenticated: boolean
-  /** 限流上限（匿名 60，认证 5000） */
+  /** Rate limitlimit(Anonymous 60,authentication 5000) */
   limit: number
-  /** 剩余可用次数 */
+  /** RemainingAvailabletimescount */
   remaining: number
-  /** 已用次数 */
+  /** Usedtimescount */
   used: number
-  /** 限流窗口重置时间（Unix 秒） */
+  /** Rate limitwindowResetTime(Unix second) */
   reset: number
-  /** token 对应的用户名（可能为空） */
+  /** token correspondingofUsername(maybeasempty) */
   login?: string
-  /** 失败时的提示信息 */
+  /** Failedtimeofhint info */
   warning?: string
 }
 
@@ -295,12 +295,12 @@ export interface UpdateCheckInfo {
   warning?: string
 }
 
-// 登录API密钥修改（adminApiKey —— 管理面板登录密钥）
+// LoginAPIKeymodify(adminApiKey —— ManagepanelLoginKey)
 export interface UpdateAdminKeyRequest {
   newKey: string
 }
 
-// IdC 设备授权登录
+// IdC Device authorizationLogin
 export interface StartIdcLoginRequest {
   region: string
   startUrl?: string
@@ -323,17 +323,17 @@ export type PollIdcLoginResponse =
   | { status: 'success'; credentialId: number }
   | { status: 'expired' }
 
-// Social 登录（Portal PKCE OAuth）
+// Social Login (Portal PKCE OAuth)
 export interface StartSocialLoginRequest {
   priority?: number
   email?: string
   proxyUrl?: string
   authEndpoint?: string
-  /** OAuth 回调公网地址（远程模式），由 API 客户端按当前访问地址自动派生，调用方一般无需填写 */
+  /** OAuth callback public address(remote mode),by API Client keybased on the current access addressAuto-derive,Callsusually no need to fill in */
   callbackBaseUrl?: string
 }
 
-/** 远程访问时手动完成 Social 登录：从浏览器地址栏粘贴的回调 URL 中提取参数 */
+/** complete manually on remote access Social Login:frombrowser address barPasteofcallback URL extract the parameter from */
 export interface CompleteSocialLoginRequest {
   code: string
   state: string
@@ -345,18 +345,18 @@ export interface StartSocialLoginResponse {
   sessionId: string
   portalUrl: string
   expiresAt: string
-  /** 是否处于远程回调模式（服务端已配置 callbackBaseUrl）。
-   *  true 时 OAuth 回调指向公网路由，前端可自动轮询完成。 */
+  /** whether in remote callback mode(serverConfigured callbackBaseUrl).
+   *  true time OAuth callback points to a public pathby,the frontend can poll to complete automatically. */
   remote: boolean
 }
 
 export type PollSocialLoginResponse = PollIdcLoginResponse
 
-// ============ 客户端 API Key 分发 ============
+// ============ Client key API Key distribute ============
 
 export interface ClientKeyItem {
   id: number
-  /** 脱敏后的 Key（仅展示） */
+  /** after maskingof Key(display only) */
   maskedKey: string
   name: string
   description?: string
@@ -368,9 +368,9 @@ export interface ClientKeyItem {
   totalOutputTokens: number
   totalCacheCreationTokens: number
   totalCacheReadTokens: number
-  /** 绑定的账号分组（未绑定时为 undefined） */
+  /** bindofAccount group(when not boundas undefined) */
   group?: string
-  /** 是否系统密钥（config.json apiKey 导入，不可删除 / 不可轮换） */
+  /** whetherSystemKey(config.json apiKey imported, cannot be deleted / Not rotatable) */
   isSystem: boolean
 }
 
@@ -385,7 +385,7 @@ export interface CreateClientKeyRequest {
   group?: string
 }
 
-/** 创建响应：明文 Key 仅在此处返回一次 */
+/** Createresponse:plaintext Key only inhereBackonetimes */
 export interface CreateClientKeyResponse {
   id: number
   key: string
@@ -399,7 +399,7 @@ export interface UpdateClientKeyRequest {
   group?: string
 }
 
-// ============ 用量统计 ============
+// ============ Usagestatistics ============
 
 export type StatsRange = '24h' | '7d' | '30d'
 export type StatsGranularity = 'hour' | 'day'
@@ -412,9 +412,9 @@ export interface StatsTimeFilter {
 }
 
 export interface StatsFilter {
-  /** 不传 = 全部；其它值 = 客户端 Key id */
+  /** do not pass = All;other values = Client key Key id */
   keyId?: number
-  /** 按账号分组筛选（仅影响 timeseries / by-credential，by-model 不支持） */
+  /** byAccount groupfilter(only affects timeseries / by-credential,by-model notSupported) */
   group?: string
 }
 
@@ -459,31 +459,31 @@ export interface CredentialDistribution {
   errors: number
 }
 
-// ============ 请求链路追踪 ============
+// ============ Request trace ============
 
-/** 单次上游尝试 */
+/** singletimesUpstreamtry */
 export interface TraceAttempt {
   attempt: number
   credentialId: number
   email?: string | null
   endpoint: string
-  /** 上游 HTTP 状态码；null = 网络层失败 */
+  /** Upstream HTTP Statuscode;null = network layerFailed */
   httpStatus: number | null
   /** success / quota_exhausted / account_throttled / auth_failed / transient / network_error / bad_request / unknown */
   outcome: string
-  /** 上游错误体片段（已截断） */
+  /** UpstreamErrorbody fragment(truncated) */
   errorSnippet: string | null
   durationMs: number
 }
 
-/** 一个外部请求的完整链路 */
+/** oneitemsexternalRequestoffull trace */
 export interface TraceRecord {
   traceId: string
   ts: string
   keyId: number
-  /** masterApiKey = 历史 master 调用（已下线）；clientKey = 客户端 Key */
+  /** masterApiKey = history master Calls(offline);clientKey = Client key Key */
   keySource: 'masterApiKey' | 'clientKey'
-  /** 发起请求的客户端 Key 名称（master 表示主 apiKey；管理员业务 Key 可为 null） */
+  /** initiateRequestofClient key Key Name(master represents the primary apiKey;Managemember business Key canas null) */
   keyName?: string | null
   model: string
   isStream: boolean
@@ -495,67 +495,67 @@ export interface TraceRecord {
   errorMessage: string | null
   totalAttempts: number
   durationMs: number
-  /** 流式中断时已发送字节数 */
+  /** StreamingInterruptedalready sent at that timebytescount */
   interruptedAfterBytes: number | null
-  /** 输入 token */
+  /** Input token */
   inputTokens?: number
-  /** 输出 token */
+  /** Output token */
   outputTokens?: number
-  /** 缓存创建 token */
+  /** Cache create token */
   cacheCreationTokens?: number
-  /** 缓存读取 token */
+  /** Cache read token */
   cacheReadTokens?: number
-  /** 总 token = input + output + cache_creation + cache_read */
+  /** total token = input + output + cache_creation + cache_read */
   totalTokens?: number
-  /** 费用（credits） */
+  /** Cost(credits) */
   credits?: number
-  /** 首 Token 延迟（毫秒，仅流式有值） */
+  /** first Token delay(millisecond,onlyStreaminghasvalue) */
   firstTokenMs?: number | null
   attempts: TraceAttempt[]
 }
 
-/** 链路查询参数 */
+/** trace query parameter */
 export interface TraceQuery {
   status?: string
   errorType?: string
   credentialId?: number
-  /** 按发起请求的客户端 Key 筛选（0 = master apiKey） */
+  /** by initiatorRequestofClient key Key filter(0 = master apiKey) */
   keyId?: number
-  /** 该凭据在某一跳失败过（即便 trace 最终成功）——用于凭据失败详情 */
+  /** theCredentialina certainjumpFailedpast(even if trace finalSuccess)——Used forCredentialFaileddetail */
   failedAttemptCredentialId?: number
   model?: string
-  /** 按账号分组名筛选（只返回 final_credential_id 属于该分组的 trace） */
+  /** byAccount groupfilter by name(onlyBack final_credential_id belongs to thisGroupof trace) */
   group?: string
   onlyFailed?: boolean
   limit?: number
   offset?: number
 }
 
-/** 分页响应 */
+/** splitpageresponse */
 export interface TracePage {
   records: TraceRecord[]
   total: number
 }
 
-/** 单凭据失败分类计数（鉴权 / 账号风控 / 其他） */
+/** singleCredentialFailedcount by category(authenticate / Account throttle / other) */
 export interface FailureStats {
   auth: number
   throttle: number
   other: number
 }
 
-/** credentialId(字符串) → 失败分类计数 */
+/** credentialId(string) → Failedcount by category */
 export type FailureStatsMap = Record<string, FailureStats>
 
-// ============ 账号分组（独立实体）============
+// ============ Account group(independent entity)============
 
 export interface GroupItem {
   name: string
   description?: string
   createdAt: string
-  /** 引用计数：有多少个凭据带这个分组 */
+  /** reference count:hashow manycredentialscarry thisgroups */
   credentialCount: number
-  /** 引用计数：有多少把客户端 Key 绑定这个分组 */
+  /** reference count:hashow manyput the client key Key bind thisgroups */
   clientKeyCount: number
 }
 
@@ -570,8 +570,8 @@ export interface CreateGroupRequest {
 }
 
 export interface UpdateGroupRequest {
-  /** 新名字；不传或与原名一致则不改名 */
+  /** new name;do not passorif same as the original name then notRename */
   newName?: string
-  /** 新备注；空字符串清除；undefined 保留原值 */
+  /** newNote;emptystringClear;undefined keep the original value */
   description?: string
 }

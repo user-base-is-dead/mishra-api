@@ -26,10 +26,10 @@ import { extractErrorMessage, generateApiKey } from '@/lib/utils'
 import { ImageUpdateDialog } from '@/components/image-update-dialog'
 
 /**
- * 顶栏右侧通用工具栏：负载均衡切换、刷新、在线更新、设置（Key 管理）。
+ * general toolbar on the right of the top bar:load balancing switch,Refresh,Online update,Settings(Key Manage).
  *
- * 与原 Dashboard 中的工具按钮等价，但全局 Tab 都可访问。刷新按钮会失效
- * 凭据/客户端 Key/统计三类查询，覆盖三个 Tab 的主要数据源。
+ * with the original Dashboard inoftool buttonetc.price,butGlobal Tab accessible to all.Refreshthe button willInvalid
+ * Credential/Client key Key/count three kinds of queries,cover threeitems Tab ofprimary data source.
  */
 interface TopbarToolsProps {
   compact?: boolean
@@ -53,15 +53,15 @@ export function TopbarTools({ compact = false }: TopbarToolsProps) {
     queryClient.invalidateQueries({ queryKey: ['credentials'] })
     queryClient.invalidateQueries({ queryKey: ['client-keys'] })
     queryClient.invalidateQueries({ queryKey: ['stats'] })
-    toast.success('已刷新')
+    toast.success('Refreshed')
   }
 
   const handleToggleLoadBalancing = () => {
     const cur = loadBalancingData?.mode || 'priority'
     const next = cur === 'priority' ? 'balanced' : 'priority'
     setLoadBalancingMode(next, {
-      onSuccess: () => toast.success(`已切换到${next === 'priority' ? '优先级模式' : '均衡负载模式'}`),
-      onError: (err) => toast.error(`切换失败: ${extractErrorMessage(err)}`),
+      onSuccess: () => toast.success(`Switched to${next === 'priority' ? 'Priority mode' : 'Balanced load mode'}`),
+      onError: (err) => toast.error(`Switch failed: ${extractErrorMessage(err)}`),
     })
   }
 
@@ -69,8 +69,8 @@ export function TopbarTools({ compact = false }: TopbarToolsProps) {
     const cur = throttleConfig?.failover ?? true
     const next = !cur
     setThrottleConfig({ failover: next }, {
-      onSuccess: () => toast.success(next ? '已开启账号级风控故障转移' : '已关闭账号级风控故障转移'),
-      onError: (err) => toast.error(`切换失败: ${extractErrorMessage(err)}`),
+      onSuccess: () => toast.success(next ? 'Account-level throttle failover enabled' : 'Account-level throttle failover disabled'),
+      onError: (err) => toast.error(`Switch failed: ${extractErrorMessage(err)}`),
     })
   }
 
@@ -84,18 +84,18 @@ export function TopbarTools({ compact = false }: TopbarToolsProps) {
     e.preventDefault()
     const key = newKey.trim()
     if (!key) {
-      toast.error('新登录API密钥不能为空')
+      toast.error('New loginAPIKey cannot be empty')
       return
     }
     setUpdating(true)
     try {
       await updateAdminKey({ newKey: key })
       storage.setApiKey(key)
-      toast.success('登录API密钥已更新，已自动切换到新 Key')
+      toast.success('LoginAPIThe key has been updated and automatically switched to the new one Key')
       setKeyDialogOpen(false)
       setNewKey('')
     } catch (err) {
-      toast.error(`更新失败: ${extractErrorMessage(err)}`)
+      toast.error(`Update failed: ${extractErrorMessage(err)}`)
     } finally {
       setUpdating(false)
     }
@@ -117,8 +117,8 @@ export function TopbarTools({ compact = false }: TopbarToolsProps) {
     updateCooldown: (secs: number) =>
       setThrottleConfig({ cooldownSecs: secs }, {
         onSuccess: () =>
-          toast.success(`冷却时长已设为 ${Math.round(secs / 60)} 分钟`),
-        onError: (err) => toast.error(`保存失败: ${extractErrorMessage(err)}`),
+          toast.success(`Cooldown duration set to ${Math.round(secs / 60)} minutes`),
+        onError: (err) => toast.error(`Save failed: ${extractErrorMessage(err)}`),
       }),
   }
 
@@ -135,17 +135,17 @@ export function TopbarTools({ compact = false }: TopbarToolsProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Key className="h-4 w-4" />
-              修改登录API密钥
+              Change loginAPIKey
             </DialogTitle>
             <DialogDescription>
-              用于登录此管理面板。修改后将自动更新本地存储的 Key，无需重新登录。
+              Used to log in to this admin panel. After changing it, the locally stored value is updated automatically Key, no need to log in again.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpdateKey} className="space-y-4 py-2">
             <div className="relative">
               <Input
                 type={showPlain ? 'text' : 'password'}
-                placeholder="输入或生成新的登录API密钥"
+                placeholder="Enter or generate a new loginAPIKey"
                 value={newKey}
                 onChange={(e) => setNewKey(e.target.value)}
                 disabled={updating}
@@ -160,7 +160,7 @@ export function TopbarTools({ compact = false }: TopbarToolsProps) {
                   className="pointer-events-auto h-7 w-7"
                   onClick={() => setShowPlain((v) => !v)}
                   disabled={updating}
-                  title={showPlain ? '隐藏' : '显示'}
+                  title={showPlain ? 'Hide' : 'Show'}
                 >
                   {showPlain ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                 </Button>
@@ -171,18 +171,18 @@ export function TopbarTools({ compact = false }: TopbarToolsProps) {
                   className="pointer-events-auto h-7 w-7"
                   onClick={async () => {
                     if (!newKey.trim()) {
-                      toast.error('请先输入或生成 Key 再复制')
+                      toast.error('Please enter or generate first Key then copy')
                       return
                     }
                     try {
                       await navigator.clipboard.writeText(newKey)
-                      toast.success('已复制到剪贴板')
+                      toast.success('Copied to clipboard')
                     } catch {
-                      toast.error('复制失败，请手动选择文本')
+                      toast.error('Copy failed. Please select the text manually')
                     }
                   }}
                   disabled={updating}
-                  title="复制"
+                  title="Copy"
                 >
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
@@ -200,18 +200,18 @@ export function TopbarTools({ compact = false }: TopbarToolsProps) {
                 }}
                 disabled={updating}
               >
-                <Wand2 className="h-3.5 w-3.5" />生成随机 Key
+                <Wand2 className="h-3.5 w-3.5" />Generate random Key
               </Button>
               <p className="text-[11px] text-muted-foreground">
-                建议生成后立即复制保存，确认更新后即生效。
+                It is recommended to copy and save it right after generating; it takes effect once the update is confirmed.
               </p>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setKeyDialogOpen(false)} disabled={updating}>
-                取消
+                Cancel
               </Button>
               <Button type="submit" disabled={updating || !newKey.trim()}>
-                {updating ? '更新中…' : '确认更新'}
+                {updating ? 'Updating…' : 'Confirm update'}
               </Button>
             </DialogFooter>
           </form>
@@ -267,33 +267,33 @@ function CompactTools({ controls }: { controls: ToolControls }) {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" title="更多操作">
+        <Button variant="outline" size="icon" title="More actions">
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel>系统操作</DropdownMenuLabel>
+        <DropdownMenuLabel>System actions</DropdownMenuLabel>
         <DropdownMenuItem
           disabled={controls.isLoadingMode || controls.isSettingMode}
           onSelect={controls.handleToggleLoadBalancing}
         >
           <Activity />
           {controls.isLoadingMode
-            ? '负载均衡加载中'
+            ? 'Load balancing loading'
             : controls.loadBalancingMode === 'priority'
-              ? '切换到均衡负载'
-              : '切换到优先级'}
+              ? 'Switch to balanced load'
+              : 'Switch to priority'}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={controls.handleRefresh}>
-          <RefreshCw />刷新数据
+          <RefreshCw />Refresh data
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={controls.openImageUpdate}>
-          <UploadCloud />镜像在线更新
+          <UploadCloud />Mirror online update
         </DropdownMenuItem>
         <ThrottleCompactItems {...throttleProps} />
-        <DropdownMenuLabel>密钥管理</DropdownMenuLabel>
+        <DropdownMenuLabel>Key management</DropdownMenuLabel>
         <DropdownMenuItem onSelect={controls.openKeyDialog}>
-          <Key />修改登录API密钥（管理面板登录）
+          <Key />Change loginAPIKey (admin panel login)
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -307,15 +307,15 @@ function LoadBalancingButton({ controls }: { controls: ToolControls }) {
       size="sm"
       onClick={controls.handleToggleLoadBalancing}
       disabled={controls.isLoadingMode || controls.isSettingMode}
-      title="切换负载均衡模式"
+      title="Switch load balancing mode"
     >
       <Activity className="h-3.5 w-3.5" />
       <span className="hidden md:inline">
         {controls.isLoadingMode
-          ? '加载中…'
+          ? 'Loading…'
           : controls.loadBalancingMode === 'priority'
-            ? '优先级'
-            : '均衡负载'}
+            ? 'Priority'
+            : 'Balanced load'}
       </span>
     </Button>
   )
@@ -323,7 +323,7 @@ function LoadBalancingButton({ controls }: { controls: ToolControls }) {
 
 function RefreshButton({ onRefresh }: { onRefresh: () => void }) {
   return (
-    <Button variant="ghost" size="icon" onClick={onRefresh} title="刷新">
+    <Button variant="ghost" size="icon" onClick={onRefresh} title="Refresh">
       <RefreshCw className="h-4 w-4" />
     </Button>
   )
@@ -348,14 +348,14 @@ function KeySettingsMenu({ onOpenKeyDialog }: { onOpenKeyDialog: () => void }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" title="设置">
+        <Button variant="ghost" size="icon" title="Settings">
           <Settings className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>密钥管理</DropdownMenuLabel>
+        <DropdownMenuLabel>Key management</DropdownMenuLabel>
         <DropdownMenuItem onSelect={onOpenKeyDialog}>
-          <Key />修改登录API密钥（管理面板登录）
+          <Key />Change loginAPIKey (admin panel login)
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -363,8 +363,8 @@ function KeySettingsMenu({ onOpenKeyDialog }: { onOpenKeyDialog: () => void }) {
 }
 
 function imageUpdateTitle(updateCheck: ToolControls['updateCheck']) {
-  if (!updateCheck?.hasUpdate) return '镜像在线更新'
-  return `发现新版本 v${updateCheck.latestVersion}（当前 v${updateCheck.currentVersion}）`
+  if (!updateCheck?.hasUpdate) return 'Mirror online update'
+  return `New version found v${updateCheck.latestVersion}(currently v${updateCheck.currentVersion})`
 }
 
 function UpdateDot() {
@@ -405,11 +405,11 @@ interface ThrottleTriggerProps extends ComponentPropsWithoutRef<typeof Button> {
 }
 
 const COOLDOWN_PRESETS = [
-  { label: '5 分钟', secs: 5 * 60 },
-  { label: '15 分钟', secs: 15 * 60 },
-  { label: '30 分钟', secs: 30 * 60 },
-  { label: '1 小时', secs: 60 * 60 },
-  { label: '2 小时', secs: 2 * 60 * 60 },
+  { label: '5 minutes', secs: 5 * 60 },
+  { label: '15 minutes', secs: 15 * 60 },
+  { label: '30 minutes', secs: 30 * 60 },
+  { label: '1 hours', secs: 60 * 60 },
+  { label: '2 hours', secs: 2 * 60 * 60 },
 ]
 
 const DEFAULT_COOLDOWN_SECS = 30 * 60
@@ -418,11 +418,11 @@ const MIN_CUSTOM_COOLDOWN_MINUTES = 1
 const MAX_CUSTOM_COOLDOWN_MINUTES = 1440
 
 /**
- * 故障转移开关 + 冷却时长设置（紧凑下拉）
+ * Failovertoggle + Cooldown durationSettings(compact dropdown)
  *
- * 主按钮文案显示当前状态；下拉里:
- * - 顶部一个 Switch 切换 failover
- * - 5 个预设时长 + 一个自定义输入（分钟）
+ * primary button textShowcurrentStatus;inside the dropdown:
+ * - at the top aitems Switch switch failover
+ * - 5 itemspreset duration + oneitemsCustom input(minutes)
  */
 function ThrottleConfigButton({
   config, loading, saving, onToggleFailover, onChangeCooldown,
@@ -439,7 +439,7 @@ function ThrottleConfigButton({
     e.preventDefault()
     const min = parseInt(customMin, 10)
     if (invalidCooldownMinutes(min)) {
-      toast.error('请输入 1-1440 之间的分钟数')
+      toast.error('Please enter 1-1440 number of minutes in between')
       return
     }
     onChangeCooldown(min * SECONDS_PER_MINUTE)
@@ -504,7 +504,7 @@ function ThrottleStatusPanel({
 }) {
   return (
     <>
-      <DropdownMenuLabel>账号级风控故障转移</DropdownMenuLabel>
+      <DropdownMenuLabel>Account-level throttle failover</DropdownMenuLabel>
       <div className="px-2 pb-2">
         <div className="flex items-center justify-between gap-2 rounded-md bg-secondary/40 px-2.5 py-2">
           <ThrottleStatusText failover={state.failover} />
@@ -523,12 +523,12 @@ function ThrottleStatusText({ failover }: { failover: boolean }) {
   return (
     <div className="text-xs">
       <div className="font-medium text-foreground">
-        {failover ? '开启' : '关闭'}
+        {failover ? 'Enable' : 'Close'}
       </div>
       <div className="text-muted-foreground leading-snug">
         {failover
-          ? '上游对当前账号触发临时限速时，自动冷却该凭据并切换到下一个可用凭据'
-          : '上游对当前账号触发临时限速时，仅按瞬态错误重试，不切换凭据'}
+          ? 'When the upstream applies a temporary rate limit to the current account, automatically cool down the credential and switch to the next available credential'
+          : 'When the upstream applies a temporary rate limit to the current account, retry only as a transient error without switching credentials'}
       </div>
     </div>
   )
@@ -549,7 +549,7 @@ function ThrottleCooldownPanel({
 
   return (
     <>
-      <DropdownMenuLabel className="pt-1">冷却时长</DropdownMenuLabel>
+      <DropdownMenuLabel className="pt-1">Cooldown duration</DropdownMenuLabel>
       <div className={cooldownPanelClassName(state.failover)}>
         <CooldownPresetButtons
           cooldownSecs={state.cooldownSecs}
@@ -578,13 +578,13 @@ function CustomCooldownForm({
         type="number"
         min={MIN_CUSTOM_COOLDOWN_MINUTES}
         max={MAX_CUSTOM_COOLDOWN_MINUTES}
-        placeholder={`自定义（当前 ${cooldownMin}）`}
+        placeholder={`Custom (currently ${cooldownMin})`}
         value={customMin}
         onChange={(e) => onCustomMinChange(e.target.value)}
         disabled={disabled}
         className="h-7 text-xs"
       />
-      <span className="text-xs text-muted-foreground">分钟</span>
+      <span className="text-xs text-muted-foreground">minutes</span>
       <Button
         type="submit"
         size="sm"
@@ -592,7 +592,7 @@ function CustomCooldownForm({
         className="h-7 text-xs"
         disabled={disabled || !customMin.trim()}
       >
-        保存
+        Save
       </Button>
     </form>
   )
@@ -608,7 +608,7 @@ function ThrottleCompactItems(props: ThrottleConfigButtonProps) {
     e.preventDefault()
     const min = parseInt(customMin, 10)
     if (invalidCooldownMinutes(min)) {
-      toast.error('请输入 1-1440 之间的分钟数')
+      toast.error('Please enter 1-1440 number of minutes in between')
       return
     }
     onChangeCooldown(min * SECONDS_PER_MINUTE)
@@ -617,7 +617,7 @@ function ThrottleCompactItems(props: ThrottleConfigButtonProps) {
 
   return (
     <>
-      <DropdownMenuLabel>故障转移</DropdownMenuLabel>
+      <DropdownMenuLabel>Failover</DropdownMenuLabel>
       <DropdownMenuItem
         disabled={busy}
         onSelect={onToggleFailover}
@@ -705,21 +705,21 @@ function readThrottleState(
 }
 
 function throttleTitle(loading: boolean, state: ThrottleState) {
-  if (loading) return '加载中…'
-  if (!state.failover) return '账号级风控故障转移：关闭'
-  return `账号级风控故障转移：开启（冷却 ${state.cooldownMin} 分钟）`
+  if (loading) return 'Loading…'
+  if (!state.failover) return 'Account-level throttle failover: off'
+  return `Account-level throttle failover: on (cooldown ${state.cooldownMin} minutes)`
 }
 
 function throttleTriggerText(loading: boolean, state: ThrottleState) {
-  if (loading) return '加载中…'
-  if (!state.failover) return '不切换'
-  return `故障转移 · ${state.cooldownMin}m`
+  if (loading) return 'Loading…'
+  if (!state.failover) return 'Do not switch'
+  return `Failover · ${state.cooldownMin}m`
 }
 
 function compactThrottleText(loading: boolean, state: ThrottleState) {
-  if (loading) return '故障转移加载中'
-  if (!state.failover) return '开启故障转移'
-  return `关闭故障转移 · ${state.cooldownMin}m`
+  if (loading) return 'Failover loading'
+  if (!state.failover) return 'Enable failover'
+  return `Disable failover · ${state.cooldownMin}m`
 }
 
 function invalidCooldownMinutes(minutes: number) {

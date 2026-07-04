@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react'
 
 /**
- * 轻量 markdown 渲染器（专为 GitHub Release Notes 场景）。
+ * lightweight markdown renderer(dedicatedas GitHub Release Notes scenario).
  *
- * 覆盖：标题（#–####）、段落、有序/无序列表、`> 引用`、`---` 分隔线、
- * 围栏代码块（``` fenced ```）、行内 `code`、`**加粗**`、`*斜体*`、`[文本](url)`。
+ * override:title(#–####),paragraph,hasorder/unorderedList,`> reference`,`---` divider,
+ * fenced code block(``` fenced ```),inline `code`,`**bold**`,`*italic*`,`[text](url)`.
  *
- * 不支持：嵌套列表、表格、HTML、图片、脚注。
- * 输入来自受信任源（GitHub Release body），React 会自动转义文本节点。
+ * notSupported:nestedList,table,HTML,image,footnote.
+ * Inputfrom a trusted source(GitHub Release body),React text nodes are escaped automatically.
  */
 
 interface MarkdownProps {
@@ -200,8 +200,8 @@ function renderBlock(block: Block, key: number): ReactNode {
 }
 
 /**
- * 行内格式：扫描器在每个位置按优先级匹配 inline code / link / bold / italic，
- * 谁最早命中谁先消费。inline code 优先级最高，避免内部内容被加粗/斜体规则吞食。
+ * Inline format: the scanner matches by priority at each position inline code / link / bold / italic,
+ * whoever hits first consumes first.inline code has the highest priority, preventing inner content from being bolded/swallowed by the italic rule.
  */
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = []

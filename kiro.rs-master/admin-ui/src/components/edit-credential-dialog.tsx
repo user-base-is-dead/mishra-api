@@ -53,7 +53,7 @@ export function EditCredentialDialog({
     enabled: open,
   })
 
-  // 每次打开时重置表单为当前凭据值
+  // eachtimeswhen openedResetformascurrentCredentialvalue
   useEffect(() => {
     if (open) {
       setEmail(credential.email ?? '')
@@ -89,7 +89,7 @@ export function EditCredentialDialog({
           onOpenChange(false)
         },
         onError: (error: unknown) => {
-          toast.error(`更新失败: ${extractErrorMessage(error)}`)
+          toast.error(`Update failed: ${extractErrorMessage(error)}`)
         },
       }
     )
@@ -97,11 +97,11 @@ export function EditCredentialDialog({
 
   const enabledProxies = proxyPool?.proxies.filter(p => p.enabled) ?? []
 
-  // 当前 proxyUrl 是否是自定义值（不匹配任何标准选项）
+  // current proxyUrl whether it isCustomvalue(does not match any standard option)
   const isCustomUrl = proxyUrl !== '' && proxyUrl !== 'direct' &&
     !enabledProxies.some(p => p.url === proxyUrl)
 
-  // 显示手动输入框：明确进入手动模式，或当前值就是自定义值
+  // ShowManual inputbox:explicitly enter manual mode,orthe current value isCustomvalue
   const showManualInput = manualMode || isCustomUrl
 
   const selectValue = showManualInput ? '__custom__' : proxyUrl
@@ -111,33 +111,33 @@ export function EditCredentialDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            编辑凭据 #{credential.id}
+            Edit credential #{credential.id}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
-            {/* 邮箱 */}
+            {/* Email */}
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
-                邮箱（用于显示标识）
+                Email (used as a display identifier)
               </label>
               <Input
                 id="email"
                 type="email"
-                placeholder="例: user@example.com"
+                placeholder="e.g.: user@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isPending}
               />
               <p className="text-xs text-muted-foreground">
-                留空则显示凭据 ID，清除请提交空值
+                Leave empty to show the credential ID, submit an empty value to clear
               </p>
             </div>
 
-            {/* 账号分组 */}
+            {/* Account group */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">账号分组</label>
+              <label className="text-sm font-medium">Account group</label>
               <GroupMultiSelect
                 value={groups}
                 options={groupOptions}
@@ -145,38 +145,38 @@ export function EditCredentialDialog({
                 disabled={isPending}
               />
               <p className="text-xs text-muted-foreground">
-                绑定了某分组的客户端 Key 只会调度到含该分组的账号。不选表示不属于任何分组。
+                A client key bound to a group Key Only accounts in this group are scheduled. Leave unselected to belong to no group.
               </p>
             </div>
 
-            {/* 账号来源渠道 */}
+            {/* Account source channel */}
             <div className="space-y-2">
               <label htmlFor="sourceChannel" className="text-sm font-medium">
-                账号来源渠道（备注）
+                Account source channel (note)
               </label>
               <Input
                 id="sourceChannel"
-                placeholder="例: 官方, 转售商A, 采购平台X"
+                placeholder="e.g.: Official, ResellerA, Purchase platformX"
                 value={sourceChannel}
                 onChange={(e) => setSourceChannel(e.target.value)}
                 disabled={isPending}
               />
               <p className="text-xs text-muted-foreground">
-                纯备注，标记此账号的购买来源/渠道，便于追踪。留空表示清除。
+                Plain note to mark this account purchase source/channel, for easier tracking. Leave empty to clear.
               </p>
             </div>
 
-            {/* 代理配置 */}
+            {/* Proxy config */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">代理配置</label>
+              <label className="text-sm font-medium">Proxy config</label>
 
-              {/* 下拉选择代理 */}
+              {/* dropdown selectionProxy */}
               <Select
                 value={selectValue === '' ? '__global__' : selectValue}
                 onValueChange={(val) => {
                   if (val === '__custom__') {
                     setManualMode(true)
-                    // 保留当前 proxyUrl 作为初始值让用户编辑
+                    // keep the current proxyUrl actasinitial value lets the userEdit
                   } else {
                     setManualMode(false)
                     setProxyUrl(val === '__global__' ? '' : val)
@@ -188,11 +188,11 @@ export function EditCredentialDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__global__">使用全局代理配置</SelectItem>
-                  <SelectItem value="direct">直连（不使用代理）</SelectItem>
+                  <SelectItem value="__global__">Use the global proxy config</SelectItem>
+                  <SelectItem value="direct">Direct connection (no proxy)</SelectItem>
                   {enabledProxies.length > 0 && (
                     <SelectGroup>
-                      <SelectLabel>代理池</SelectLabel>
+                      <SelectLabel>Proxy pool</SelectLabel>
                       {enabledProxies.map((p) => (
                         <SelectItem key={p.id} value={p.url}>
                           {p.label ? `${p.label} | ${maskProxyUrl(p.url)}` : maskProxyUrl(p.url)}
@@ -200,14 +200,14 @@ export function EditCredentialDialog({
                       ))}
                     </SelectGroup>
                   )}
-                  <SelectItem value="__custom__">手动输入...</SelectItem>
+                  <SelectItem value="__custom__">Manual input...</SelectItem>
                 </SelectContent>
               </Select>
 
-              {/* 自定义 URL 手动输入框 */}
+              {/* Custom URL Manual inputbox */}
               {showManualInput && (
                 <Input
-                  placeholder='自定义代理 URL（如 socks5://user:pass@host:port）'
+                  placeholder='Custom proxy URL(such as socks5://user:pass@host:port)'
                   value={proxyUrl}
                   onChange={(e) => setProxyUrl(e.target.value)}
                   disabled={isPending}
@@ -215,11 +215,11 @@ export function EditCredentialDialog({
                 />
               )}
 
-              {/* 代理认证（仅在需要时显示） */}
+              {/* Proxyauthentication(only inwhen neededShow) */}
               <div className="grid grid-cols-2 gap-2">
                 <Input
                   id="proxyUsername"
-                  placeholder="代理用户名（留空不修改）"
+                  placeholder="Proxy username (leave empty to keep unchanged)"
                   value={proxyUsername}
                   onChange={(e) => setProxyUsername(e.target.value)}
                   disabled={isPending}
@@ -227,14 +227,14 @@ export function EditCredentialDialog({
                 <Input
                   id="proxyPassword"
                   type="password"
-                  placeholder="代理密码（留空不修改）"
+                  placeholder="Proxy password (leave empty to keep unchanged)"
                   value={proxyPassword}
                   onChange={(e) => setProxyPassword(e.target.value)}
                   disabled={isPending}
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                用户名/密码留空表示不修改；代理 URL 已包含凭据时无需填写
+                Username/Leave the password empty to keep it unchanged; proxy URL Not required when credentials are already included
               </p>
             </div>
           </div>
@@ -246,10 +246,10 @@ export function EditCredentialDialog({
               onClick={() => onOpenChange(false)}
               disabled={isPending}
             >
-              取消
+              Cancel
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? '保存中...' : '保存'}
+              {isPending ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>
         </form>

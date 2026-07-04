@@ -1,8 +1,8 @@
 /**
- * 三个 recharts 图共用的 Tooltip 样式
+ * threeitems recharts imagetotaluseof Tooltip style
  *
- * 注意：recharts 的 Tooltip label 和 item 各有独立 style，
- * 不会继承 contentStyle.color；必须分别设 labelStyle / itemStyle。
+ * note:recharts of Tooltip label and item eachhasindependent style,
+ * does not inherit contentStyle.color;must be set separately labelStyle / itemStyle.
  */
 import type { CSSProperties } from 'react'
 

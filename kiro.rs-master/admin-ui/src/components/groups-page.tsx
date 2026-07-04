@@ -18,13 +18,13 @@ import { extractErrorMessage } from '@/lib/utils'
 import type { GroupItem } from '@/types/api'
 
 /**
- * 分组管理页：CRUD 已注册分组。
+ * Group managementpage:CRUD registeredGroup.
  *
- * 设计要点：
- * - 分组是独立实体，凭据 / 客户端 Key 通过名字引用
- * - 改名走级联（后端自动同步所有引用）
- * - 删除默认拒绝有引用的，二次确认才允许 force 级联清理
- * - 列表展示每个分组当前被多少个凭据 / Key 引用，删除前清楚知道影响
+ * design point:
+ * - Groupis an independent entity,Credential / Client key Key vianame reference
+ * - Renamego through cascade(the backend syncs automaticallyhasreference)
+ * - DeleteDefaultrejecthasreferenceof,twotimesConfirmonly then allow force cascade cleanup
+ * - Listshow eachgroupscurrentlyhow manycredentials / Key reference,Deleteclearly know the impact beforehand
  */
 export function GroupsPage() {
   const { data, isLoading, isFetching, refetch } = useGroups()
@@ -53,7 +53,7 @@ export function GroupsPage() {
   const handleCreate = async () => {
     const name = createName.trim()
     if (!name) {
-      toast.error('分组名不能为空')
+      toast.error('Group name cannot be empty')
       return
     }
     try {
@@ -61,7 +61,7 @@ export function GroupsPage() {
         name,
         description: createDesc.trim() || undefined,
       })
-      toast.success(`已创建分组：${name}`)
+      toast.success(`Group created:${name}`)
       setCreateOpen(false)
     } catch (e) {
       toast.error(extractErrorMessage(e))
@@ -79,7 +79,7 @@ export function GroupsPage() {
     if (!editTarget) return
     const newName = editNewName.trim()
     if (!newName) {
-      toast.error('分组名不能为空')
+      toast.error('Group name cannot be empty')
       return
     }
     try {
@@ -87,11 +87,11 @@ export function GroupsPage() {
         name: editTarget.name,
         req: {
           newName: newName !== editTarget.name ? newName : undefined,
-          description: editDesc, // 空字符串 → 后端清空
+          description: editDesc, // emptystring → the backend clears
         },
       })
       const renamed = newName !== editTarget.name
-      toast.success(renamed ? `已改名：${editTarget.name} → ${newName}` : '备注已更新')
+      toast.success(renamed ? `Renamed:${editTarget.name} → ${newName}` : 'Note updated')
       setEditOpen(false)
     } catch (e) {
       toast.error(extractErrorMessage(e))
@@ -100,32 +100,32 @@ export function GroupsPage() {
 
   const handleDelete = async (g: GroupItem) => {
     const refs = g.credentialCount + g.clientKeyCount
-    // 无引用：单层确认；有引用：二次确认 + force
+    // no reference:single layerConfirm;hasreference:twotimesConfirm + force
     if (refs === 0) {
       const ok = await confirm({
-        title: `删除分组 ${g.name}？`,
-        description: '该分组当前无任何引用，可以安全删除。',
-        confirmText: '删除',
+        title: `Delete group ${g.name}?`,
+        description: 'This group has no references and can be safely deleted.',
+        confirmText: 'Delete',
         destructive: true,
       })
       if (!ok) return
       try {
         await deleteGroup.mutateAsync({ name: g.name })
-        toast.success(`分组 ${g.name} 已删除`)
+        toast.success(`Group ${g.name} Deleted`)
       } catch (e) {
         toast.error(extractErrorMessage(e))
       }
     } else {
       const ok = await confirm({
-        title: `强制删除分组 ${g.name}？`,
-        description: `该分组当前被 ${g.credentialCount} 个凭据 + ${g.clientKeyCount} 把客户端 Key 引用。继续将级联清理这些引用（凭据从 groups 列表移除该分组；客户端 Key 解除绑定）。此操作不可撤销。`,
-        confirmText: '强制删除',
+        title: `Force delete group ${g.name}?`,
+        description: `This group is currently ${g.credentialCount} credentials + ${g.clientKeyCount} put the client key Key references. Continuing cascades to clean up these references (credentials from groups removes this group from the list; the client key Key unbind). This action cannot be undone.`,
+        confirmText: 'Force delete',
         destructive: true,
       })
       if (!ok) return
       try {
         await deleteGroup.mutateAsync({ name: g.name, force: true })
-        toast.success(`分组 ${g.name} 已删除，已清理 ${refs} 个引用`)
+        toast.success(`Group ${g.name} Deleted, cleaned up ${refs} references`)
       } catch (e) {
         toast.error(extractErrorMessage(e))
       }
@@ -138,31 +138,31 @@ export function GroupsPage() {
         <div>
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <FolderTree className="h-4 w-4" />
-            分组管理
+            Group management
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            分组是凭据 / 客户端 Key 共享的独立实体；改名 / 删除会级联同步。
+            Groups are credentials / Client key Key a shared independent entity; renaming / Deletion cascades in sync.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
             <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
-            刷新
+            Refresh
           </Button>
           <Button size="sm" onClick={openCreate}>
             <Plus className="h-3.5 w-3.5" />
-            新建分组
+            New group
           </Button>
         </div>
       </div>
 
       {isLoading ? (
-        <Card><CardContent className="py-8 text-sm text-center text-muted-foreground">加载中…</CardContent></Card>
+        <Card><CardContent className="py-8 text-sm text-center text-muted-foreground">Loading…</CardContent></Card>
       ) : groups.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-sm text-center text-muted-foreground space-y-2">
             <FolderTree className="h-8 w-8 mx-auto opacity-40" />
-            <p>暂无分组。点上方「新建分组」开始。</p>
+            <p>No groups yet. Click New group above to start.</p>
           </CardContent>
         </Card>
       ) : (
@@ -178,7 +178,7 @@ export function GroupsPage() {
                     )}
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(g)} title="编辑">
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(g)} title="Edit">
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     <Button
@@ -186,7 +186,7 @@ export function GroupsPage() {
                       variant="ghost"
                       className="h-7 w-7 text-destructive hover:text-destructive"
                       onClick={() => handleDelete(g)}
-                      title="删除"
+                      title="Delete"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
@@ -196,7 +196,7 @@ export function GroupsPage() {
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <Badge variant="secondary" className="gap-1">
                     <Users className="h-3 w-3" />
-                    {g.credentialCount} 凭据
+                    {g.credentialCount} Credential
                   </Badge>
                   <Badge variant="secondary" className="gap-1">
                     <KeyRound className="h-3 w-3" />
@@ -205,7 +205,7 @@ export function GroupsPage() {
                 </div>
 
                 <p className="text-[11px] text-muted-foreground">
-                  创建于 {new Date(g.createdAt).toLocaleString()}
+                  Created at {new Date(g.createdAt).toLocaleString()}
                 </p>
               </CardContent>
             </Card>
@@ -213,20 +213,20 @@ export function GroupsPage() {
         </div>
       )}
 
-      {/* 新建分组弹框 */}
+      {/* New groupdialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>新建分组</DialogTitle>
+            <DialogTitle>New group</DialogTitle>
             <DialogDescription>
-              注册后即可在凭据 / 客户端 Key 中选择该分组。
+              Once registered, you can in the credential / Client key Key select this group in.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
-              <label className="text-sm font-medium">分组名 *</label>
+              <label className="text-sm font-medium">Group name *</label>
               <Input
-                placeholder="例如：客户A、生产、备用池"
+                placeholder="For example: customerA, production, backup pool"
                 value={createName}
                 onChange={(e) => setCreateName(e.target.value)}
                 disabled={createGroup.isPending}
@@ -234,9 +234,9 @@ export function GroupsPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium">备注（可选）</label>
+              <label className="text-sm font-medium">Note (optional)</label>
               <Input
-                placeholder="用途说明，方便后续辨认"
+                placeholder="Purpose description for easier identification later"
                 value={createDesc}
                 onChange={(e) => setCreateDesc(e.target.value)}
                 disabled={createGroup.isPending}
@@ -245,27 +245,27 @@ export function GroupsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={createGroup.isPending}>
-              取消
+              Cancel
             </Button>
             <Button onClick={handleCreate} disabled={createGroup.isPending || !createName.trim()}>
-              {createGroup.isPending ? '创建中…' : '创建'}
+              {createGroup.isPending ? 'Creating…' : 'Create'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* 编辑分组弹框 */}
+      {/* EditGroupdialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>编辑分组：{editTarget?.name}</DialogTitle>
+            <DialogTitle>Edit group:{editTarget?.name}</DialogTitle>
             <DialogDescription>
-              改名会级联同步所有引用此分组的凭据与客户端 Key。
+              Renaming cascades to all credentials and client keys that reference this group Key.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
-              <label className="text-sm font-medium">分组名</label>
+              <label className="text-sm font-medium">Group name</label>
               <Input
                 value={editNewName}
                 onChange={(e) => setEditNewName(e.target.value)}
@@ -273,9 +273,9 @@ export function GroupsPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium">备注</label>
+              <label className="text-sm font-medium">Note</label>
               <Input
-                placeholder="（清空备注请留空）"
+                placeholder="(leave empty to clear the note)"
                 value={editDesc}
                 onChange={(e) => setEditDesc(e.target.value)}
                 disabled={updateGroup.isPending}
@@ -283,16 +283,16 @@ export function GroupsPage() {
             </div>
             {editTarget && (editTarget.credentialCount > 0 || editTarget.clientKeyCount > 0) && (
               <p className="text-xs text-amber-600">
-                当前被 {editTarget.credentialCount} 凭据 + {editTarget.clientKeyCount} 客户端 Key 引用，改名会自动同步。
+                currently {editTarget.credentialCount} Credential + {editTarget.clientKeyCount} Client key Key references; renaming syncs automatically.
               </p>
             )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)} disabled={updateGroup.isPending}>
-              取消
+              Cancel
             </Button>
             <Button onClick={handleEdit} disabled={updateGroup.isPending || !editNewName.trim()}>
-              {updateGroup.isPending ? '保存中…' : '保存'}
+              {updateGroup.isPending ? 'Saving…' : 'Save'}
             </Button>
           </DialogFooter>
         </DialogContent>

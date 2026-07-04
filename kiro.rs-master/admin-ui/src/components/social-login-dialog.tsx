@@ -26,11 +26,11 @@ type CopyState = 'idle' | 'copied' | 'manual'
 
 const POLL_INTERVAL_MS = 2000
 
-// 检查是否为远程访问（非本机）
+// check whetherasremote access(notLocal)
 const isRemoteAccess = () =>
   window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
 
-// 从回调 URL 字符串中提取 OAuth 参数
+// fromcallback URL stringextract from OAuth parameter
 function parseCallbackUrl(rawUrl: string): { code: string; state: string; loginOption: string; path: string } | null {
   try {
     const url = new URL(rawUrl.trim())
@@ -103,7 +103,7 @@ export function SocialLoginDialog({ open, onOpenChange, onSuccess }: SocialLogin
     if (!window.isSecureContext || !navigator.clipboard?.writeText) {
       setCopyState('manual')
       selectLoginLink()
-      toast.error('当前访问地址不是 HTTPS/localhost，浏览器不允许网页直接写入剪贴板')
+      toast.error('The current address is not HTTPS/localhost, the browser does not allow pages to write to the clipboard directly')
       return
     }
 
@@ -112,25 +112,25 @@ export function SocialLoginDialog({ open, onOpenChange, onSuccess }: SocialLogin
       if (permission === 'denied') {
         setCopyState('manual')
         selectLoginLink()
-        toast.error('Chrome 已拒绝该站点写入剪贴板，请在地址栏权限设置中允许后重试')
+        toast.error('Chrome Clipboard write was denied for this site. Allow it in the address bar permission settings and retry')
         return
       }
 
       await navigator.clipboard.writeText(url)
       setCopyState('copied')
-      toast.success('登录链接已复制，请在无痕窗口粘贴打开')
+      toast.success('Login link copied. Paste and open it in an incognito window')
       setTimeout(() => setCopyState('idle'), 2000)
     } catch {
       setCopyState('manual')
       selectLoginLink()
-      toast.error('浏览器拒绝写入剪贴板，已选中链接，请按 Ctrl+C 复制')
+      toast.error('The browser denied clipboard write. The link is selected, please press Ctrl+C Copy')
     }
   }
 
   const handleStart = async () => {
     setIsStarting(true)
-    // 无痕模式：浏览器不允许 JS 直接开无痕窗口，改为复制链接让用户手动在无痕窗口打开，
-    // 因此不预开 about:blank（避免在当前登录态里误开）。
+    // Incognitomode:the browser does not allow JS open directlyIncognitowindow,changeasCopylink lets the user do it manuallyinIncognitowindow opens,
+    // therefore do not preopen about:blank(avoidincurrentLoginwrongly opened in this state).
     const loginWindow = incognito ? null : window.open('about:blank', '_blank')
     try {
       const resp = await startSocialLogin({
@@ -139,20 +139,20 @@ export function SocialLoginDialog({ open, onOpenChange, onSuccess }: SocialLogin
       setSession(resp)
       setStep('waiting')
       if (incognito) {
-        // 无痕：优先写入剪贴板；被浏览器策略拒绝时会选中下方链接。
+        // Incognito:priorityWriteclipboard;when rejected by browser policy the link below is selected.
         await handleCopyLink(resp.portalUrl)
       } else if (loginWindow) {
         loginWindow.location.href = resp.portalUrl
       } else {
         window.open(resp.portalUrl, '_blank')
       }
-      // 始终轮询：本地模式由本地回调服务器投递；服务端远程模式（resp.remote）
-      // 由公网 GET 回调路由投递 channel，轮询都能自动完成。
-      // 仅浏览器远程访问且未配置 callbackBaseUrl 时靠下方手动粘贴兜底（轮询无害）。
+      // always poll:local modebylocal callback server delivery;server remote mode(resp.remote)
+      // bypublic network GET callback pathbydeliver channel,polling can complete it automatically.
+      // only remote browser access and notConfig callbackBaseUrl toward the bottom at that timePaste manuallyfallback(polling is harmless).
       schedulePoll(resp.sessionId)
     } catch (e) {
       loginWindow?.close()
-      toast.error('发起登录失败：' + extractErrorMessage(e))
+      toast.error('Start login failed:' + extractErrorMessage(e))
     } finally {
       setIsStarting(false)
     }
@@ -168,14 +168,14 @@ export function SocialLoginDialog({ open, onOpenChange, onSuccess }: SocialLogin
           setCredentialId(result.credentialId)
           setStep('done')
           onSuccess()
-          toast.success(`登录成功，已添加凭据 #${result.credentialId}`)
+          toast.success(`Login succeeded, credential added #${result.credentialId}`)
         } else {
-          toast.error('会话已过期，请重新发起登录')
+          toast.error('Session expired. Please start login again')
           setStep('form')
           setSession(null)
         }
       } catch (e) {
-        toast.error('轮询失败：' + extractErrorMessage(e))
+        toast.error('Round-robin failed:' + extractErrorMessage(e))
         schedulePoll(sessionId)
       }
     }, POLL_INTERVAL_MS)
@@ -185,7 +185,7 @@ export function SocialLoginDialog({ open, onOpenChange, onSuccess }: SocialLogin
     if (!session) return
     const parsed = parseCallbackUrl(callbackUrl)
     if (!parsed) {
-      toast.error('URL 格式无效，请复制完整的地址栏 URL')
+      toast.error('URL Invalid format. Please copy the full address bar URL')
       return
     }
     setIsCompleting(true)
@@ -200,14 +200,14 @@ export function SocialLoginDialog({ open, onOpenChange, onSuccess }: SocialLogin
         setCredentialId(result.credentialId)
         setStep('done')
         onSuccess()
-        toast.success(`登录成功，已添加凭据 #${result.credentialId}`)
+        toast.success(`Login succeeded, credential added #${result.credentialId}`)
       } else {
-        toast.error('会话已过期，请重新发起登录')
+        toast.error('Session expired. Please start login again')
         setStep('form')
         setSession(null)
       }
     } catch (e) {
-      toast.error('完成登录失败：' + extractErrorMessage(e))
+      toast.error('Complete login failed:' + extractErrorMessage(e))
     } finally {
       setIsCompleting(false)
     }
@@ -217,16 +217,16 @@ export function SocialLoginDialog({ open, onOpenChange, onSuccess }: SocialLogin
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Kiro 账号登录（Google / GitHub）</DialogTitle>
+          <DialogTitle>Kiro Account login (Google / GitHub)</DialogTitle>
           <DialogDescription>
-            通过 Kiro 网页端完成 Social 登录，无需手动导出 refreshToken。
+            via Kiro Complete on the web Social log in, no manual export needed refreshToken.
           </DialogDescription>
         </DialogHeader>
 
         {step === 'form' && (
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <label htmlFor="social-email" className="text-sm font-medium">邮箱（可选）</label>
+              <label htmlFor="social-email" className="text-sm font-medium">Email (optional)</label>
               <Input
                 id="social-email"
                 placeholder="user@example.com"
@@ -242,10 +242,10 @@ export function SocialLoginDialog({ open, onOpenChange, onSuccess }: SocialLogin
                 className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
               />
               <span className="text-sm">
-                <span className="font-medium">使用无痕窗口登录</span>
+                <span className="font-medium">Log in using an incognito window</span>
                 <span className="mt-0.5 block text-xs text-muted-foreground">
-                  发起后复制登录链接，自行用浏览器无痕/隐身窗口（Ctrl+Shift+N）打开，
-                  避免与当前已登录的 Google / GitHub 账号串号。
+                  After starting, copy the login link and use an incognito browser yourself/Incognito window (Ctrl+Shift+N) to open,
+                  to avoid conflicting with the currently logged-in Google / GitHub account mix-up.
                 </span>
               </span>
             </label>
@@ -258,10 +258,10 @@ export function SocialLoginDialog({ open, onOpenChange, onSuccess }: SocialLogin
               <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
                 <p className="text-sm text-muted-foreground">
                   {copyState === 'copied'
-                    ? '登录链接已复制。'
-                    : '复制登录链接后，'}
-                  请新开一个<span className="font-medium text-foreground">无痕 / 隐身窗口</span>
-                  （Ctrl+Shift+N，Safari 为 ⌘+Shift+N），粘贴打开并完成授权。
+                    ? 'Login link copied.'
+                    : 'After copying the login link,'}
+                  Please open a new<span className="font-medium text-foreground">Incognito / Incognito window</span>
+                  (Ctrl+Shift+N,Safari as ⌘+Shift+N), paste to open and complete authorization.
                 </p>
                 <textarea
                   ref={loginLinkRef}
@@ -281,11 +281,11 @@ export function SocialLoginDialog({ open, onOpenChange, onSuccess }: SocialLogin
                     ) : (
                       <Copy className="h-3.5 w-3.5" />
                     )}
-                    {copyState === 'copied' ? '已复制' : '复制登录链接'}
+                    {copyState === 'copied' ? 'Copied' : 'Copy login link'}
                   </Button>
                   {copyState === 'manual' && (
                     <span className="text-xs text-muted-foreground">
-                      链接已选中，可直接按 Ctrl+C
+                      The link is selected. You can directly press Ctrl+C
                     </span>
                   )}
                 </div>
@@ -293,7 +293,7 @@ export function SocialLoginDialog({ open, onOpenChange, onSuccess }: SocialLogin
             ) : (
               <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  浏览器应已自动打开 Kiro 登录页，请完成授权。
+                  The browser should have opened automatically Kiro login page. Please complete authorization.
                 </p>
                 <a
                   href={session.portalUrl}
@@ -301,19 +301,19 @@ export function SocialLoginDialog({ open, onOpenChange, onSuccess }: SocialLogin
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
                 >
-                  重新打开登录页
+                  Reopen the login page
                   <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               </div>
             )}
 
             {isRemote && !session.remote ? (
-              // 浏览器远程访问且服务端未配置 callbackBaseUrl：OAuth 回调到 localhost 无法被捕获，
-              // 需用户从地址栏复制完整 URL 手动粘贴完成。
+              // remote browser access and the server has notConfig callbackBaseUrl:OAuth callback to localhost cannot be captured,
+              // requires the userfromaddress barCopyfull URL Paste manuallycomplete.
               <div className="space-y-2">
                 <p className="text-sm text-amber-600 dark:text-amber-400">
-                  完成登录后，浏览器会跳转到 <code>localhost</code> 失败页面，
-                  请从地址栏复制完整 URL 粘贴到下方：
+                  After logging in, the browser will redirect to <code>localhost</code> failure page,
+                  Please copy the full URL from the address bar URL Paste below:
                 </p>
                 <textarea
                   placeholder="http://localhost:3128/oauth/callback?code=...&state=...&login_option=google"
@@ -327,8 +327,8 @@ export function SocialLoginDialog({ open, onOpenChange, onSuccess }: SocialLogin
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 {session.remote
-                  ? '完成登录后浏览器会自动跳回本服务，正在等待自动完成…'
-                  : '正在等待登录完成…'}
+                  ? 'After login the browser returns to this service automatically. Waiting for automatic completion…'
+                  : 'Waiting for login to complete…'}
               </div>
             )}
           </div>
@@ -337,8 +337,8 @@ export function SocialLoginDialog({ open, onOpenChange, onSuccess }: SocialLogin
         {step === 'done' && (
           <div className="flex flex-col items-center gap-3 py-4">
             <CheckCircle className="h-10 w-10 text-green-500" />
-            <p className="text-sm font-medium">登录成功</p>
-            <p className="text-xs text-muted-foreground">凭据 #{credentialId} 已添加并启用</p>
+            <p className="text-sm font-medium">Login succeeded</p>
+            <p className="text-xs text-muted-foreground">Credential #{credentialId} Added and enabled</p>
           </div>
         )}
 
@@ -346,13 +346,13 @@ export function SocialLoginDialog({ open, onOpenChange, onSuccess }: SocialLogin
           {step === 'form' && (
             <Button onClick={handleStart} disabled={isStarting}>
               {isStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              发起登录
+              Start login
             </Button>
           )}
           {step === 'waiting' && (
             <>
               <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isCompleting}>
-                取消
+                Cancel
               </Button>
               {isRemote && session && !session.remote && (
                 <Button
@@ -360,13 +360,13 @@ export function SocialLoginDialog({ open, onOpenChange, onSuccess }: SocialLogin
                   disabled={isCompleting || !callbackUrl.trim()}
                 >
                   {isCompleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  完成登录
+                  Complete login
                 </Button>
               )}
             </>
           )}
           {step === 'done' && (
-            <Button onClick={() => handleOpenChange(false)}>关闭</Button>
+            <Button onClick={() => handleOpenChange(false)}>Close</Button>
           )}
         </DialogFooter>
       </DialogContent>

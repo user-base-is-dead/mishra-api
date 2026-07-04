@@ -6,20 +6,20 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * 解析后端错误响应，提取用户友好的错误信息
+ * parse the backendErrorresponse,extract a user friendlyofErrorinfo
  */
 export interface ParsedError {
-  /** 简短的错误标题 */
+  /** shortofErrortitle */
   title: string
-  /** 详细的错误描述 */
+  /** detailedofErrorDescription */
   detail?: string
-  /** 错误类型 */
+  /** Error type */
   type?: string
 }
 
 /**
- * 从错误对象中提取错误消息
- * 支持 Axios 错误和普通 Error 对象
+ * fromErrorextract from the objectErrorMessage
+ * Supported Axios Errorandnormal Error object
  */
 export function extractErrorMessage(error: unknown): string {
   const parsed = parseError(error)
@@ -27,24 +27,24 @@ export function extractErrorMessage(error: unknown): string {
 }
 
 /**
- * 超额操作失败提示：403 / 权限不足 统一提示联系组织管理员
- * （Enterprise / 受组织策略限制的账号无法自行开启超额）
+ * OverageOperation failedhint:403 / Insufficient permissions uniform prompt to contact the organizationManagemember
+ * (Enterprise / restricted by organization policyaccountscannot on its ownEnable overage)
  */
 export function overageFailureMessage(raw?: string): string {
   const msg = (raw ?? '').trim()
-  if (!msg) return '操作失败'
-  if (/\b403\b|Forbidden|权限不足/i.test(msg)) {
-    return '请联系您的组织管理员以获取支持'
+  if (!msg) return 'Operation failed'
+  if (/\b403\b|Forbidden|Insufficient permissions/i.test(msg)) {
+    return 'Please contact your organization administrator for support'
   }
   return msg
 }
 
 /**
- * 解析错误，返回结构化的错误信息
+ * parseError,BackStructureconvertofErrorinfo
  */
 export function parseError(error: unknown): ParsedError {
   if (!error || typeof error !== 'object') {
-    return { title: '未知错误' }
+    return { title: 'Unknown error' }
   }
 
   const axiosError = error as Record<string, unknown>
@@ -52,12 +52,12 @@ export function parseError(error: unknown): ParsedError {
   const data = response?.data as Record<string, unknown> | undefined
   const errorObj = data?.error as Record<string, unknown> | undefined
 
-  // 尝试从后端错误响应中提取信息
+  // tryfrombackendErrorextract info from the response
   if (errorObj && typeof errorObj.message === 'string') {
     const message = errorObj.message
     const type = typeof errorObj.type === 'string' ? errorObj.type : undefined
 
-    // 解析嵌套的错误信息（如：上游服务错误: 权限不足: 403 {...}）
+    // parse nestedofErrorinfo(such as:UpstreamService error: Insufficient permissions: 403 {...})
     const parsed = parseNestedErrorMessage(message)
 
     return {
@@ -67,35 +67,35 @@ export function parseError(error: unknown): ParsedError {
     }
   }
 
-  // 回退到 Error.message
+  // Roll back to Error.message
   if ('message' in axiosError && typeof axiosError.message === 'string') {
     return { title: axiosError.message }
   }
 
-  return { title: '未知错误' }
+  return { title: 'Unknown error' }
 }
 
 /**
- * 解析嵌套的错误消息
- * 例如："上游服务错误: 权限不足，无法获取使用额度: 403 Forbidden {...}"
+ * parse nestedofErrorMessage
+ * For example:"UpstreamService error: Insufficient permissions,cannot obtainUseQuota: 403 Forbidden {...}"
  */
 function parseNestedErrorMessage(message: string): { title: string; detail?: string } {
-  // 尝试提取 HTTP 状态码（如 403、502 等）
+  // try to extract HTTP Statuscode(such as 403,502 etc.)
   const statusMatch = message.match(/(\d{3})\s+\w+/)
   const statusCode = statusMatch ? statusMatch[1] : null
 
-  // 尝试提取 JSON 中的 message 字段
+  // try to extract JSON inof message field
   const jsonMatch = message.match(/\{[^{}]*"message"\s*:\s*"([^"]+)"[^{}]*\}/)
   if (jsonMatch) {
     const innerMessage = jsonMatch[1]
-    // 提取主要错误原因（去掉前缀）
+    // Extract the main error cause (drop the prefix)
     const parts = message.split(':').map(s => s.trim())
     const mainReason = parts.length > 1 ? parts[1].split(':')[0] : parts[0]
 
-    // 在 title 中包含状态码
+    // in title contains a status code
     const title = statusCode
-      ? `${mainReason || '服务错误'} (${statusCode})`
-      : (mainReason || '服务错误')
+      ? `${mainReason || 'Service error'} (${statusCode})`
+      : (mainReason || 'Service error')
 
     return {
       title,
@@ -103,7 +103,7 @@ function parseNestedErrorMessage(message: string): { title: string; detail?: str
     }
   }
 
-  // 尝试按冒号分割，提取主要信息
+  // Try splitting by colon to extract the main message
   const colonParts = message.split(':')
   if (colonParts.length >= 2) {
     const mainPart = colonParts[1].trim().split(':')[0].trim()
@@ -122,10 +122,10 @@ function parseNestedErrorMessage(message: string): { title: string; detail?: str
 
 
 /**
- * 数量语义的紧凑展示（K / M / B）。
+ * Compact display of count semantics (K / M / B).
  *
- * 规则：< 1000 原样输出；≥ 1000 使用 Intl 的 compact notation，最多保留 1 位小数（如 1.2K / 3.4M / 5.6B）。
- * 仅用于"数量 / 金额 / 大小"语义；ID / 端口号 / 版本号 / 页码 / 状态码请勿使用。
+ * Rule:< 1000 output as-is;≥ 1000 Use Intl of compact notation, keep at most 1 decimal places (such as 1.2K / 3.4M / 5.6B).
+ * Used only for"Count / Amount / Size"semantics;ID / Port number / Version number / Page number / status code, do not use.
  */
 export function formatNumber(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return '0'
@@ -137,9 +137,9 @@ export function formatNumber(value: number | null | undefined): string {
 }
 
 /**
- * Credit 计费量展示：上游 meteringEvent.usage 是浮点（如 0.0169543），
- * 单位为 "credit"。统一保留 3 位小数；≥ 1000 时走 K/M/B 紧凑模式（compact
- * notation 自带 1 位小数四舍五入，例如 1,234 → "1.2K"）。
+ * Credit Billing amount display: upstream meteringEvent.usage is a float (such as 0.0169543),
+ * unit is "credit". Uniformly keep 3 decimal places;≥ 1000 goes through when K/M/B Compact mode (compact
+ * notation built-in 1 decimal places rounded, for example 1,234 → "1.2K").
  */
 export function formatCredits(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value) || value <= 0) return '0'
@@ -153,7 +153,7 @@ export function formatCredits(value: number | null | undefined): string {
 }
 
 /**
- * 脱敏代理 URL：将 user:pass@host 中的认证信息替换为 xxx****xxx
+ * Masked proxy URL: will user:pass@host replace the auth info in with xxx****xxx
  */
 export function maskProxyUrl(url: string): string {
   const match = url.match(/^(\w+:\/\/)([^:@]+):([^@]+)@(.+)$/)
@@ -165,31 +165,31 @@ export function maskProxyUrl(url: string): string {
 }
 
 /**
- * 计算字符串的 SHA-256 哈希（十六进制）
+ * compute the string SHA-256 hash (hexadecimal)
  *
- * 优先使用 Web Crypto API（crypto.subtle），在非安全上下文（HTTP + 非 localhost）中
- * 自动回退到纯 JS 实现，解决 Docker 部署时 crypto.subtle 不可用的问题。
+ * Prefer Web Crypto API(crypto.subtle), in a non-secure context (HTTP + not localhost) in
+ * automatically fall back to plain JS implementation, resolving Docker when deploying crypto.subtle unavailable issue.
  */
 export async function sha256Hex(value: string): Promise<string> {
   const encoded = new TextEncoder().encode(value)
 
-  // 安全上下文中使用原生 Web Crypto API（性能更好）
+  // use the native one in a secure context Web Crypto API(better performance)
   if (typeof crypto !== 'undefined' && crypto.subtle) {
     const digest = await crypto.subtle.digest('SHA-256', encoded)
     const bytes = new Uint8Array(digest)
     return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
   }
 
-  // 非安全上下文 fallback：纯 JS SHA-256 实现
+  // Non-secure context fallback: plain JS SHA-256 Implementation
   return sha256Pure(encoded)
 }
 
 /**
- * 纯 JS SHA-256 实现（无外部依赖）
- * 仅在 crypto.subtle 不可用时使用
+ * plain JS SHA-256 implementation (no external dependencies)
+ * only in crypto.subtle used when unavailable
  */
 function sha256Pure(data: Uint8Array): string {
-  // SHA-256 常量：前 64 个素数的立方根的小数部分
+  // SHA-256 constant: the first 64 the fractional part of the cube roots of prime numbers
   const K = new Uint32Array([
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
@@ -203,18 +203,18 @@ function sha256Pure(data: Uint8Array): string {
 
   const rotr = (x: number, n: number) => (x >>> n) | (x << (32 - n))
 
-  // 预处理：填充消息
+  // Preprocessing: pad the message
   const bitLen = data.length * 8
-  // 消息 + 1 字节 0x80 + 填充 + 8 字节长度，总长度对齐到 64 字节
+  // Message + 1 bytes 0x80 + Padding + 8 byte length, with total length aligned to 64 bytes
   const padLen = (((data.length + 9 + 63) >>> 6) << 6)
   const buf = new Uint8Array(padLen)
   buf.set(data)
   buf[data.length] = 0x80
-  // 写入 64 位大端长度（仅低 32 位，高 32 位在 JS 中始终为 0）
+  // Write 64 bit big-endian length (only the low 32 bits, high 32 bit in JS is always in 0)
   const view = new DataView(buf.buffer)
   view.setUint32(padLen - 4, bitLen, false)
 
-  // 初始哈希值
+  // initial hash value
   let h0 = 0x6a09e667, h1 = 0xbb67ae85, h2 = 0x3c6ef372, h3 = 0xa54ff53a
   let h4 = 0x510e527f, h5 = 0x9b05688c, h6 = 0x1f83d9ab, h7 = 0x5be0cd19
 
@@ -254,18 +254,18 @@ function sha256Pure(data: Uint8Array): string {
 }
 
 /**
- * 生成一个加密强度的随机 API Key
+ * Generate a cryptographically strong random API Key
  *
- * 默认 32 字符随机部分（仅大小写字母 + 数字，~190 bit 熵），加上 `sk-kiro-` 前缀；
- * 不使用 `-` / `_`，避免与前缀里的连字符相邻产生 `--`。
- * 强依赖 `crypto.getRandomValues`，缺失时直接抛错，不做任何弱熵 fallback。
+ * Default 32 character random part (letters only, upper and lower case + digits,~190 bit entropy), plus `sk-kiro-` prefix;
+ * Do not use `-` / `_`, to avoid being adjacent to the hyphen in the prefix `--`.
+ * hard dependency `crypto.getRandomValues`, throwing an error when missing without any weak-entropy fallback fallback.
  */
 export function generateApiKey(prefix: string = 'sk-kiro-', randomLen: number = 32): string {
   if (typeof crypto === 'undefined' || typeof crypto.getRandomValues !== 'function') {
-    throw new Error('crypto.getRandomValues 不可用，无法安全生成 API Key')
+    throw new Error('crypto.getRandomValues unavailable, cannot generate securely API Key')
   }
   const ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  // 用拒绝采样把字节均匀映射到 62 字符表，避免取模偏置（248 = 4 * 62）
+  // use rejection sampling to map bytes evenly onto 62 character table to avoid modulo bias (248 = 4 * 62)
   let out = ''
   const buf = new Uint8Array(randomLen)
   while (out.length < randomLen) {

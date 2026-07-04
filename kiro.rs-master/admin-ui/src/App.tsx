@@ -54,32 +54,32 @@ const TABS: {
 }[] = [
   {
     key: "overview",
-    label: "概览",
-    mobileLabel: "概览",
+    label: "Overview",
+    mobileLabel: "Overview",
     icon: <Activity className="h-3.5 w-3.5" />,
   },
   {
     key: "credentials",
-    label: "凭据管理",
-    mobileLabel: "凭据",
+    label: "Credential management",
+    mobileLabel: "Credential",
     icon: <Server className="h-3.5 w-3.5" />,
   },
   {
     key: "keys",
-    label: "客户端 Key",
+    label: "Client key Key",
     mobileLabel: "Key",
     icon: <KeyRound className="h-3.5 w-3.5" />,
   },
   {
     key: "groups",
-    label: "分组管理",
-    mobileLabel: "分组",
+    label: "Group management",
+    mobileLabel: "Group",
     icon: <FolderTree className="h-3.5 w-3.5" />,
   },
   {
     key: "traces",
-    label: "请求日志",
-    mobileLabel: "日志",
+    label: "Request logs",
+    mobileLabel: "Logs",
     icon: <ScrollText className="h-3.5 w-3.5" />,
   },
 ];
@@ -285,10 +285,10 @@ function HeaderActions({
       </div>
       <span className="mx-1 hidden h-5 w-px bg-border/70 xl:inline-block" />
       <GithubButton />
-      <Button variant="ghost" size="icon" onClick={onToggleDarkMode} title="切换主题">
+      <Button variant="ghost" size="icon" onClick={onToggleDarkMode} title="Switch theme">
         {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
       </Button>
-      <Button variant="ghost" size="icon" onClick={onLogout} title="退出登录">
+      <Button variant="ghost" size="icon" onClick={onLogout} title="Log out">
         <LogOut className="h-4 w-4" />
       </Button>
     </div>
@@ -301,14 +301,14 @@ function GithubButton() {
       variant="ghost"
       size="icon"
       asChild
-      title="GitHub 仓库"
+      title="GitHub Repository"
       className="hidden xl:inline-flex"
     >
       <a
         href="https://github.com/ZyphrZero/kiro.rs"
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="GitHub 仓库"
+        aria-label="GitHub Repository"
       >
         <GithubIcon className="h-4 w-4" />
       </a>
@@ -372,7 +372,7 @@ function TabButton({
 function AppMain({ onLogout, tab }: { onLogout: () => void; tab: Tab }) {
   return (
     <main className="mx-auto max-w-[1400px] px-4 md:px-8 py-8">
-      <Suspense fallback={<div className="text-sm text-muted-foreground">加载中…</div>}>
+      <Suspense fallback={<div className="text-sm text-muted-foreground">Loading…</div>}>
         {tab === "overview" && <OverviewPage />}
         {tab === "credentials" && <Dashboard onLogout={onLogout} embedded />}
         {tab === "keys" && <ClientKeysPage />}

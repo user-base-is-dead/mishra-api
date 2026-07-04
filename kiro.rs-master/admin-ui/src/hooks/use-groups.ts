@@ -11,15 +11,15 @@ export function useGroups() {
   return useQuery({
     queryKey: ['groups'],
     queryFn: listGroups,
-    // 分组变更频率低（人工操作），15s 自动刷新足够
+    // Grouplow change frequency(manualActions),15s automaticRefreshenough
     refetchInterval: 15000,
     staleTime: 5000,
   })
 }
 
 /**
- * 给所有 GroupSelect 用的"已注册分组名"字符串数组。
- * 内部复用 useGroups 缓存，不会重复打接口。
+ * give allhas GroupSelect useof"registeredGroup name"stringarray.
+ * internal reuse useGroups cache,will notDuplicatecall the endpoint.
  */
 export function useGroupOptions(): string[] {
   const { data } = useGroups()
@@ -40,7 +40,7 @@ export function useUpdateGroup() {
     mutationFn: ({ name, req }: { name: string; req: UpdateGroupRequest }) =>
       updateGroup(name, req),
     onSuccess: () => {
-      // 改名 / 改备注会影响凭据 / Key 的展示，三处缓存全部失效
+      // Rename / changeNotewill affectCredential / Key ofdisplay,three cachesAllInvalid
       qc.invalidateQueries({ queryKey: ['groups'] })
       qc.invalidateQueries({ queryKey: ['credentials'] })
       qc.invalidateQueries({ queryKey: ['client-keys'] })

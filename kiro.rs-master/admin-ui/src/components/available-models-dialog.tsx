@@ -27,7 +27,7 @@ export function AvailableModelsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>凭据 #{credentialId} 可用模型</DialogTitle>
+          <DialogTitle>Credential #{credentialId} Available models</DialogTitle>
         </DialogHeader>
 
         {isLoading && (
@@ -62,7 +62,7 @@ export function AvailableModelsDialog({
 
         {data && data.models.length === 0 && (
           <div className="py-8 text-center text-sm text-muted-foreground">
-            该凭据当前没有可用模型
+            This credential has no available models right now
           </div>
         )}
 

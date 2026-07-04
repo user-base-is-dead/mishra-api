@@ -34,12 +34,12 @@ export async function updateGroup(
   name: string,
   req: UpdateGroupRequest,
 ): Promise<GroupItem> {
-  // path 中的分组名可能含中文/空格，必须 encodeURIComponent
+  // path inofGroup namemay contain Chinese/space,must encodeURIComponent
   const { data } = await api.patch<GroupItem>(`/groups/${encodeURIComponent(name)}`, req)
   return data
 }
 
-/** 删除分组。`force=true` 时级联清理所有引用（凭据 groups + 客户端 Key.group）。 */
+/** Delete group.`force=true` cascade cleanup of all at that timehasreference(Credential groups + Client key Key.group). */
 export async function deleteGroup(name: string, force = false): Promise<SuccessResponse> {
   const path = `/groups/${encodeURIComponent(name)}${force ? '?force=true' : ''}`
   const { data } = await api.delete<SuccessResponse>(path)

@@ -105,17 +105,17 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
   const [method, setMethod] = useState<Method>('social')
   const [step, setStep] = useState<Step>('select')
 
-  // Social/IdC 表单字段
+  // Social/IdC form field
   const [isStarting, setIsStarting] = useState(false)
   const [isCompleting, setIsCompleting] = useState(false)
   const [callbackUrl, setCallbackUrl] = useState('')
   const [socialSession, setSocialSession] = useState<StartSocialLoginResponse | null>(null)
   const [idcSession, setIdcSession] = useState<StartIdcLoginResponse | null>(null)
-  // IdC 表单
+  // IdC form
   const [idcRegion, setIdcRegion] = useState('us-east-1')
   const [idcStartUrl, setIdcStartUrl] = useState('')
 
-  // Manual 字段
+  // Manual field
   const [manualInput, setManualInput] = useState('')
   const [manualLog, setManualLog] = useState<string[]>([])
 
@@ -152,7 +152,7 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
 
   const handleStartSocial = async () => {
     setIsStarting(true)
-    // 必须在 await 之前同步打开窗口，否则浏览器弹窗拦截会导致跳转当前页
+    // must be within await open the window synchronously beforehand,otherwise the browser popup blocker causesjumpconvert to currentpage
     const loginWindow = window.open('about:blank', '_blank')
     try {
       const resp = await startSocialRelogin(credential.id, {})
@@ -163,11 +163,11 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
       } else {
         window.open(resp.portalUrl, '_blank')
       }
-      // 始终轮询：服务端远程模式（resp.remote）由公网回调路由自动完成，本地模式由本地回调完成。
+      // always poll:server remote mode(resp.remote)bypublic callback pathbyauto complete,local modebylocal callback complete.
       scheduleSocialPoll(resp.sessionId)
     } catch (e) {
       loginWindow?.close()
-      toast.error('发起登录失败：' + extractErrorMessage(e))
+      toast.error('Start login failed:' + extractErrorMessage(e))
     } finally {
       setIsStarting(false)
     }
@@ -182,14 +182,14 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
         } else if (result.status === 'success') {
           setStep('done')
           invalidate()
-          toast.success(`凭据 #${result.credentialId} Token 已更新并启用`)
+          toast.success(`Credential #${result.credentialId} Token Updated and enabled`)
         } else {
-          toast.error('会话已过期，请重新发起登录')
+          toast.error('Session expired. Please start login again')
           setStep('form')
           setSocialSession(null)
         }
       } catch (e) {
-        toast.error('轮询失败：' + extractErrorMessage(e))
+        toast.error('Round-robin failed:' + extractErrorMessage(e))
         scheduleSocialPoll(sessionId)
       }
     }, POLL_INTERVAL_MS)
@@ -199,7 +199,7 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
     if (!socialSession) return
     const parsed = parseCallbackUrl(callbackUrl)
     if (!parsed) {
-      toast.error('URL 格式无效，请复制完整的地址栏 URL')
+      toast.error('URL Invalid format. Please copy the full address bar URL')
       return
     }
     setIsCompleting(true)
@@ -213,14 +213,14 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
       if (result.status === 'success') {
         setStep('done')
         invalidate()
-        toast.success(`凭据 #${result.credentialId} Token 已更新并启用`)
+        toast.success(`Credential #${result.credentialId} Token Updated and enabled`)
       } else {
-        toast.error('会话已过期，请重新发起登录')
+        toast.error('Session expired. Please start login again')
         setStep('form')
         setSocialSession(null)
       }
     } catch (e) {
-      toast.error('完成登录失败：' + extractErrorMessage(e))
+      toast.error('Complete login failed:' + extractErrorMessage(e))
     } finally {
       setIsCompleting(false)
     }
@@ -230,7 +230,7 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
 
   const handleStartIdc = async () => {
     if (!idcRegion.trim()) {
-      toast.error('请填写 AWS Region')
+      toast.error('Please fill in AWS Region')
       return
     }
     setIsStarting(true)
@@ -243,7 +243,7 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
       setStep('waiting')
       scheduleIdcPoll(resp.sessionId, resp.pollInterval)
     } catch (e) {
-      toast.error('发起登录失败：' + extractErrorMessage(e))
+      toast.error('Start login failed:' + extractErrorMessage(e))
     } finally {
       setIsStarting(false)
     }
@@ -258,14 +258,14 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
         } else if (result.status === 'success') {
           setStep('done')
           invalidate()
-          toast.success(`凭据 #${result.credentialId} Token 已更新并启用`)
+          toast.success(`Credential #${result.credentialId} Token Updated and enabled`)
         } else {
-          toast.error('授权已过期，请重新发起登录')
+          toast.error('Authorization expired. Please start login again')
           setStep('form')
           setIdcSession(null)
         }
       } catch (e) {
-        toast.error('轮询失败：' + extractErrorMessage(e))
+        toast.error('Round-robin failed:' + extractErrorMessage(e))
         scheduleIdcPoll(sessionId, interval)
       }
     }, interval * 1000)
@@ -274,7 +274,7 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
   const copyIdcCode = () => {
     if (!idcSession) return
     navigator.clipboard.writeText(idcSession.userCode)
-    toast.success('验证码已复制')
+    toast.success('Verification code copied')
   }
 
   // ─── Manual ───────────────────────────────────────────────────────────────
@@ -289,7 +289,7 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isManualValid) {
-      toast.error('refreshToken 无效或已被截断')
+      toast.error('refreshToken Invalid or truncated')
       return
     }
     setStep('manual-updating')
@@ -297,65 +297,65 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
 
     try {
       if (!credential.disabled) {
-        addLog('正在临时禁用凭据…')
+        addLog('Temporarily disabling the credential…')
         await new Promise<void>((resolve, reject) => {
           setDisabled.mutate({ id: credential.id, disabled: true }, { onSuccess: () => resolve(), onError: reject })
         })
-        addLog('✓ 已临时禁用')
+        addLog('✓ Temporarily disabled')
       }
 
-      addLog('正在更新 refreshToken…')
+      addLog('Updating refreshToken…')
       await new Promise<void>((resolve, reject) => {
         updateRefreshToken.mutate(
           { id: credential.id, req: { refreshToken: extractedToken } },
           { onSuccess: () => resolve(), onError: reject }
         )
       })
-      addLog('✓ refreshToken 已更新')
+      addLog('✓ refreshToken Updated')
 
-      addLog('正在重置失败计数并启用…')
+      addLog('Resetting the failure count and enabling…')
       await new Promise<void>((resolve, reject) => {
         resetFailure.mutate(credential.id, { onSuccess: () => resolve(), onError: reject })
       })
-      addLog('✓ 已重置并启用')
+      addLog('✓ Reset and enabled')
 
       setStep('done')
       invalidate()
-      toast.success(`凭据 #${credential.id} 重新导入完成，已自动启用`)
+      toast.success(`Credential #${credential.id} Reimport complete, automatically enabled`)
     } catch (error) {
-      addLog(`✗ 失败: ${extractErrorMessage(error)}`)
+      addLog(`✗ Failed: ${extractErrorMessage(error)}`)
       setStep('select')
-      toast.error(`操作失败: ${extractErrorMessage(error)}`)
+      toast.error(`Operation failed: ${extractErrorMessage(error)}`)
     }
   }
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
-  const displayName = credential.email || `凭据 #${credential.id}`
+  const displayName = credential.email || `Credential #${credential.id}`
   const authMethod = credential.authMethod
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>重新登录 — {displayName}</DialogTitle>
+          <DialogTitle>Log in again — {displayName}</DialogTitle>
           <DialogDescription>
-            选择登录方式，完成后将刷新该凭据的 Token 并自动重新启用。
+            Choose a login method; once done the credential will be refreshed Token and re-enable automatically.
           </DialogDescription>
         </DialogHeader>
 
-        {/* 方式选择 */}
+        {/* method selection */}
         {step === 'select' && (
           <div className="space-y-3 py-2">
-            <p className="text-sm text-muted-foreground">选择重新登录方式：</p>
+            <p className="text-sm text-muted-foreground">Choose a re-login method:</p>
             <div className="grid gap-2">
               <button
                 onClick={() => { setMethod('social'); setStep('form') }}
                 className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-accent ${authMethod === 'social' ? 'border-primary bg-accent/50' : ''}`}
               >
                 <div>
-                  <p className="text-sm font-medium">Social 登录（Google / GitHub）</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">通过 Kiro 网页端完成 OAuth 授权</p>
+                  <p className="text-sm font-medium">Social Login (Google / GitHub)</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">via Kiro Complete on the web OAuth Authorize</p>
                 </div>
               </button>
               <button
@@ -363,8 +363,8 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
                 className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-accent ${authMethod === 'idc' ? 'border-primary bg-accent/50' : ''}`}
               >
                 <div>
-                  <p className="text-sm font-medium">AWS SSO / Builder ID（IdC）</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">通过 AWS Identity Center 设备授权</p>
+                  <p className="text-sm font-medium">AWS SSO / Builder ID(IdC)</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">via AWS Identity Center Device authorization</p>
                 </div>
               </button>
               <button
@@ -372,43 +372,43 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
                 className="flex items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-accent"
               >
                 <div>
-                  <p className="text-sm font-medium">手动粘贴 Token</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">粘贴 KAM JSON 或 refreshToken 字符串</p>
+                  <p className="text-sm font-medium">Paste manually Token</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Paste KAM JSON or refreshToken string</p>
                 </div>
               </button>
             </div>
           </div>
         )}
 
-        {/* Social 表单 */}
+        {/* Social form */}
         {step === 'form' && method === 'social' && (
           <div className="py-2 space-y-3">
             <p className="text-sm text-muted-foreground">
-              点击「发起登录」，浏览器将打开 Kiro 登录页。完成授权后，Token 将自动更新到本凭据。
+              Click Start login and the browser will open Kiro login page. After authorization,Token will be updated to this credential automatically.
             </p>
           </div>
         )}
 
-        {/* Social 等待 */}
+        {/* Social etc.pending */}
         {step === 'waiting' && method === 'social' && socialSession && (
           <div className="space-y-4 py-2">
             <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
-              <p className="text-sm text-muted-foreground">浏览器应已自动打开 Kiro 登录页，请完成授权。</p>
+              <p className="text-sm text-muted-foreground">The browser should have opened automatically Kiro login page. Please complete authorization.</p>
               <a
                 href={socialSession.portalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
               >
-                重新打开登录页
+                Reopen the login page
                 <ExternalLink className="h-3.5 w-3.5" />
               </a>
             </div>
             {isRemote && !socialSession.remote ? (
-              // 浏览器远程访问且服务端未配置 callbackBaseUrl：手动粘贴兜底
+              // remote browser access and the server has notConfig callbackBaseUrl:Paste manuallyfallback
               <div className="space-y-2">
                 <p className="text-sm text-amber-600 dark:text-amber-400">
-                  完成登录后，从地址栏复制完整 URL 粘贴到下方：
+                  After logging in, copy the full URL from the address bar URL Paste below:
                 </p>
                 <textarea
                   placeholder="http://localhost:3128/oauth/callback?code=...&state=...&login_option=google"
@@ -422,14 +422,14 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 {socialSession.remote
-                  ? '完成登录后浏览器会自动跳回本服务，正在等待自动完成…'
-                  : '正在等待登录完成…'}
+                  ? 'After login the browser returns to this service automatically. Waiting for automatic completion…'
+                  : 'Waiting for login to complete…'}
               </div>
             )}
           </div>
         )}
 
-        {/* IdC 表单 */}
+        {/* IdC form */}
         {step === 'form' && method === 'idc' && (
           <div className="space-y-3 py-2">
             <div className="space-y-1.5">
@@ -443,7 +443,7 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
             <div className="space-y-1.5">
               <label className="text-sm font-medium">
                 SSO Start URL
-                <span className="ml-1 text-xs text-muted-foreground">（留空使用 AWS Builder ID）</span>
+                <span className="ml-1 text-xs text-muted-foreground">(leave empty to use AWS Builder ID)</span>
               </label>
               <Input
                 placeholder="https://view.awsapps.com/start"
@@ -454,11 +454,11 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
           </div>
         )}
 
-        {/* IdC 等待 */}
+        {/* IdC etc.pending */}
         {step === 'waiting' && method === 'idc' && idcSession && (
           <div className="space-y-4 py-2">
             <div className="rounded-lg border bg-muted/50 p-4 text-center space-y-3">
-              <p className="text-sm text-muted-foreground">在浏览器中访问以下地址并输入验证码</p>
+              <p className="text-sm text-muted-foreground">Open the following address in your browser and enter the verification code</p>
               <a
                 href={idcSession.verificationUriComplete ?? idcSession.verificationUri}
                 target="_blank"
@@ -477,20 +477,20 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              正在等待授权，请在浏览器中完成登录…
+              Waiting for authorization. Please complete the login in your browser…
             </div>
           </div>
         )}
 
-        {/* Manual 表单 */}
+        {/* Manual form */}
         {(step === 'form' || step === 'manual-updating') && method === 'manual' && (
           <form onSubmit={handleManualSubmit}>
             <div className="space-y-3 py-2">
               <label className="text-sm font-medium">
-                粘贴 KAM 导出 JSON 或 refreshToken 字符串
+                Paste KAM Export JSON or refreshToken string
               </label>
               <textarea
-                placeholder={'支持以下格式：\n\n1. 直接粘贴 refreshToken 字符串\n\n2. KAM 导出 JSON：\n{\n  "email": "...",\n  "refreshToken": "aor..."\n}'}
+                placeholder={'The following formats are supported:\n\n1. Paste directly refreshToken string\n\n2. KAM Export JSON:\n{\n  "email": "...",\n  "refreshToken": "aor..."\n}'}
                 value={manualInput}
                 onChange={(e) => setManualInput(e.target.value)}
                 disabled={isManualUpdating}
@@ -500,15 +500,15 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
                 <div className={`text-sm rounded-md p-3 ${isManualValid ? 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300'}`}>
                   {isManualValid ? (
                     <>
-                      已识别 refreshToken（{extractedToken.length} 字符）：
+                      Recognized refreshToken({extractedToken.length} characters):
                       <span className="font-mono text-xs block mt-1 opacity-75">
                         {extractedToken.slice(0, 20)}...{extractedToken.slice(-10)}
                       </span>
                     </>
                   ) : (
                     extractedToken.length > 0
-                      ? `Token 无效：长度 ${extractedToken.length} 字符（需要 ≥100 字符）`
-                      : '无法识别 refreshToken，请检查格式'
+                      ? `Token Invalid: length ${extractedToken.length} characters (need ≥100 characters)`
+                      : 'Unrecognized refreshToken, please check the format'
                   )}
                 </div>
               )}
@@ -523,40 +523,40 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
           </form>
         )}
 
-        {/* 完成 */}
+        {/* complete */}
         {step === 'done' && (
           <div className="flex flex-col items-center gap-3 py-4">
             <CheckCircle className="h-10 w-10 text-green-500" />
-            <p className="text-sm font-medium">Token 已更新，凭据已启用</p>
+            <p className="text-sm font-medium">Token Updated, credential enabled</p>
             <p className="text-xs text-muted-foreground">{displayName}</p>
           </div>
         )}
 
         <DialogFooter>
           {step === 'select' && (
-            <Button variant="outline" onClick={handleClose}>取消</Button>
+            <Button variant="outline" onClick={handleClose}>Cancel</Button>
           )}
 
           {step === 'form' && method === 'social' && (
             <>
-              <Button variant="outline" onClick={() => setStep('select')}>返回</Button>
+              <Button variant="outline" onClick={() => setStep('select')}>Back</Button>
               <Button onClick={handleStartSocial} disabled={isStarting}>
                 {isStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                发起登录
+                Start login
               </Button>
             </>
           )}
 
           {step === 'waiting' && method === 'social' && (
             <>
-              <Button variant="outline" onClick={handleClose} disabled={isCompleting}>取消</Button>
+              <Button variant="outline" onClick={handleClose} disabled={isCompleting}>Cancel</Button>
               {isRemote && socialSession && !socialSession.remote && (
                 <Button
                   onClick={handleCompleteSocialManually}
                   disabled={isCompleting || !callbackUrl.trim()}
                 >
                   {isCompleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  完成登录
+                  Complete login
                 </Button>
               )}
             </>
@@ -564,33 +564,33 @@ export function ReloginDialog({ open, onOpenChange, credential }: ReloginDialogP
 
           {step === 'form' && method === 'idc' && (
             <>
-              <Button variant="outline" onClick={() => setStep('select')}>返回</Button>
+              <Button variant="outline" onClick={() => setStep('select')}>Back</Button>
               <Button onClick={handleStartIdc} disabled={isStarting}>
                 {isStarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                发起登录
+                Start login
               </Button>
             </>
           )}
 
           {step === 'waiting' && method === 'idc' && (
-            <Button variant="outline" onClick={handleClose}>取消</Button>
+            <Button variant="outline" onClick={handleClose}>Cancel</Button>
           )}
 
           {(step === 'form' || step === 'manual-updating') && method === 'manual' && (
             <>
-              <Button variant="outline" onClick={() => setStep('select')} disabled={isManualUpdating}>返回</Button>
+              <Button variant="outline" onClick={() => setStep('select')} disabled={isManualUpdating}>Back</Button>
               <Button
                 onClick={(e) => handleManualSubmit(e as unknown as React.FormEvent)}
                 disabled={isManualUpdating || !isManualValid}
               >
                 {isManualUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {isManualUpdating ? '处理中…' : '确认更新'}
+                {isManualUpdating ? 'Processing…' : 'Confirm update'}
               </Button>
             </>
           )}
 
           {step === 'done' && (
-            <Button onClick={handleClose}>关闭</Button>
+            <Button onClick={handleClose}>Close</Button>
           )}
         </DialogFooter>
       </DialogContent>

@@ -44,7 +44,7 @@ function buildChartData(data: CredentialDistribution[]): ChartDatum[] {
 function EmptyCredentialChart() {
   return (
     <div className="flex h-[180px] items-center justify-center text-sm text-muted-foreground sm:h-[260px]">
-      暂无数据
+      No data yet
     </div>
   )
 }
@@ -99,14 +99,14 @@ function formatTooltipLabel(label: string, payload?: ReadonlyArray<{ payload?: C
 
 function credentialChartBars() {
   return [
-    <Bar key="input" dataKey="inputTokens" name="输入" stackId="a" fill="#3b82f6" isAnimationActive={false} />,
-    <Bar key="output" dataKey="outputTokens" name="输出" stackId="a" fill="#10b981" isAnimationActive={false} />,
+    <Bar key="input" dataKey="inputTokens" name="Input" stackId="a" fill="#3b82f6" isAnimationActive={false} />,
+    <Bar key="output" dataKey="outputTokens" name="Output" stackId="a" fill="#10b981" isAnimationActive={false} />,
   ]
 }
 
 export const CredentialBarChart = memo(CredentialBarChartImpl)
 
-/** 仅用于 X 轴展示：保留 @ 后域名前 1-2 段，整体最长 22 字符 */
+/** Used only for X axis display:keep @ after the domain and before 1-2 segment,longest overall 22 character */
 function truncateEmail(email: string): string {
   if (email.length <= 22) return email
   const at = email.indexOf('@')

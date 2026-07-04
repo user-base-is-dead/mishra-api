@@ -4,16 +4,16 @@ import { Check, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 /**
- * Select API 的单选下拉框，基于 DropdownMenu non-modal 分支实现。
+ * Select API ofsingle select dropdown,based on DropdownMenu non-modal branchImplementation.
  *
- * Radix Select 打开 Content 时会调用 hideOthers(content)，并把下拉层以外的
- * DOM 标记为 aria-hidden。Select 嵌在 Dialog 内时，Content 默认 Portal 到 body，
- * DialogContent 会被当作外部节点隐藏；此时焦点仍在 trigger 上，浏览器会打印
- * "Blocked aria-hidden on an element because its descendant retained focus"。
+ * Radix Select open Content will at that timeCalls hideOthers(content),andputoutside the dropdown layerof
+ * DOM markas aria-hidden.Select embedin Dialog when inside,Content Default Portal to body,
+ * DialogContent treated as an external nodeHide;the focus stillin trigger up,the browser prints
+ * "Blocked aria-hidden on an element because its descendant retained focus".
  *
- * DropdownMenu 在 modal={false} 下不执行这套 aria-hidden / body 锁逻辑，可以保持
- * Dialog 内下拉框的可访问性状态稳定，同时保留 value / onValueChange / disabled 这类
- * Select 组件 API。
+ * DropdownMenu in modal={false} do not run this set under aria-hidden / body lock logic,can keep
+ * Dialog inner dropdownofaccessibilityStatusstable,keep at the same time value / onValueChange / disabled this kind
+ * Select component API.
  */
 
 interface SelectContextValue {
@@ -50,7 +50,7 @@ const SelectGroup = DropdownMenuPrimitive.Group
 
 function useSelectContext() {
   const ctx = React.useContext(SelectContext)
-  if (!ctx) throw new Error('Select 子组件必须在 <Select> 内使用')
+  if (!ctx) throw new Error('Select The child component must be within <Select> used within')
   return ctx
 }
 

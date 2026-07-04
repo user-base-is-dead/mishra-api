@@ -44,7 +44,7 @@ function buildChartData(data: ModelDistribution[]) {
 function EmptyModelChart() {
   return (
     <div className="flex h-[180px] items-center justify-center text-sm text-muted-foreground sm:h-[260px]">
-      暂无数据
+      No data yet
     </div>
   )
 }
@@ -103,7 +103,7 @@ function formatTooltipValue({
   const payload = item?.payload
   const input = formatNumber(payload?.inputTokens ?? 0)
   const output = formatNumber(payload?.outputTokens ?? 0)
-  return [`${formatNumber(value)} 次（${pct}%）  in ${input} / out ${output}`, payload?.name ?? '']
+  return [`${formatNumber(value)} times (${pct}%)  in ${input} / out ${output}`, payload?.name ?? '']
 }
 
 export const ModelPieChart = memo(ModelPieChartImpl)

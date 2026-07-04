@@ -16,28 +16,28 @@ interface CredentialFailuresDialogProps {
   email?: string;
 }
 
-/** 失败分类 → 中文标签 + Badge 颜色 */
+/** Failedcategory → Chinese label + Badge color */
 function outcomeStyle(outcome: string | null): {
   label: string;
   variant: "destructive" | "warning" | "outline" | "secondary";
 } {
   switch (outcome) {
     case "quota_exhausted":
-      return { label: "额度耗尽", variant: "warning" };
+      return { label: "Quota exhausted", variant: "warning" };
     case "account_throttled":
-      return { label: "账号风控", variant: "warning" };
+      return { label: "Account throttle", variant: "warning" };
     case "auth_failed":
-      return { label: "鉴权失败", variant: "destructive" };
+      return { label: "Authentication failed", variant: "destructive" };
     case "transient":
-      return { label: "瞬态错误", variant: "outline" };
+      return { label: "Transient error", variant: "outline" };
     case "network_error":
-      return { label: "网络错误", variant: "destructive" };
+      return { label: "Network error", variant: "destructive" };
     case "bad_request":
-      return { label: "请求错误", variant: "destructive" };
+      return { label: "Request error", variant: "destructive" };
     case "stream_interrupted":
-      return { label: "流中断", variant: "warning" };
+      return { label: "Stream interrupted", variant: "warning" };
     default:
-      return { label: outcome || "未知", variant: "secondary" };
+      return { label: outcome || "Unknown", variant: "secondary" };
   }
 }
 
@@ -62,7 +62,7 @@ export function CredentialFailuresDialog({
     open,
   );
   const records = data?.records ?? [];
-  // 摊平：同一请求里该凭据失败了几跳就显示几条（按时间倒序）
+  // flatten:the sameRequestthe one insideCredentialFaileda fewjumpthenShowfewitems(byTimereverse order)
   const failedHops = records.flatMap((rec) =>
     rec.attempts
       .filter((a) => a.credentialId === credentialId && a.outcome !== "success")
@@ -73,19 +73,19 @@ export function CredentialFailuresDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>失败日志详情</DialogTitle>
+          <DialogTitle>Failure log details</DialogTitle>
           <DialogDescription>
-            {email || `凭据 #${credentialId}`} 最近的失败记录（最多 50 条请求）
+            {email || `Credential #${credentialId}`} Recent failure records (up to 50 requests)
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-[60vh] space-y-2 overflow-y-auto">
           {isLoading ? (
             <div className="py-6 text-center text-sm text-muted-foreground">
-              加载中…
+              Loading…
             </div>
           ) : failedHops.length === 0 ? (
             <div className="py-6 text-center text-sm text-muted-foreground">
-              该凭据暂无失败记录（trace 关闭或近期无失败）。
+              This credential has no failure records yet (trace off or no recent failures).
             </div>
           ) : (
             failedHops.map(({ rec, attempt }) => (
@@ -102,7 +102,7 @@ export function CredentialFailuresDialog({
   );
 }
 
-/** 单跳失败：展示该凭据某次失败的 outcome / HTTP / 错误体 */
+/** singlejumpFailed:show thisCredentialsometimesFailedof outcome / HTTP / Errorbody */
 function FailureRow({
   rec,
   attempt,
@@ -111,7 +111,7 @@ function FailureRow({
   attempt: TraceAttempt;
 }) {
   const style = outcomeStyle(attempt.outcome);
-  // 整条 trace 后续是否成功了（用别的凭据救回）
+  // wholeitems trace whether afterwardSuccessdone(use anotherofCredentialrecover)
   const traceRecovered = rec.finalStatus === "success";
   return (
     <div className="rounded-lg border border-border/50 bg-secondary/30 p-3">
@@ -128,14 +128,14 @@ function FailureRow({
         )}
         {rec.totalAttempts > 1 && (
           <span className="text-[12px] text-muted-foreground">
-            第 {attempt.attempt + 1}/{rec.totalAttempts} 跳
+            No. {attempt.attempt + 1}/{rec.totalAttempts} jump
           </span>
         )}
         {traceRecovered && (
-          <Badge variant="outline">本次请求最终由其他凭据成功</Badge>
+          <Badge variant="outline">This request eventually succeeded via another credential</Badge>
         )}
         {rec.finalStatus === "interrupted" && (
-          <Badge variant="warning">中断</Badge>
+          <Badge variant="warning">Interrupted</Badge>
         )}
         <span className="ml-auto text-[12px] text-muted-foreground">
           {rec.model}

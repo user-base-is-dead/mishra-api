@@ -140,27 +140,27 @@ import type { BalanceResponse } from "@/types/api";
 
 interface DashboardProps {
   onLogout: () => void;
-  /** 当作为 Tab 嵌入到 App 中时为 true：隐藏自带顶栏与外层布局，由父 App 提供 */
+  /** treat asas Tab embed into App when insideas true:Hidebuilt-intop bar and outer layout,byparent App provide */
   embedded?: boolean;
 }
 
-// 订阅分级筛选的可选项（key 与 detectTier 返回值一致）
+// Subscription tierfilterofoptional item(key and detectTier Backvalue matches)
 const TIER_OPTIONS: { value: Tier; label: string }[] = [
   { value: "free", label: "FREE" },
   { value: "pro", label: "PRO" },
   { value: "pro_plus", label: "PRO+" },
   { value: "power", label: "POWER" },
-  { value: "unknown", label: "未知/未查询" },
+  { value: "unknown", label: "Unknown/Not queried" },
 ];
 const TIER_LABELS: Record<Tier, string> = {
   free: "FREE",
   pro: "PRO",
   pro_plus: "PRO+",
   power: "POWER",
-  unknown: "未知",
+  unknown: "Unknown",
 };
 
-// 每页数量可选项；另有“全部”（pageSize = 0）由下拉单独追加
+// Per pageCountoptional item;anotherhas“All”(pageSize = 0)bydropdown separatelyAppend
 const PAGE_SIZE_OPTIONS = [12, 24, 48, 96] as const;
 
 export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
@@ -208,7 +208,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
   });
   const cancelVerifyRef = useRef(false);
   const [currentPage, setCurrentPage] = useState(1);
-  // 展示形态（卡片 / 列表）与每页数量，均持久化到 localStorage
+  // display form(Card / List)andPer pageCount,all persisted to localStorage
   const [viewMode, setViewMode] = useState<CredentialView>(() =>
     storage.getCredentialView(),
   );
@@ -245,11 +245,11 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
   const { data: failureStatsMap } = useFailureStats();
   const groupOptions = useGroupOptions();
 
-  // 分组筛选：'' = 全部；'__none__' = 仅显示未分组；其他 = 按分组名筛选
+  // GroupFilter:'' = All;'__none__' = onlyShowUngrouped;other = byGroup namefilter
   const [groupFilter, setGroupFilter] = useState<string>("");
-  // 订阅分级筛选（多选）：空集合 = 全部分级；否则只显示集合内的分级
+  // Subscription tierfilter(multi select):empty set = All tiers;otherwise onlyShowinside the setofTier
   const [tierFilter, setTierFilter] = useState<Set<Tier>>(new Set());
-  // 模糊搜索：按来源渠道（备注）/ 邮箱做大小写不敏感的子串匹配；空串 = 不限
+  // fuzzy search:bySource channel(Note)/ EmaildoSizecase insensitiveofsubstring match;empty string = no limit
   const [searchQuery, setSearchQuery] = useState("");
   const toggleTier = (t: Tier) => {
     setTierFilter((prev) => {
@@ -260,7 +260,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
     });
   };
 
-  // 应用分组 + 分级筛选后的凭据全集（分页前先过滤，确保翻页粒度正确）
+  // ApplyGroup + Tierafter filteringofCredentialfull set(splitpagefilter first before,ensure pagingpagecorrect granularity)
   const filteredCredentials = (() => {
     const all = data?.credentials ?? [];
     let out = all;
@@ -286,12 +286,12 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
     return out;
   })();
 
-  // 切换分组 / 分级筛选 / 搜索时复位到第 1 页，避免空页
+  // switchGroup / Tierfilter / reset on search toNo. 1 page,avoid emptypage
   useEffect(() => {
     setCurrentPage(1);
   }, [groupFilter, tierFilter, searchQuery]);
 
-  // pageSize === 0 表示“全部”：单页容纳全部已筛选凭据
+  // pageSize === 0 represents“All”:singlepageaccommodateAllalready filteredCredential
   const effectivePageSize =
     pageSize === 0 ? Math.max(filteredCredentials.length, 1) : pageSize;
   const totalPages = Math.max(
@@ -301,8 +301,8 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
   const startIndex = (currentPage - 1) * effectivePageSize;
   const endIndex = startIndex + effectivePageSize;
   const serverPageCreds = filteredCredentials.slice(startIndex, endIndex);
-  // 拖拽排序的本地乐观顺序：仅当 id 集合与当前页一致时生效，否则回落到服务端顺序，
-  // 避免翻页 / 数据变更后顺序错乱。
+  // drag to reorderoflocal optimistic order:only when id the set and the currentpagetakes effect when consistent,otherwise fall back to server order,
+  // avoid pagingpage / order becomes scrambled after data change.
   const [pageOrder, setPageOrder] = useState<number[] | null>(null);
   const currentCredentials = (() => {
     if (!pageOrder) return serverPageCreds;
@@ -326,7 +326,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
     allFilteredIds.length > 0 &&
     allFilteredIds.every((id) => selectedIds.has(id));
 
-  // 翻页时清掉本地排序覆盖，回到服务端顺序
+  // pagepageclear the local sort override at that time,return to server order
   useEffect(() => {
     setPageOrder(null);
   }, [currentPage]);
@@ -346,9 +346,9 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
     const newOrder = arrayMove(ids, oldIndex, newIndex);
     setPageOrder(newOrder);
 
-    // 按新视觉顺序赋连续递增的 priority（全局位置 = startIndex + 页内索引）。
-    // 不依赖原有 priority 值域：即使原值全为默认 0 / 相同，也能保证数字更新、排序持久化；
-    // 跨页也不冲突（第 1 页 0..11、第 2 页 12..23）。只对实际变化的卡片发请求。
+    // assign continuous increasing values in new visual orderof priority(Globalposition = startIndex + pageinner index).
+    // does not depend on the originalhas priority value range:even if the original value is allasDefault 0 / identical,still ensures numbers update,persist the sort order;
+    // crosspagedoes not conflict either(No. 1 page 0..11,No. 2 page 12..23).only for actual changesofCardsendRequest.
     const prevPriority = new Map(
       currentCredentials.map((c) => [c.id, c.priority]),
     );
@@ -363,11 +363,11 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
       ),
     )
       .then(() => {
-        toast.success("优先级顺序已更新");
+        toast.success("Priority order updated");
         queryClient.invalidateQueries({ queryKey: ["credentials"] });
       })
       .catch((err) => {
-        toast.error("更新优先级失败: " + (err as Error).message);
+        toast.error("Update priority failed: " + (err as Error).message);
         setPageOrder(null);
       });
   };
@@ -390,7 +390,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
   const disabledCredentialCount =
     data?.credentials.filter((c) => c.disabled).length || 0;
 
-  // 已超额且尚未禁用的数量（用于一键超额按钮）
+  // Over quotaand not yetDisableofCount(Used forone clickOveragebutton)
   const quotaExceededCount = (data?.credentials || []).filter((c) => {
     if (c.disabled) return false;
     const b = balanceMap.get(c.id) || c.balance;
@@ -398,7 +398,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
     return b.remaining <= 0 || b.usagePercentage >= 100;
   }).length;
 
-  // 超额统计：分别计算"已开 / 未开 / 待确定"三类，便于按钮文案与决策
+  // Overagestatistics:compute separately"Enabled / Not enabled / Pending"three kinds,helps button text and decisions
   const overageStats = (() => {
     let enabled = 0;
     let disabledOff = 0;
@@ -409,11 +409,11 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
       total += 1;
       const b = balanceMap.get(c.id) || c.balance;
       if (!b) {
-        // 还没拉到余额，无法判断 — 视为待定
+        // not fetched yetBalance,cannot decide — viewaspending
         unknown += 1;
         continue;
       }
-      // 不可开启的订阅（FREE）不参与统计
+      // cannotEnableofsubscription(FREE)not counted in statistics
       if (b.overageCapable === false) continue;
       if (b.overageEnabled === true) enabled += 1;
       else if (b.overageCapable === true) disabledOff += 1;
@@ -459,7 +459,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
 
   const handleRefresh = () => {
     refetch();
-    toast.success("已刷新凭据列表");
+    toast.success("Credential list refreshed");
   };
 
   const handleLogout = () => {
@@ -472,7 +472,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
     if (!error) return;
     const parsed = parseError(error);
     if (parsed.type === "authentication_error") {
-      toast.error("登录已失效，请重新登录");
+      toast.error("Login expired. Please log in again");
       handleLogout();
     }
   }, [error]);
@@ -485,7 +485,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
   };
   const deselectAll = () => setSelectedIds(new Set());
 
-  /** 全选 / 取消全选当前页凭据。已选中其他页的不会被清除。 */
+  /** select all / CancelSelect the current pageCredential.Selectedothers in the setpageofwill not beClear. */
   const toggleSelectCurrentPage = () => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -498,10 +498,10 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
     });
   };
 
-  /** 全选 / 取消全选所有筛选后的凭据（跨页） */
+  /** select all / Deselect allplacehasafter filteringofCredential(crosspage) */
   const toggleSelectAllFiltered = () => {
     if (allFilteredSelected) {
-      // 取消：仅清除筛选范围内的，保留筛选范围外的已选项
+      // Cancel:onlyClear filterwithin rangeof,keep items outside the filter rangeofSelecteditem
       setSelectedIds((prev) => {
         const next = new Set(prev);
         allFilteredIds.forEach((id) => next.delete(id));
@@ -514,15 +514,15 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
 
   const handleBatchDelete = async () => {
     if (selectedIds.size === 0) {
-      toast.error("请先选择要删除的凭据");
+      toast.error("Please select the credentials to delete first");
       return;
     }
     const ids = Array.from(selectedIds);
     if (
       !(await confirm({
-        title: "批量删除凭据",
-        description: `确定要删除 ${ids.length} 个凭据吗？此操作无法撤销。`,
-        confirmText: "删除",
+        title: "Bulk delete credentials",
+        description: `Are you sure you want to delete ${ids.length} credentials? This action cannot be undone.`,
+        confirmText: "Delete",
         destructive: true,
       }))
     )
@@ -545,14 +545,14 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
         });
       } catch {}
     }
-    if (f === 0) toast.success(`成功删除 ${s} 个凭据`);
-    else toast.warning(`删除凭据：成功 ${s} 个，失败 ${f} 个`);
+    if (f === 0) toast.success(`Deleted successfully ${s} credentials`);
+    else toast.warning(`Delete credential: success ${s} succeeded, failed ${f} items`);
     deselectAll();
   };
 
   const handleBatchResetFailure = async () => {
     if (selectedIds.size === 0) {
-      toast.error("请先选择要恢复的凭据");
+      toast.error("Please select the credentials to restore first");
       return;
     }
     const failedIds = Array.from(selectedIds).filter((id) => {
@@ -560,7 +560,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
       return c && c.failureCount > 0;
     });
     if (failedIds.length === 0) {
-      toast.error("选中的凭据中没有失败的凭据");
+      toast.error("None of the selected credentials have failed");
       return;
     }
     let s = 0,
@@ -581,14 +581,14 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
         });
       } catch {}
     }
-    if (f === 0) toast.success(`成功恢复 ${s} 个凭据`);
-    else toast.warning(`成功 ${s} 个，失败 ${f} 个`);
+    if (f === 0) toast.success(`Restored successfully ${s} credentials`);
+    else toast.warning(`Success ${s} succeeded, failed ${f} items`);
     deselectAll();
   };
 
   const handleBatchForceRefresh = async () => {
     if (selectedIds.size === 0) {
-      toast.error("请先选择要刷新的凭据");
+      toast.error("Please select the credentials to refresh first");
       return;
     }
     const enabledIds = Array.from(selectedIds).filter((id) => {
@@ -596,7 +596,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
       return c && !c.disabled;
     });
     if (enabledIds.length === 0) {
-      toast.error("选中的凭据中没有启用的凭据");
+      toast.error("None of the selected credentials are enabled");
       return;
     }
     setBatchRefreshing(true);
@@ -614,26 +614,26 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
     }
     setBatchRefreshing(false);
     queryClient.invalidateQueries({ queryKey: ["credentials"] });
-    if (f === 0) toast.success(`成功刷新 ${s} 个凭据的 Token`);
-    else toast.warning(`刷新 Token：成功 ${s} 个，失败 ${f} 个`);
+    if (f === 0) toast.success(`Refreshed successfully ${s} credentials Token`);
+    else toast.warning(`Refresh Token: success ${s} succeeded, failed ${f} items`);
     deselectAll();
   };
 
   const handleClearAll = async () => {
     if (!data?.credentials || data.credentials.length === 0) {
-      toast.error("没有可清除的凭据");
+      toast.error("No credentials to clear");
       return;
     }
     const disabled = data.credentials.filter((c) => c.disabled);
     if (disabled.length === 0) {
-      toast.error("没有可清除的已禁用凭据");
+      toast.error("No disabled credentials to clear");
       return;
     }
     if (
       !(await confirm({
-        title: "清除已禁用凭据",
-        description: `确定要清除所有 ${disabled.length} 个已禁用凭据吗？此操作无法撤销。`,
-        confirmText: "清除",
+        title: "Clear disabled credentials",
+        description: `Are you sure you want to clear all ${disabled.length} disabled credentials? This action cannot be undone.`,
+        confirmText: "Clear",
         destructive: true,
       }))
     )
@@ -656,24 +656,24 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
         });
       } catch {}
     }
-    if (f === 0) toast.success(`成功清除所有 ${s} 个已禁用凭据`);
-    else toast.warning(`清除已禁用凭据：成功 ${s} 个，失败 ${f} 个`);
+    if (f === 0) toast.success(`Successfully cleared all ${s} disabled credentials`);
+    else toast.warning(`Clear disabled credentials: success ${s} succeeded, failed ${f} items`);
     deselectAll();
   };
 
   const handleQueryCurrentPageInfo = async () => {
     if (currentCredentials.length === 0) {
-      toast.error("当前页没有可查询的凭据");
+      toast.error("No credentials on the current page can be queried");
       return;
     }
     const ids = currentCredentials.filter((c) => !c.disabled).map((c) => c.id);
     if (ids.length === 0) {
-      toast.error("当前页没有可查询的启用凭据");
+      toast.error("No enabled credentials on the current page can be queried");
       return;
     }
     setQueryingInfo(true);
     setQueryInfoProgress({ current: 0, total: ids.length });
-    // 有界并发（worker pool，与批量验活一致），逐条更新余额与进度
+    // hasconcurrent(worker pool,andBulk validateconsistent),one by oneitemsupdateBalanceand progress
     let s = 0;
     let f = 0;
     let finalized = 0;
@@ -714,8 +714,8 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
       Array.from({ length: Math.min(CONCURRENCY, ids.length) }, () => worker()),
     );
     setQueryingInfo(false);
-    if (f === 0) toast.success(`查询完成：成功 ${s}/${ids.length}`);
-    else toast.warning(`查询完成：成功 ${s} 个，失败 ${f} 个`);
+    if (f === 0) toast.success(`Query complete: success ${s}/${ids.length}`);
+    else toast.warning(`Query complete: success ${s} succeeded, failed ${f} items`);
   };
 
   const handleRefreshBalance = async (id: number) => {
@@ -731,9 +731,9 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
         n.set(id, balance);
         return n;
       });
-      toast.success("余额已刷新");
+      toast.success("Balance refreshed");
     } catch (err) {
-      toast.error("刷新余额失败: " + (err as Error).message);
+      toast.error("Refresh balance failed: " + (err as Error).message);
     } finally {
       setLoadingBalanceIds((prev) => {
         const n = new Set(prev);
@@ -745,7 +745,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
 
   const handleBatchVerify = async () => {
     if (selectedIds.size === 0) {
-      toast.error("请先选择要验活的凭据");
+      toast.error("Please select the credentials to validate first");
       return;
     }
     setVerifying(true);
@@ -753,7 +753,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
     const ids = Array.from(selectedIds);
     setVerifyProgress({ current: 0, total: ids.length });
 
-    // id → email，便于结果列表直接看到是哪个账号
+    // id → email,helps the resultListdirectly see which oneaccounts
     const emailById = new Map<number, string | undefined>();
     for (const c of data?.credentials ?? []) emailById.set(c.id, c.email);
 
@@ -764,7 +764,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
     setVerifyResults(init);
     setVerifyDialogOpen(true);
 
-    // 有界并发（无 2s 间隔）。worker pool 领取下一个 id，逐条更新结果。
+    // hasconcurrent(none 2s interval).worker pool claim the nextitems id,one by oneitemsupdate the result.
     let successCount = 0;
     let finalized = 0;
     let next = 0;
@@ -814,7 +814,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
     );
     setVerifying(false);
     if (!cancelVerifyRef.current)
-      toast.success(`验活完成：成功 ${successCount}/${ids.length}`);
+      toast.success(`Validation complete: success ${successCount}/${ids.length}`);
   };
 
   const handleCancelVerify = () => {
@@ -822,7 +822,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
     setVerifying(false);
   };
 
-  // 在批量验活窗口删除单个失败凭据
+  // inBulk validatewindowDeletesinglefailed credentials
   const handleDeleteVerifyResult = (id: number) => {
     deleteCredential(id, {
       onSuccess: () => {
@@ -831,13 +831,13 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
           n.delete(id);
           return n;
         });
-        toast.success(`凭据 #${id} 已删除`);
+        toast.success(`Credential #${id} Deleted`);
       },
-      onError: (err) => toast.error("删除失败: " + extractErrorMessage(err)),
+      onError: (err) => toast.error("Delete failed: " + extractErrorMessage(err)),
     });
   };
 
-  // 一键删除批量验活窗口里全部失败凭据（并发删除）
+  // one clickDeleteBulk validateinside the windowAllFailedCredential(concurrentDelete)
   const handleDeleteFailedVerify = () => {
     const failedIds = Array.from(verifyResults.values())
       .filter((r) => r.status === "failed")
@@ -857,30 +857,30 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
           });
         },
         onError: (err) =>
-          toast.error(`删除 #${id} 失败: ` + extractErrorMessage(err)),
+          toast.error(`Delete #${id} Failed: ` + extractErrorMessage(err)),
         onSettled: () => {
           remaining--;
           if (remaining === 0) {
             setVerifyDeleting(false);
-            toast.success(`已删除 ${ok}/${failedIds.length} 个失败凭据`);
+            toast.success(`Deleted ${ok}/${failedIds.length} failed credentials`);
           }
         },
       });
     });
   };
 
-  // 一键超额：把所有已超额（未禁用）凭据标记为 QuotaExceeded 并禁用
+  // one clickOverage:putplacehasOver quota(notDisable)Credentialmarkas QuotaExceeded andDisable
   const [disablingQuota, setDisablingQuota] = useState(false);
   const handleDisableQuotaExceeded = async () => {
     if (quotaExceededCount === 0) {
-      toast.info('当前没有已超额的凭据，可先点击"刷新当前页余额"');
+      toast.info('There are no over-quota credentials right now. You can first click"Refresh the balance on the current page"');
       return;
     }
     if (
       !(await confirm({
-        title: "禁用已超额凭据",
-        description: `确定要把 ${quotaExceededCount} 个已超额的凭据全部禁用吗？`,
-        confirmText: "禁用",
+        title: "Disable over-quota credentials",
+        description: `Are you sure you want to put ${quotaExceededCount} over-quota credentials? Disable all of them?`,
+        confirmText: "Disable",
         destructive: true,
       }))
     )
@@ -892,29 +892,29 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
       const skip = res.skippedIds?.length || 0;
       if (ok > 0)
         toast.success(
-          `已禁用 ${ok} 个已超额凭据${skip > 0 ? `，跳过 ${skip} 个` : ""}`,
+          `Disabled ${ok} over-quota credentials${skip > 0 ? `, skipped ${skip} items` : ""}`,
         );
-      else toast.warning("未找到已超额凭据（缓存可能已失效）");
+      else toast.warning("No over-quota credentials found (the cache may be stale)");
       queryClient.invalidateQueries({ queryKey: ["credentials"] });
     } catch (err) {
-      toast.error("一键超额失败: " + extractErrorMessage(err));
+      toast.error("One-click overage failed: " + extractErrorMessage(err));
     } finally {
       setDisablingQuota(false);
     }
   };
 
-  // 一键开启超额：调用上游 setUserPreference 把所有"可开启且未开启"的凭据开启
+  // one clickEnable overage:CallsUpstream setUserPreference putplacehas"canEnableandNot enabledstart"ofCredentialEnable
   const [enablingOverage, setEnablingOverage] = useState(false);
   const handleEnableOverageAll = async () => {
     if (overageEnableableCount === 0) {
-      toast.info("当前没有明确「未开启超额」的凭据");
+      toast.info("There are currently no credentials clearly marked as overage not enabled");
       return;
     }
     if (
       !(await confirm({
-        title: "开启超额",
-        description: `确定要为 ${overageEnableableCount} 个凭据开启超额吗？开启后超出额度将按 overageRate 计费。`,
-        confirmText: "开启",
+        title: "Enable overage",
+        description: `Are you sure you want to, for ${overageEnableableCount} credentials? Once enabled, usage beyond the quota is billed as overageRate billing.`,
+        confirmText: "Enable",
       }))
     )
       return;
@@ -923,26 +923,26 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
       const res = await enableOverageForAllCapable();
       const ok = res.enabledIds?.length || 0;
       const fail = res.failedIds?.length || 0;
-      if (ok > 0 && fail === 0) toast.success(`已为 ${ok} 个凭据开启超额`);
+      if (ok > 0 && fail === 0) toast.success(`Done for ${ok} credentials with overage enabled`);
       else if (ok > 0 && fail > 0)
         toast.warning(
-          `成功 ${ok} 个，失败 ${fail} 个：${overageFailureMessage(res.failureMessages?.[0])}`,
+          `Success ${ok} succeeded, failed ${fail} items:${overageFailureMessage(res.failureMessages?.[0])}`,
         );
       else if (fail > 0)
         toast.error(
-          `全部失败：${overageFailureMessage(res.failureMessages?.[0])}`,
+          `All failed:${overageFailureMessage(res.failureMessages?.[0])}`,
         );
-      else toast.info("没有需要操作的凭据");
+      else toast.info("No credentials to act on");
       queryClient.invalidateQueries({ queryKey: ["credentials"] });
     } catch (err) {
-      toast.error("一键开启超额失败: " + extractErrorMessage(err));
+      toast.error("One-click enable overage failed: " + extractErrorMessage(err));
     } finally {
       setEnablingOverage(false);
     }
   };
 
-  // 重试拉取超额状态：仅针对状态待确定的凭据批量查余额（只读，安全）。
-  // 区分于「一键开启超额」——后者会调用写接口 setUserPreference，FREE 订阅会 403。
+  // RetryfetchOverageStatus:only forStatusPendingofCredentialBulkqueryBalance(read only,safe).
+  // distinct from [one clickEnable overage]——the latter willCallswrite endpoint setUserPreference,FREE the subscription will 403.
   const [refreshingOverage, setRefreshingOverage] = useState(false);
   const [refreshingOverageProgress, setRefreshingOverageProgress] = useState({
     current: 0,
@@ -958,7 +958,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
       })
       .map((c) => c.id);
     if (targets.length === 0) {
-      toast.info("没有状态待确定的凭据");
+      toast.info("No credentials with pending status");
       return;
     }
     setRefreshingOverage(true);
@@ -992,8 +992,8 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
       setRefreshingOverageProgress({ current: i + 1, total: targets.length });
     }
     setRefreshingOverage(false);
-    if (f === 0) toast.success(`刷新完成：成功 ${s}/${targets.length}`);
-    else toast.warning(`刷新完成：成功 ${s} 个，失败 ${f} 个`);
+    if (f === 0) toast.success(`Refresh complete: success ${s}/${targets.length}`);
+    else toast.warning(`Refresh complete: success ${s} succeeded, failed ${f} items`);
   };
 
   const [exportingKam, setExportingKam] = useState(false);
@@ -1002,18 +1002,18 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
     e.preventDefault();
     const key = newAdminKey.trim();
     if (!key) {
-      toast.error("新登录API密钥不能为空");
+      toast.error("New loginAPIKey cannot be empty");
       return;
     }
     setUpdatingAdminKey(true);
     try {
       await updateAdminKey({ newKey: key });
       storage.setApiKey(key);
-      toast.success("登录API密钥已更新，已自动切换到新 Key");
+      toast.success("LoginAPIThe key has been updated and automatically switched to the new one Key");
       setAdminKeyDialogOpen(false);
       setNewAdminKey("");
     } catch (error) {
-      toast.error(`更新失败: ${extractErrorMessage(error)}`);
+      toast.error(`Update failed: ${extractErrorMessage(error)}`);
     } finally {
       setUpdatingAdminKey(false);
     }
@@ -1021,7 +1021,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
 
   const handleExportKam = async () => {
     if (selectedIds.size === 0) {
-      toast.info("请先勾选要导出的凭据");
+      toast.info("Please check the credentials to export first");
       return;
     }
     const ids = Array.from(selectedIds);
@@ -1030,7 +1030,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
       const exportData = await exportKamCredentials(ids);
       const accountCount = exportData.accounts?.length ?? 0;
       if (accountCount === 0) {
-        toast.warning("勾选的凭据中没有可导出的（缺少 refreshToken）");
+        toast.warning("None of the selected credentials can be exported (missing refreshToken)");
         return;
       }
       const json = JSON.stringify(exportData, null, 2);
@@ -1051,11 +1051,11 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
       const skipped = ids.length - accountCount;
       toast.success(
         skipped > 0
-          ? `已导出 ${accountCount} 个账号，${skipped} 个无效已跳过`
-          : `已导出 ${accountCount} 个账号`,
+          ? `Exported ${accountCount} accounts,${skipped} invalid ones skipped`
+          : `Exported ${accountCount} accounts`,
       );
     } catch (err) {
-      toast.error("导出失败: " + extractErrorMessage(err));
+      toast.error("Export failed: " + extractErrorMessage(err));
     } finally {
       setExportingKam(false);
     }
@@ -1067,9 +1067,9 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
     setLoadBalancingMode(next, {
       onSuccess: () =>
         toast.success(
-          `已切换到${next === "priority" ? "优先级模式" : "均衡负载模式"}`,
+          `Switched to${next === "priority" ? "Priority mode" : "Balanced load mode"}`,
         ),
-      onError: (err) => toast.error(`切换失败: ${extractErrorMessage(err)}`),
+      onError: (err) => toast.error(`Switch failed: ${extractErrorMessage(err)}`),
     });
   };
 
@@ -1078,7 +1078,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary/20 border-t-primary mx-auto mb-4"></div>
-          <p className="text-sm text-muted-foreground">加载中…</p>
+          <p className="text-sm text-muted-foreground">Loading…</p>
         </div>
       </div>
     );
@@ -1089,14 +1089,14 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
-            <div className="text-destructive font-semibold mb-2">加载失败</div>
+            <div className="text-destructive font-semibold mb-2">Load failed</div>
             <p className="text-sm text-muted-foreground mb-4">
               {extractErrorMessage(error)}
             </p>
             <div className="flex gap-2 justify-center">
-              <Button onClick={() => refetch()}>重试</Button>
+              <Button onClick={() => refetch()}>Retry</Button>
               <Button variant="outline" onClick={handleLogout}>
-                重新登录
+                Log in again
               </Button>
             </div>
           </CardContent>
@@ -1107,7 +1107,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
 
   return (
     <div className={embedded ? "" : "min-h-screen"}>
-      {/* 顶部毛玻璃导航条（仅独立模式渲染；嵌入模式由外层 App 提供顶栏） */}
+      {/* frosted glass navigation at the topitems(render only in standalone mode;embedded modebyouter layer App provide the top bar) */}
       {!embedded && (
         <header className="sticky top-0 z-40 w-full glass">
           <div className="mx-auto max-w-[1400px] flex h-16 items-center justify-between px-4 md:px-8">
@@ -1126,21 +1126,21 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                 size="sm"
                 onClick={handleToggleLoadBalancing}
                 disabled={isLoadingMode || isSettingMode}
-                title="切换负载均衡模式"
+                title="Switch load balancing mode"
               >
                 <Activity className="h-3.5 w-3.5" />
                 {isLoadingMode
-                  ? "加载中…"
+                  ? "Loading…"
                   : loadBalancingData?.mode === "priority"
-                    ? "优先级"
-                    : "均衡负载"}
+                    ? "Priority"
+                    : "Balanced load"}
               </Button>
-              <Button variant="ghost" size="icon" asChild title="GitHub 仓库">
+              <Button variant="ghost" size="icon" asChild title="GitHub Repository">
                 <a
                   href="https://github.com/ZyphrZero/kiro.rs"
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="GitHub 仓库"
+                  aria-label="GitHub Repository"
                 >
                   <GithubIcon className="h-4 w-4" />
                 </a>
@@ -1149,7 +1149,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                 variant="ghost"
                 size="icon"
                 onClick={toggleDarkMode}
-                title="切换主题"
+                title="Switch theme"
               >
                 {darkMode ? (
                   <Sun className="h-4 w-4" />
@@ -1161,7 +1161,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                 variant="ghost"
                 size="icon"
                 onClick={handleRefresh}
-                title="刷新"
+                title="Refresh"
               >
                 <RefreshCw className="h-4 w-4" />
               </Button>
@@ -1171,8 +1171,8 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                 onClick={() => setImageUpdateDialogOpen(true)}
                 title={
                   updateCheck?.hasUpdate
-                    ? `发现新版本 v${updateCheck.latestVersion}（当前 v${updateCheck.currentVersion}）`
-                    : "镜像在线更新"
+                    ? `New version found v${updateCheck.latestVersion}(currently v${updateCheck.currentVersion})`
+                    : "Mirror online update"
                 }
                 className="relative"
               >
@@ -1186,12 +1186,12 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
               </Button>
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" title="设置">
+                  <Button variant="ghost" size="icon" title="Settings">
                     <Settings className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>密钥管理</DropdownMenuLabel>
+                  <DropdownMenuLabel>Key management</DropdownMenuLabel>
                   <DropdownMenuItem
                     onSelect={() => {
                       setNewAdminKey("");
@@ -1200,7 +1200,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                     }}
                   >
                     <Key />
-                    修改登录API密钥（管理面板登录）
+                    Change loginAPIKey (admin panel login)
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -1208,7 +1208,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                 variant="ghost"
                 size="icon"
                 onClick={handleLogout}
-                title="退出登录"
+                title="Log out"
               >
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -1217,29 +1217,29 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
         </header>
       )}
 
-      {/* 主内容 */}
+      {/* main content */}
       <main
         ref={gridRef}
         className={embedded ? "" : "mx-auto max-w-[1400px] px-4 md:px-8 py-8"}
       >
-        {/* 大标题 */}
+        {/* large title */}
         <div className="mb-5 flex items-end justify-between gap-4 sm:mb-6">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight leading-tight sm:text-[28px]">
-              凭据管理
+              Credential management
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              管理 Kiro 的所有访问凭据、负载均衡与登录信息
+              Manage Kiro all access credentials, load balancing, and login info of
             </p>
           </div>
         </div>
 
-        {/* 统计卡片 */}
+        {/* statisticsCard */}
         <div className="mb-5 grid grid-cols-3 gap-2 sm:mb-6 sm:gap-4">
           <Card className="hover:shadow-apple-lg hover:-translate-y-0.5">
             <CardContent className="p-3 sm:p-5">
               <div className="text-[11px] font-medium text-muted-foreground sm:text-[13px]">
-                凭据总数
+                Total credentials
               </div>
               <div className="mt-1.5 text-2xl font-semibold tracking-tight tabular-nums sm:mt-2 sm:text-3xl">
                 {formatNumber(data?.total)}
@@ -1249,7 +1249,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
           <Card className="hover:shadow-apple-lg hover:-translate-y-0.5">
             <CardContent className="p-3 sm:p-5">
               <div className="text-[11px] font-medium text-muted-foreground sm:text-[13px]">
-                可用凭据
+                Available credentials
               </div>
               <div className="mt-1.5 text-2xl font-semibold tracking-tight tabular-nums text-emerald-600 dark:text-emerald-400 sm:mt-2 sm:text-3xl">
                 {formatNumber(data?.available)}
@@ -1259,22 +1259,22 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
           <Card className="hover:shadow-apple-lg hover:-translate-y-0.5">
             <CardContent className="p-3 sm:p-5">
               <div className="text-[11px] font-medium text-muted-foreground sm:text-[13px]">
-                当前活跃
+                Currently active
               </div>
               <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5 sm:mt-2 sm:gap-2">
                 <span className="truncate text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">
                   #{data?.currentId || "-"}
                 </span>
-                {data?.currentId && <Badge variant="success">活跃</Badge>}
+                {data?.currentId && <Badge variant="success">Active</Badge>}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* 工具栏 */}
+        {/* toolbar */}
         <div className="mb-5 flex flex-col gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <h2 className="text-lg font-semibold tracking-tight">凭据列表</h2>
+            <h2 className="text-lg font-semibold tracking-tight">Credential list</h2>
             {data?.credentials && data.credentials.length > 0 && (
               <Badge variant="secondary">
                 {groupFilter || tierFilter.size > 0
@@ -1284,12 +1284,12 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
             )}
             {groupFilter && (
               <Badge variant="outline" className="gap-1">
-                筛选：{groupFilter === "__none__" ? "未分组" : groupFilter}
+                Filter:{groupFilter === "__none__" ? "Ungrouped" : groupFilter}
                 <button
                   type="button"
                   className="ml-1 text-muted-foreground hover:text-foreground"
                   onClick={() => setGroupFilter("")}
-                  title="清除筛选"
+                  title="Clear filter"
                 >
                   ×
                 </button>
@@ -1297,15 +1297,15 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
             )}
             {tierFilter.size > 0 && (
               <Badge variant="outline" className="gap-1">
-                分级：
+                Tier:
                 {Array.from(tierFilter)
                   .map((t) => TIER_LABELS[t])
-                  .join("、")}
+                  .join(",")}
                 <button
                   type="button"
                   className="ml-1 text-muted-foreground hover:text-foreground"
                   onClick={() => setTierFilter(new Set())}
-                  title="清除分级筛选"
+                  title="Clear tier filter"
                 >
                   ×
                 </button>
@@ -1318,9 +1318,9 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                 variant="ghost"
                 className="px-2 sm:px-3"
                 onClick={toggleSelectCurrentPage}
-                title={currentPageAllSelected ? "取消选择当前页" : "全选当前页"}
+                title={currentPageAllSelected ? "Deselect the current page" : "Select the current page"}
               >
-                {currentPageAllSelected ? "取消全选" : "全选当前页"}
+                {currentPageAllSelected ? "Deselect all" : "Select the current page"}
               </Button>
             )}
             {filteredCredentials.length > currentCredentials.length && (
@@ -1331,25 +1331,25 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                 onClick={toggleSelectAllFiltered}
                 title={
                   allFilteredSelected
-                    ? "取消选择全部筛选结果"
-                    : `全选所有 ${filteredCredentials.length} 个筛选结果`
+                    ? "Deselect all filtered results"
+                    : `Select all ${filteredCredentials.length} filtered results`
                 }
               >
                 {allFilteredSelected
-                  ? "取消全选所有页"
-                  : `全选所有页 (${filteredCredentials.length})`}
+                  ? "Deselect all pages"
+                  : `Select all pages (${filteredCredentials.length})`}
               </Button>
             )}
             {selectedIds.size > 0 && (
               <>
-                <Badge variant="default">已选 {selectedIds.size}</Badge>
+                <Badge variant="default">Selected {selectedIds.size}</Badge>
                 <Button
                   onClick={deselectAll}
                   size="sm"
                   variant="ghost"
                   className="px-2 sm:px-3"
                 >
-                  取消选择
+                  Deselect
                 </Button>
               </>
             )}
@@ -1360,23 +1360,23 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                 variant="secondary"
               >
                 <CheckCircle2 className="h-3.5 w-3.5 animate-spin" />
-                验活中… {verifyProgress.current}/{verifyProgress.total}
+                Validating… {verifyProgress.current}/{verifyProgress.total}
               </Button>
             )}
           </div>
 
-          {/* 第二行：筛选（左） + 操作（右） */}
+          {/* No.second row:filter(left) + Actions(right) */}
           <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-            {/* 筛选器 — 左（移动端两列网格并排，桌面端内联） */}
+            {/* filter — left(two column grid side by side on mobile,inline on desktop) */}
             <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
-              {/* 模糊搜索：来源渠道（备注）/ 邮箱；移动端整行、桌面端 200px */}
+              {/* fuzzy search:Source channel(Note)/ Email;full row on mobile,desktop 200px */}
               <div className="relative col-span-2 sm:col-span-1 sm:w-[200px]">
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="搜索来源渠道 / 备注 / 邮箱"
+                  placeholder="Search source channel / Note / Email"
                   className="h-8 w-full rounded-full border border-border bg-card/60 pl-5 pr-5 text-base backdrop-blur placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:text-sm"
                 />
                 {searchQuery && (
@@ -1384,7 +1384,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                     type="button"
                     onClick={() => setSearchQuery("")}
                     className="absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                    title="清除搜索"
+                    title="Clear search"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -1396,13 +1396,13 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
               >
                 <SelectTrigger
                   className="h-8 w-full rounded-full border-border bg-card/60 px-3 backdrop-blur sm:w-[140px]"
-                  title="按分组筛选凭据"
+                  title="Filter credentials by group"
                 >
-                  <SelectValue placeholder="全部分组" />
+                  <SelectValue placeholder="All groups" />
                 </SelectTrigger>
                 <SelectContent align="end">
-                  <SelectItem value="all">全部分组</SelectItem>
-                  <SelectItem value="__none__">未分组</SelectItem>
+                  <SelectItem value="all">All groups</SelectItem>
+                  <SelectItem value="__none__">Ungrouped</SelectItem>
                   {groupOptions.map((g) => (
                     <SelectItem key={g} value={g}>
                       {g}
@@ -1411,24 +1411,24 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                 </SelectContent>
               </Select>
 
-              {/* 订阅分级筛选（多选） */}
+              {/* Subscription tierfilter(multi select) */}
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    title="按订阅分级筛选凭据（可多选，依据最近一次余额缓存）"
+                    title="Filter credentials by subscription tier (multi-select, based on the latest balance cache)"
                     className="inline-flex h-8 w-full items-center justify-between gap-1 rounded-full border border-border bg-card/60 px-3 text-sm backdrop-blur hover:bg-accent sm:w-[136px]"
                   >
                     <span className="truncate">
                       {tierFilter.size > 0
-                        ? `分级 ·${tierFilter.size}`
-                        : "全部分级"}
+                        ? `Tier ·${tierFilter.size}`
+                        : "All tiers"}
                     </span>
                     <ChevronDown className="h-3.5 w-3.5 opacity-60" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-[10rem]">
-                  <DropdownMenuLabel>订阅分级</DropdownMenuLabel>
+                  <DropdownMenuLabel>Subscription tier</DropdownMenuLabel>
                   {TIER_OPTIONS.map((t) => (
                     <DropdownMenuItem
                       key={t.value}
@@ -1452,20 +1452,20 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                         }}
                         className="text-muted-foreground"
                       >
-                        清除分级筛选
+                        Clear tier filter
                       </DropdownMenuItem>
                     </>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* 卡片 / 列表 视图切换（iOS 分段控件） */}
+              {/* Card / List view switch(iOS segmented control) */}
               <div className="col-span-2 inline-flex h-8 shrink-0 items-center justify-self-start rounded-full border border-border bg-card/60 p-0.5 backdrop-blur sm:col-span-1">
                 <button
                   type="button"
                   onClick={() => changeViewMode("card")}
                   aria-pressed={viewMode === "card"}
-                  title="卡片视图"
+                  title="Card view"
                   className={`inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-[13px] transition-colors ${
                     viewMode === "card"
                       ? "bg-background text-foreground shadow-apple-sm"
@@ -1473,13 +1473,13 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                   }`}
                 >
                   <LayoutGrid className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">卡片</span>
+                  <span className="hidden sm:inline">Card</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => changeViewMode("list")}
                   aria-pressed={viewMode === "list"}
-                  title="列表视图"
+                  title="List view"
                   className={`inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-[13px] transition-colors ${
                     viewMode === "list"
                       ? "bg-background text-foreground shadow-apple-sm"
@@ -1487,12 +1487,12 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                   }`}
                 >
                   <List className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">列表</span>
+                  <span className="hidden sm:inline">List</span>
                 </button>
               </div>
             </div>
 
-            {/* 操作 — 右（移动端整宽两列网格，桌面端右对齐内联） */}
+            {/* Actions — right(full width two column grid on mobile,right aligned inline on desktop) */}
             <div className="ml-auto grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
               {selectedIds.size > 0 && (
                 <>
@@ -1500,10 +1500,10 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                     onClick={() => setBatchEditDialogOpen(true)}
                     size="sm"
                     variant="outline"
-                    title="批量编辑分组 / 来源渠道"
+                    title="Bulk edit groups / Source channel"
                   >
                     <Tags className="h-3.5 w-3.5" />
-                    分组/来源
+                    Group/Source
                   </Button>
                   <Button
                     onClick={handleBatchDelete}
@@ -1513,23 +1513,23 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                     disabled={selectedIds.size === 0}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    删除
+                    Delete
                   </Button>
                   <span className="mx-1 hidden h-5 w-px bg-border/70 sm:inline-block" />
                 </>
               )}
 
-              {/* 主操作 */}
+              {/* primaryActions */}
               <Button
                 onClick={() => setAddDialogOpen(true)}
                 size="sm"
                 className="w-full sm:w-auto"
               >
                 <Plus className="h-3.5 w-3.5" />
-                添加凭据
+                Add credential
               </Button>
 
-              {/* 导入 / 登录折叠菜单 */}
+              {/* Import / Logincollapsible menu */}
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -1538,74 +1538,74 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                     className="w-full sm:w-auto"
                   >
                     <Upload className="h-3.5 w-3.5" />
-                    登录 / 导入 / 导出
+                    Login / Import / Export
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>登录</DropdownMenuLabel>
+                  <DropdownMenuLabel>Login</DropdownMenuLabel>
                   <DropdownMenuItem
                     onSelect={() => setSocialLoginDialogOpen(true)}
                   >
                     <LogIn />
-                    Kiro 账号登录
+                    Kiro Account login
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() => setIdcLoginDialogOpen(true)}
                   >
                     <Key />
-                    AWS SSO (IdC) 登录
+                    AWS SSO (IdC) Login
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() => setEnterpriseLoginDialogOpen(true)}
                   >
                     <Building2 />
-                    Enterprise (IAM Identity Center) 登录
+                    Enterprise (IAM Identity Center) Login
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuLabel>导入</DropdownMenuLabel>
+                  <DropdownMenuLabel>Import</DropdownMenuLabel>
                   <DropdownMenuItem
                     onSelect={() => setBatchImportDialogOpen(true)}
                   >
                     <Upload />
-                    批量导入
+                    Bulk import
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() => setKamImportDialogOpen(true)}
                   >
                     <FileUp />
-                    Kiro Account Manager 导入
+                    Kiro Account Manager Import
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={handleExportKam}
                     disabled={exportingKam}
                   >
                     <FileDown />
-                    {exportingKam ? "导出中…" : "Kiro Account Manager 导出"}
+                    {exportingKam ? "Exporting…" : "Kiro Account Manager Export"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* 维护 / 危险操作折叠菜单 */}
+              {/* Maintenance / dangerousActionscollapsible menu */}
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     size="sm"
                     variant="outline"
-                    title="更多操作"
+                    title="More actions"
                     className="w-full sm:w-auto"
                   >
                     <MoreHorizontal className="h-3.5 w-3.5" />
-                    <span className="sm:hidden">更多</span>
+                    <span className="sm:hidden">More</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>批量操作</DropdownMenuLabel>
+                  <DropdownMenuLabel>Bulk actions</DropdownMenuLabel>
                   <DropdownMenuItem
                     onSelect={handleBatchVerify}
                     disabled={selectedIds.size === 0}
                   >
                     <CheckCircle2 />
-                    批量验活
+                    Bulk validate
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={(e) => {
@@ -1618,18 +1618,18 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                       className={batchRefreshing ? "animate-spin" : ""}
                     />
                     {batchRefreshing
-                      ? `刷新中… ${batchRefreshProgress.current}/${batchRefreshProgress.total}`
-                      : "刷新 Token"}
+                      ? `Refreshing… ${batchRefreshProgress.current}/${batchRefreshProgress.total}`
+                      : "Refresh Token"}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={handleBatchResetFailure}
                     disabled={selectedIds.size === 0}
                   >
                     <RotateCcw />
-                    恢复异常
+                    Restore failed
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuLabel>维护</DropdownMenuLabel>
+                  <DropdownMenuLabel>Maintenance</DropdownMenuLabel>
                   <DropdownMenuItem
                     onSelect={(e) => {
                       e.preventDefault();
@@ -1639,14 +1639,14 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                   >
                     <RefreshCw className={queryingInfo ? "animate-spin" : ""} />
                     {queryingInfo
-                      ? `刷新中… ${queryInfoProgress.current}/${queryInfoProgress.total}`
-                      : "刷新当前页余额"}
+                      ? `Refreshing… ${queryInfoProgress.current}/${queryInfoProgress.total}`
+                      : "Refresh the balance on the current page"}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() => setProxyPoolDialogOpen(true)}
                   >
                     <Globe />
-                    IP 代理池管理
+                    IP Proxy pool management
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     disabled={
@@ -1657,7 +1657,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                       resetAllSuccess.mutate(undefined, {
                         onSuccess: (res) => toast.success(res.message),
                         onError: (err) =>
-                          toast.error("重置失败: " + (err as Error).message),
+                          toast.error("Reset failed: " + (err as Error).message),
                       });
                     }}
                   >
@@ -1666,7 +1666,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                         resetAllSuccess.isPending ? "animate-spin" : ""
                       }
                     />
-                    重置成功次数
+                    Reset success count
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     disabled={
@@ -1684,8 +1684,8 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                     }}
                     title={
                       overageRetryableCount === 0
-                        ? `全部 ${overageStats.enabled} 个 PRO/ENTERPRISE 凭据均已开启超额`
-                        : `已开 ${overageStats.enabled} 个 / 未开 ${overageStats.disabledOff} 个 / 待确定 ${overageStats.unknown} 个`
+                        ? `All ${overageStats.enabled} items PRO/ENTERPRISE All credentials have overage enabled`
+                        : `Enabled ${overageStats.enabled} items / Not enabled ${overageStats.disabledOff} items / Pending ${overageStats.unknown} items`
                     }
                   >
                     <Zap
@@ -1696,12 +1696,12 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                       }
                     />
                     {refreshingOverage
-                      ? `刷新中… ${refreshingOverageProgress.current}/${refreshingOverageProgress.total}`
+                      ? `Refreshing… ${refreshingOverageProgress.current}/${refreshingOverageProgress.total}`
                       : overageRetryableCount === 0
-                        ? `全部已开启超额（${overageStats.enabled}）`
+                        ? `All have overage enabled (${overageStats.enabled})`
                         : overageEnableableCount > 0
-                          ? `一键开启超额（${overageEnableableCount}）`
-                          : `重试拉取超额状态（${overageStats.unknown}）`}
+                          ? `One-click enable overage (${overageEnableableCount})`
+                          : `Retry fetching overage status (${overageStats.unknown})`}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -1713,7 +1713,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                     }}
                   >
                     <AlertTriangle />
-                    一键超额禁用 ({quotaExceededCount})
+                    One-click overage disable ({quotaExceededCount})
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     destructive
@@ -1724,7 +1724,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                     }}
                   >
                     <Trash2 />
-                    清除已禁用 ({disabledCredentialCount})
+                    Clear disabled ({disabledCredentialCount})
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -1732,7 +1732,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
           </div>
         </div>
 
-        {/* 列表 */}
+        {/* List */}
         {data?.credentials.length === 0 ? (
           <Card>
             <CardContent className="py-16 text-center">
@@ -1740,7 +1740,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                 <Server className="h-5 w-5" />
               </div>
               <p className="text-sm text-muted-foreground">
-                暂无凭据，点击右上角“添加凭据”开始
+                No credentials yet. Click the top right“Add credential”Start
               </p>
             </CardContent>
           </Card>
@@ -1791,31 +1791,31 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
 
             {filteredCredentials.length > 0 && (
               <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:mt-8 sm:flex-row sm:gap-5">
-                {/* 每页数量 */}
+                {/* Per pageCount */}
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span className="whitespace-nowrap">每页</span>
+                  <span className="whitespace-nowrap">Per page</span>
                   <Select
                     value={String(pageSize)}
                     onValueChange={(v) => changePageSize(Number(v))}
                   >
                     <SelectTrigger
                       className="h-8 w-[92px] rounded-full border-border bg-card/60 px-3 backdrop-blur"
-                      title="设置每页显示数量"
+                      title="Set items shown per page"
                     >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent align="center">
                       {PAGE_SIZE_OPTIONS.map((n) => (
                         <SelectItem key={n} value={String(n)}>
-                          {n} 个
+                          {n} items
                         </SelectItem>
                       ))}
-                      <SelectItem value="0">全部</SelectItem>
+                      <SelectItem value="0">All</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* 翻页控件（仅多页时显示） */}
+                {/* pagepagecontrol(only multipagetimeShow) */}
                 {totalPages > 1 && (
                   <div className="flex flex-wrap items-center justify-center gap-2">
                     <Button
@@ -1825,16 +1825,16 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                       disabled={currentPage === 1}
                     >
                       <ChevronLeft className="h-3.5 w-3.5" />
-                      上一页
+                      Previous page
                     </Button>
                     <div className="order-first w-full px-3 text-center text-sm tabular-nums text-muted-foreground sm:order-none sm:w-auto">
-                      第{" "}
+                      No.{" "}
                       <span className="font-medium text-foreground">
                         {currentPage}
                       </span>{" "}
-                      / {totalPages} 页
+                      / {totalPages} page
                       <span className="mx-1.5 text-muted-foreground/50">·</span>
-                      共 {filteredCredentials.length} 个
+                      total {filteredCredentials.length} items
                     </div>
                     <Button
                       variant="outline"
@@ -1844,7 +1844,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                       }
                       disabled={currentPage === totalPages}
                     >
-                      下一页
+                      Next page
                       <ChevronRight className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -1855,7 +1855,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
         )}
       </main>
 
-      {/* 弹窗们 */}
+      {/* the dialogs */}
       <AddCredentialDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
@@ -1908,7 +1908,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
         onOpenChange={setImageUpdateDialogOpen}
       />
 
-      {/* 修改登录API密钥对话框（adminApiKey —— 管理面板登录密钥） */}
+      {/* Change loginAPIKeydialog(adminApiKey —— ManagepanelLoginKey) */}
       <Dialog
         open={adminKeyDialogOpen}
         onOpenChange={(open) => {
@@ -1919,17 +1919,17 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Key className="h-4 w-4" />
-              修改登录API密钥
+              Change loginAPIKey
             </DialogTitle>
             <DialogDescription>
-              用于登录此管理面板。修改后将自动更新本地存储的 Key，无需重新登录。
+              Used to log in to this admin panel. After changing it, the locally stored value is updated automatically Key, no need to log in again.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpdateAdminKey} className="space-y-4 py-2">
             <div className="relative">
               <Input
                 type={showAdminKeyPlain ? "text" : "password"}
-                placeholder="输入或生成新的登录API密钥"
+                placeholder="Enter or generate a new loginAPIKey"
                 value={newAdminKey}
                 onChange={(e) => setNewAdminKey(e.target.value)}
                 disabled={updatingAdminKey}
@@ -1944,7 +1944,7 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                   className="pointer-events-auto h-7 w-7"
                   onClick={() => setShowAdminKeyPlain((v) => !v)}
                   disabled={updatingAdminKey}
-                  title={showAdminKeyPlain ? "隐藏" : "显示"}
+                  title={showAdminKeyPlain ? "Hide" : "Show"}
                 >
                   {showAdminKeyPlain ? (
                     <EyeOff className="h-3.5 w-3.5" />
@@ -1959,18 +1959,18 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                   className="pointer-events-auto h-7 w-7"
                   onClick={async () => {
                     if (!newAdminKey.trim()) {
-                      toast.error("请先输入或生成 Key 再复制");
+                      toast.error("Please enter or generate first Key then copy");
                       return;
                     }
                     try {
                       await navigator.clipboard.writeText(newAdminKey);
-                      toast.success("已复制到剪贴板");
+                      toast.success("Copied to clipboard");
                     } catch {
-                      toast.error("复制失败，请手动选择文本");
+                      toast.error("Copy failed. Please select the text manually");
                     }
                   }}
                   disabled={updatingAdminKey}
-                  title="复制"
+                  title="Copy"
                 >
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
@@ -1989,10 +1989,10 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                 disabled={updatingAdminKey}
               >
                 <Wand2 className="h-3.5 w-3.5" />
-                生成随机 Key
+                Generate random Key
               </Button>
               <p className="text-[11px] text-muted-foreground">
-                建议生成后立即复制保存，确认更新后即生效。
+                It is recommended to copy and save it right after generating; it takes effect once the update is confirmed.
               </p>
             </div>
             <DialogFooter>
@@ -2002,13 +2002,13 @@ export function Dashboard({ onLogout, embedded = false }: DashboardProps) {
                 onClick={() => setAdminKeyDialogOpen(false)}
                 disabled={updatingAdminKey}
               >
-                取消
+                Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={updatingAdminKey || !newAdminKey.trim()}
               >
-                {updatingAdminKey ? "更新中…" : "确认更新"}
+                {updatingAdminKey ? "Updating…" : "Confirm update"}
               </Button>
             </DialogFooter>
           </form>

@@ -9,15 +9,15 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 
-/** 单次确认的配置项 */
+/** singletimesConfirmofConfigitem */
 export interface ConfirmOptions {
   title?: string
   description: React.ReactNode
-  /** 确认按钮文案，默认「确认」 */
+  /** Confirmbutton text,Default[Confirm] */
   confirmText?: string
-  /** 取消按钮文案，默认「取消」 */
+  /** Cancelbutton text,Default[Cancel] */
   cancelText?: string
-  /** 确认按钮是否使用危险（红色）样式，删除类操作应设为 true */
+  /** Confirmwhether the buttonUsedangerous(red)style,DeletekindActionsshould setas true */
   destructive?: boolean
 }
 
@@ -25,11 +25,11 @@ type ConfirmFn = (options: ConfirmOptions) => Promise<boolean>
 
 const ConfirmContext = React.createContext<ConfirmFn | null>(null)
 
-/** 命令式确认：返回 Promise<boolean>，与原生 confirm() 控制流一致。 */
+/** imperative styleConfirm:Back Promise<boolean>,with the native confirm() consistent control flow. */
 export function useConfirm(): ConfirmFn {
   const ctx = React.useContext(ConfirmContext)
   if (!ctx) {
-    throw new Error('useConfirm 必须在 <ConfirmProvider> 内使用')
+    throw new Error('useConfirm must be within <ConfirmProvider> used within')
   }
   return ctx
 }
@@ -39,7 +39,7 @@ interface PendingState {
   resolve: (value: boolean) => void
 }
 
-/** 全局确认弹窗 Provider：挂在 App 根，子树内任意组件用 useConfirm() 调起。 */
+/** GlobalConfirmdialog Provider:pendingin App root,used by any component in the subtree useConfirm() invoke. */
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   const [pending, setPending] = React.useState<PendingState | null>(null)
 
@@ -49,7 +49,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     })
   }, [])
 
-  // 关闭时落定结果：确认 → true，其余（取消 / 点遮罩 / Esc）→ false。
+  // Closesettle the result at that time:Confirm → true,the rest(Cancel / overlay click / Esc)→ false.
   const settle = React.useCallback(
     (value: boolean) => {
       setPending((prev) => {
@@ -74,18 +74,18 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
       >
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>{opts?.title ?? '请确认'}</DialogTitle>
+            <DialogTitle>{opts?.title ?? 'Please confirm'}</DialogTitle>
             <DialogDescription>{opts?.description}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => settle(false)}>
-              {opts?.cancelText ?? '取消'}
+              {opts?.cancelText ?? 'Cancel'}
             </Button>
             <Button
               variant={destructive ? 'destructive' : 'default'}
               onClick={() => settle(true)}
             >
-              {opts?.confirmText ?? '确认'}
+              {opts?.confirmText ?? 'Confirm'}
             </Button>
           </DialogFooter>
         </DialogContent>

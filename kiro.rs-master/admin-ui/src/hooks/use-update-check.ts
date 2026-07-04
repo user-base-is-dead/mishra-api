@@ -2,21 +2,21 @@ import { useQuery } from '@tanstack/react-query'
 import { checkSystemUpdate } from '@/api/credentials'
 
 /**
- * 轮询后端"检查更新"接口。
+ * poll the backend"check for updates"endpoint.
  *
- * 后端命中缓存时直接返回，未命中才会调用上游版本接口。前端这里再叠加一层
- * 15 分钟的 refetchInterval，足以让用户在打开页面后短时间内看到红点提醒，
- * 又不会带来明显的请求压力。
+ * when the backend hits cache it directlyBack,only on a miss willCallsUpstreamversion endpoint.the frontend adds another layer here
+ * 15 minutesof refetchInterval,enough for the userinopenpageshortly after the pageTimesee the red dot reminder inside,
+ * yet brings no obviousofRequestload.
  */
 export function useUpdateCheck() {
   return useQuery({
     queryKey: ['system-update-check'],
     queryFn: () => checkSystemUpdate(false),
-    // 15 分钟主动刷新一次；首次加载时立即执行
+    // 15 minutesproactiveRefreshonetimes;firsttimesrun immediately on load
     refetchInterval: 15 * 60 * 1000,
-    // 避免短时间内反复请求
+    // avoid shortTimerepeatedly withinRequest
     staleTime: 5 * 60 * 1000,
-    // 网络抖动时不要疯狂重试
+    // do not go wild on network jitterRetry
     retry: 1,
   })
 }

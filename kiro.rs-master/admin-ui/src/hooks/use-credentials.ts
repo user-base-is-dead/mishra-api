@@ -23,36 +23,36 @@ import {
 } from '@/api/credentials'
 import type { AddCredentialRequest, UpdateCredentialRequest, UpdateRefreshTokenRequest } from '@/types/api'
 
-// 查询凭据列表
+// queryCredential list
 export function useCredentials() {
   return useQuery({
     queryKey: ['credentials'],
     queryFn: getCredentials,
-    refetchInterval: 30000, // 每 30 秒刷新一次
+    refetchInterval: 30000, // each 30 secondRefreshonetimes
   })
 }
 
-// 查询凭据余额
+// queryCredentialBalance
 export function useCredentialBalance(id: number | null) {
   return useQuery({
     queryKey: ['credential-balance', id],
     queryFn: () => getCredentialBalance(id!),
     enabled: id !== null,
-    retry: false, // 余额查询失败时不重试（避免重复请求被封禁的账号）
+    retry: false, // BalancequeryFailedat that time notRetry(avoidDuplicateRequestbannedaccounts)
   })
 }
 
-// 查询凭据当前可用的模型列表（按需实时查询上游）
+// queryCredentialcurrentAvailableofModelList(query in real time on demandUpstream)
 export function useCredentialModels(id: number | null) {
   return useQuery({
     queryKey: ['credential-models', id],
     queryFn: () => getCredentialModels(id!),
     enabled: id !== null,
-    retry: false, // 失败不重试，避免对被封禁/异常账号反复请求
+    retry: false, // FailednotRetry,avoid acting on the banned/ErrorAccountrepeatedlyRequest
   })
 }
 
-// 设置禁用状态
+// SettingsDisableStatus
 export function useSetDisabled() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -64,7 +64,7 @@ export function useSetDisabled() {
   })
 }
 
-// 设置优先级
+// SettingsPriority
 export function useSetPriority() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -76,7 +76,7 @@ export function useSetPriority() {
   })
 }
 
-// 重置失败计数
+// Reset failure count
 export function useResetFailure() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -87,7 +87,7 @@ export function useResetFailure() {
   })
 }
 
-// 强制刷新 Token
+// Force refresh Token
 export function useForceRefreshToken() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -98,7 +98,7 @@ export function useForceRefreshToken() {
   })
 }
 
-// 解除账号级风控冷却
+// releaseAccountlevel throttleCooldown
 export function useClearThrottle() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -109,7 +109,7 @@ export function useClearThrottle() {
   })
 }
 
-// 添加新凭据
+// AddnewCredential
 export function useAddCredential() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -120,7 +120,7 @@ export function useAddCredential() {
   })
 }
 
-// 删除凭据
+// Delete credential
 export function useDeleteCredential() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -131,7 +131,7 @@ export function useDeleteCredential() {
   })
 }
 
-// 重置单个凭据的成功次数
+// ResetsinglecredentialsSuccess count
 export function useResetSuccessCount() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -142,7 +142,7 @@ export function useResetSuccessCount() {
   })
 }
 
-// 重置所有凭据的成功次数
+// ResetplacehasCredentialofSuccess count
 export function useResetAllSuccessCount() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -153,7 +153,7 @@ export function useResetAllSuccessCount() {
   })
 }
 
-// 更新已禁用凭据的 refreshToken
+// updateDisabledCredentialof refreshToken
 export function useUpdateRefreshToken() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -165,7 +165,7 @@ export function useUpdateRefreshToken() {
   })
 }
 
-// 更新凭据可编辑字段
+// updateCredentialcanEditfield
 export function useUpdateCredential() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -177,7 +177,7 @@ export function useUpdateCredential() {
   })
 }
 
-// 获取负载均衡模式
+// get the load balancing mode
 export function useLoadBalancingMode() {
   return useQuery({
     queryKey: ['loadBalancingMode'],
@@ -185,7 +185,7 @@ export function useLoadBalancingMode() {
   })
 }
 
-// 设置负载均衡模式
+// Settingsload balancing mode
 export function useSetLoadBalancingMode() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -196,7 +196,7 @@ export function useSetLoadBalancingMode() {
   })
 }
 
-// 获取账号级风控故障转移配置
+// getAccount-level throttle failoverConfig
 export function useAccountThrottleConfig() {
   return useQuery({
     queryKey: ['accountThrottleConfig'],
@@ -204,7 +204,7 @@ export function useAccountThrottleConfig() {
   })
 }
 
-// 更新账号级风控故障转移配置
+// updateAccount-level throttle failoverConfig
 export function useSetAccountThrottleConfig() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -215,7 +215,7 @@ export function useSetAccountThrottleConfig() {
   })
 }
 
-// 获取日志治理配置
+// getLogsgovernanceConfig
 export function useLogGovernanceConfig() {
   return useQuery({
     queryKey: ['logGovernanceConfig'],
@@ -223,7 +223,7 @@ export function useLogGovernanceConfig() {
   })
 }
 
-// 更新日志治理配置
+// updateLogsgovernanceConfig
 export function useSetLogGovernanceConfig() {
   const queryClient = useQueryClient()
   return useMutation({

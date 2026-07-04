@@ -28,11 +28,11 @@ const COLORS = {
 } as const
 
 const SERIES = [
-  { key: 'inputTokens', name: '输入', color: COLORS.input, axis: 'left' as const, kind: 'tokens' as const },
-  { key: 'outputTokens', name: '输出', color: COLORS.output, axis: 'left' as const, kind: 'tokens' as const },
-  { key: 'cacheCreationTokens', name: '缓存写', color: COLORS.cacheCreation, axis: 'left' as const, kind: 'tokens' as const },
-  { key: 'cacheReadTokens', name: '缓存读', color: COLORS.cacheRead, axis: 'left' as const, kind: 'tokens' as const },
-  { key: 'cacheHitRate', name: '命中率', color: COLORS.cacheHitRate, axis: 'right' as const, kind: 'percent' as const },
+  { key: 'inputTokens', name: 'Input', color: COLORS.input, axis: 'left' as const, kind: 'tokens' as const },
+  { key: 'outputTokens', name: 'Output', color: COLORS.output, axis: 'left' as const, kind: 'tokens' as const },
+  { key: 'cacheCreationTokens', name: 'Cache write', color: COLORS.cacheCreation, axis: 'left' as const, kind: 'tokens' as const },
+  { key: 'cacheReadTokens', name: 'Cache read', color: COLORS.cacheRead, axis: 'left' as const, kind: 'tokens' as const },
+  { key: 'cacheHitRate', name: 'Hit rate', color: COLORS.cacheHitRate, axis: 'right' as const, kind: 'percent' as const },
 ]
 
 interface ChartPoint extends TimeSeriesPoint {
@@ -47,7 +47,7 @@ function formatTs(ts: string, granularity: StatsGranularity): string {
   return `${d.getFullYear()}-${md} ${String(d.getHours()).padStart(2, '0')}:00`
 }
 
-/** 命中率 = cacheRead / (input + cacheRead)，无缓存读取时为 0 */
+/** Hit rate = cacheRead / (input + cacheRead),noneCache readtimeas 0 */
 function calcHitRate(p: TimeSeriesPoint): number {
   const denom = p.inputTokens + p.cacheReadTokens
   if (denom <= 0) return 0
@@ -162,7 +162,7 @@ function TimeSeriesChartImpl({ data, granularity }: Props) {
     [data, granularity],
   )
   const interval = useMemo(() => pickXAxisInterval(formatted.length), [formatted.length])
-  // 全零时强制让左轴显示 0 刻度，避免空白
+  // force the left axis when all zeroShow 0 scale tick,avoid blank space
   const leftAllZero = useMemo(
     () =>
       formatted.every(

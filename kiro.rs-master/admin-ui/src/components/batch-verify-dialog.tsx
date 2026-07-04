@@ -23,11 +23,11 @@ interface BatchVerifyDialogProps {
   progress: { current: number; total: number }
   results: Map<number, VerifyResult>
   onCancel: () => void
-  /** 删除单个失败凭据 */
+  /** Deletesinglefailed credentials */
   onDelete?: (id: number) => void
-  /** 一键删除全部失败凭据 */
+  /** one clickDeleteAllFailedCredential */
   onDeleteFailed?: () => void
-  /** 删除进行中（禁用按钮） */
+  /** Deleteproceedin (Disablebutton) */
   deleting?: boolean
 }
 
@@ -50,15 +50,15 @@ export function BatchVerifyDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>批量验活</DialogTitle>
+          <DialogTitle>Bulk validate</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* 进度显示 */}
+          {/* progressShow */}
           {verifying && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>验活进度</span>
+                <span>Validation progress</span>
                 <span>{progress.current} / {progress.total}</span>
               </div>
               <div className="w-full bg-secondary rounded-full h-2">
@@ -70,17 +70,17 @@ export function BatchVerifyDialog({
             </div>
           )}
 
-          {/* 统计信息 */}
+          {/* statistics info */}
           {results.size > 0 && (
             <div className="flex justify-between items-center text-sm font-medium">
-              <span>验活结果</span>
+              <span>Validation result</span>
               <span>
-                成功: {successCount} / 失败: {failedCount}
+                Success: {successCount} / Failed: {failedCount}
               </span>
             </div>
           )}
 
-          {/* 一键删除失败凭据 */}
+          {/* one clickDelete failedCredential */}
           {!verifying && failedCount > 0 && onDeleteFailed && (
             <Button
               type="button"
@@ -91,11 +91,11 @@ export function BatchVerifyDialog({
               onClick={onDeleteFailed}
             >
               <Trash2 className="h-3.5 w-3.5" />
-              {deleting ? '删除中…' : `删除全部失败（${failedCount}）`}
+              {deleting ? 'Deleting…' : `Delete all failed (${failedCount})`}
             </Button>
           )}
 
-          {/* 结果列表 */}
+          {/* resultList */}
           {results.size > 0 && (
             <div className="max-h-[400px] overflow-y-auto border rounded-md p-2 space-y-1">
               {resultsArray.map((result) => (
@@ -113,7 +113,7 @@ export function BatchVerifyDialog({
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-medium shrink-0">凭据 #{result.id}</span>
+                      <span className="font-medium shrink-0">Credential #{result.id}</span>
                       {result.email && (
                         <span className="text-xs opacity-80 truncate">{result.email}</span>
                       )}
@@ -127,7 +127,7 @@ export function BatchVerifyDialog({
                       {!verifying && result.status === 'failed' && onDelete && (
                         <button
                           type="button"
-                          title="删除该失败凭据"
+                          title="Delete this failed credential"
                           disabled={deleting}
                           onClick={() => onDelete(result.id)}
                           className="text-red-500 hover:text-red-700 disabled:opacity-40"
@@ -145,7 +145,7 @@ export function BatchVerifyDialog({
                   </div>
                   {result.error && (
                     <div className="text-xs mt-1 opacity-90">
-                      错误: {result.error}
+                      Error: {result.error}
                     </div>
                   )}
                 </div>
@@ -153,10 +153,10 @@ export function BatchVerifyDialog({
             </div>
           )}
 
-          {/* 提示信息 */}
+          {/* hint info */}
           {verifying && (
             <p className="text-xs text-muted-foreground">
-              💡 验活在后台并发进行，你可以关闭此窗口，验活会继续。完成后可在此窗口删除失效/封号的账号。
+              💡 Validation runs concurrently in the background. You can close this window and validation will continue. When done you can remove the invalid ones in this window/banned account.
             </p>
           )}
         </div>
@@ -169,14 +169,14 @@ export function BatchVerifyDialog({
                 variant="outline"
                 onClick={() => onOpenChange(false)}
               >
-                后台运行
+                Run in background
               </Button>
               <Button
                 type="button"
                 variant="destructive"
                 onClick={onCancel}
               >
-                取消验活
+                Cancel validation
               </Button>
             </>
           ) : (
@@ -184,7 +184,7 @@ export function BatchVerifyDialog({
               type="button"
               onClick={() => onOpenChange(false)}
             >
-              关闭
+              Close
             </Button>
           )}
         </div>

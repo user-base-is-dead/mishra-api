@@ -26,7 +26,7 @@ interface ParsedTokenData {
   expiresAt?: string
 }
 
-// 从 KAM JSON 或纯字符串中提取 token 相关字段
+// from KAM JSON orplainstringextract from token related field
 function parseTokenInput(input: string): ParsedTokenData {
   const trimmed = input.trim()
   if (!trimmed) return { refreshToken: '' }
@@ -103,7 +103,7 @@ export function UpdateTokenDialog({ open, onOpenChange, credential }: UpdateToke
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isValid) {
-      toast.error('refreshToken 无效或已被截断')
+      toast.error('refreshToken Invalid or truncated')
       return
     }
 
@@ -111,20 +111,20 @@ export function UpdateTokenDialog({ open, onOpenChange, credential }: UpdateToke
     setStepLog([])
 
     try {
-      // 步骤 1：若凭据未禁用，先禁用（后端要求更新 Token 前必须禁用）
+      // step 1:ifCredentialnotDisable,firstDisable(the backend requires an update Token must beforeDisable)
       if (!credential.disabled) {
-        addLog('正在临时禁用凭据…')
+        addLog('Temporarily disabling the credential…')
         await new Promise<void>((resolve, reject) => {
           setDisabled.mutate(
             { id: credential.id, disabled: true },
             { onSuccess: () => resolve(), onError: reject }
           )
         })
-        addLog('✓ 已临时禁用')
+        addLog('✓ Temporarily disabled')
       }
 
-      // 步骤 2：更新 refreshToken（若 JSON 中含 accessToken 则一并保留，避免立即调认证服务器）
-      addLog('正在更新 refreshToken…')
+      // step 2:update refreshToken(if JSON contains accessToken then keep it too,avoid calling the auth server immediately)
+      addLog('Updating refreshToken…')
       await new Promise<void>((resolve, reject) => {
         updateRefreshToken.mutate(
           {
@@ -138,46 +138,46 @@ export function UpdateTokenDialog({ open, onOpenChange, credential }: UpdateToke
           { onSuccess: () => resolve(), onError: reject }
         )
       })
-      addLog(`✓ refreshToken 已更新${parsed.accessToken ? '（含 accessToken）' : ''}`)
+      addLog(`✓ refreshToken Updated${parsed.accessToken ? '(including accessToken)' : ''}`)
 
-      // 步骤 3：重置失败计数
-      addLog('正在重置失败计数…')
+      // step 3:Reset failure count
+      addLog('Resetting the failure count…')
       await new Promise<void>((resolve, reject) => {
         resetFailure.mutate(credential.id, {
           onSuccess: () => resolve(),
           onError: reject,
         })
       })
-      addLog('✓ 失败计数已重置')
+      addLog('✓ Failure count reset')
 
-      // 步骤 4：启用凭据
-      addLog('正在重新启用凭据…')
+      // step 4:EnableCredential
+      addLog('Re-enabling the credential…')
       await new Promise<void>((resolve, reject) => {
         setDisabled.mutate(
           { id: credential.id, disabled: false },
           { onSuccess: () => resolve(), onError: reject }
         )
       })
-      addLog('✓ 凭据已启用')
+      addLog('✓ Credential enabled')
 
-      // 步骤 5：如果 JSON 中包含 email 且与当前不同，同步更新
+      // step 5:if JSON contains email and differs from the current,sync update
       if (extractedEmail && extractedEmail !== credential.email) {
-        addLog(`正在更新邮箱为 ${extractedEmail}…`)
+        addLog(`Updating email to ${extractedEmail}…`)
         await new Promise<void>((resolve, reject) => {
           updateCredential.mutate(
             { id: credential.id, req: { email: extractedEmail } },
             { onSuccess: () => resolve(), onError: reject }
           )
         })
-        addLog(`✓ 邮箱已更新为 ${extractedEmail}`)
+        addLog(`✓ Email updated to ${extractedEmail}`)
       }
 
       setStep('done')
-      toast.success(`凭据 #${credential.id} 重新导入完成，已自动启用`)
+      toast.success(`Credential #${credential.id} Reimport complete, automatically enabled`)
     } catch (error) {
-      addLog(`✗ 失败: ${extractErrorMessage(error)}`)
+      addLog(`✗ Failed: ${extractErrorMessage(error)}`)
       setStep('idle')
-      toast.error(`重新导入失败: ${extractErrorMessage(error)}`)
+      toast.error(`Reimport failed: ${extractErrorMessage(error)}`)
     }
   }
 
@@ -193,10 +193,10 @@ export function UpdateTokenDialog({ open, onOpenChange, credential }: UpdateToke
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>重新导入凭据 #{credential.id}</DialogTitle>
+          <DialogTitle>Reimport credentials #{credential.id}</DialogTitle>
           <DialogDescription>
-            为 {credential.email || `凭据 #${credential.id}`} 粘贴新 Token，
-            系统将自动更新 Token、重置失败计数并重新启用。
+            as {credential.email || `Credential #${credential.id}`} Paste the new Token,
+            The system will update automatically Token, reset the failure count, and re-enable.
           </DialogDescription>
         </DialogHeader>
 
@@ -204,10 +204,10 @@ export function UpdateTokenDialog({ open, onOpenChange, credential }: UpdateToke
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                粘贴 KAM 导出 JSON 或直接粘贴 refreshToken 字符串
+                Paste KAM Export JSON or paste directly refreshToken string
               </label>
               <textarea
-                placeholder={'支持以下格式：\n\n1. 直接粘贴 refreshToken 字符串\n\n2. KAM 导出的单账号 JSON：\n{\n  "email": "...",\n  "refreshToken": "aor...",\n  "authMethod": "social"\n}'}
+                placeholder={'The following formats are supported:\n\n1. Paste directly refreshToken string\n\n2. KAM Exported single account JSON:\n{\n  "email": "...",\n  "refreshToken": "aor...",\n  "authMethod": "social"\n}'}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 disabled={isPending || step === 'done'}
@@ -215,25 +215,25 @@ export function UpdateTokenDialog({ open, onOpenChange, credential }: UpdateToke
               />
             </div>
 
-            {/* Token 解析预览 */}
+            {/* Token parse preview */}
             {input.trim() && step === 'idle' && (
               <div className={`text-sm rounded-md p-3 ${isValid ? 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300'}`}>
                 {isValid ? (
                   <>
-                    已识别 refreshToken（{extractedToken.length} 字符）：
+                    Recognized refreshToken({extractedToken.length} characters):
                     <span className="font-mono text-xs block mt-1 opacity-75">
                       {extractedToken.slice(0, 20)}...{extractedToken.slice(-10)}
                     </span>
                   </>
                 ) : (
                   extractedToken.length > 0
-                    ? `Token 无效：长度 ${extractedToken.length} 字符（需要 ≥100 字符）`
-                    : '无法识别 refreshToken，请检查格式'
+                    ? `Token Invalid: length ${extractedToken.length} characters (need ≥100 characters)`
+                    : 'Unrecognized refreshToken, please check the format'
                 )}
               </div>
             )}
 
-            {/* 执行步骤日志 */}
+            {/* execution stepLogs */}
             {stepLog.length > 0 && (
               <div className="rounded-md border bg-muted/40 p-3 space-y-1">
                 {stepLog.map((log, i) => (
@@ -247,11 +247,11 @@ export function UpdateTokenDialog({ open, onOpenChange, credential }: UpdateToke
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose} disabled={isPending}>
-              {step === 'done' ? '关闭' : '取消'}
+              {step === 'done' ? 'Close' : 'Cancel'}
             </Button>
             {step !== 'done' && (
               <Button type="submit" disabled={isPending || !isValid}>
-                {isPending ? '处理中…' : '重新导入并启用'}
+                {isPending ? 'Processing…' : 'Reimport and enable'}
               </Button>
             )}
           </DialogFooter>

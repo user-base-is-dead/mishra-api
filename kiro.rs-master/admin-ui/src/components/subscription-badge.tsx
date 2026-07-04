@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 
 interface SubscriptionBadgeProps {
   title?: string | null
-  /** "sm" 用于卡片标题区紧凑展示；"md" 用于余额面板等突出位置 */
+  /** "sm" Used forCardcompact display in the title area;"md" Used forBalancepaneletc.prominent position */
   size?: 'sm' | 'md'
   className?: string
 }
@@ -11,15 +11,15 @@ interface SubscriptionBadgeProps {
 export type Tier = 'free' | 'pro' | 'pro_plus' | 'power' | 'unknown'
 
 interface TierStyle {
-  /** 容器背景与文字颜色 */
+  /** container background and text color */
   container: string
-  /** 图标 */
+  /** icon */
   Icon: React.ComponentType<{ className?: string }>
-  /** 大写标准化标题 */
+  /** uppercase normalized title */
   label: string
 }
 
-/** 根据订阅标题推断分级（供列表筛选复用） */
+/** infer from the subscription titleTier(provideListfilter reuse) */
 export function detectTier(title?: string | null): Tier {
   if (!title) return 'unknown'
   const upper = title.toUpperCase()
@@ -31,10 +31,10 @@ export function detectTier(title?: string | null): Tier {
 }
 
 function getTierStyle(tier: Tier, original?: string | null): TierStyle {
-  const fallback = original?.replace(/^KIRO\s+/i, '').trim() || '未知'
+  const fallback = original?.replace(/^KIRO\s+/i, '').trim() || 'Unknown'
   switch (tier) {
     case 'power':
-      // 钻紫渐变 — 顶级版，最强视觉
+      // diamond purple gradient — top tier version,strongest visual
       return {
         Icon: Gem,
         label: 'POWER',
@@ -42,7 +42,7 @@ function getTierStyle(tier: Tier, original?: string | null): TierStyle {
           'bg-gradient-to-br from-fuchsia-500 to-violet-600 text-white shadow-[0_2px_8px_-2px_rgba(168,85,247,0.5)] border-transparent',
       }
     case 'pro_plus':
-      // 金色渐变 — Pro+ 高级身份
+      // gold gradient — Pro+ premium identity
       return {
         Icon: Crown,
         label: 'PRO+',
@@ -50,7 +50,7 @@ function getTierStyle(tier: Tier, original?: string | null): TierStyle {
           'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-[0_2px_8px_-2px_rgba(245,158,11,0.5)] border-transparent',
       }
     case 'pro':
-      // 苹果蓝渐变 — 标准 Pro
+      // apple blue gradient — standard Pro
       return {
         Icon: Sparkles,
         label: 'PRO',
@@ -58,7 +58,7 @@ function getTierStyle(tier: Tier, original?: string | null): TierStyle {
           'bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-[0_2px_8px_-2px_rgba(59,130,246,0.45)] border-transparent',
       }
     case 'free':
-      // 中性灰 — 免费层弱化
+      // neutral gray — free tier de emphasized
       return {
         Icon: Zap,
         label: 'FREE',

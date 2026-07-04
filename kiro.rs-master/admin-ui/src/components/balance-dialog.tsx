@@ -18,7 +18,7 @@ export function BalanceDialog({ credentialId, open, onOpenChange }: BalanceDialo
   const { data: balance, isLoading, error } = useCredentialBalance(credentialId)
 
   const formatDate = (timestamp: number | null) => {
-    if (!timestamp) return '未知'
+    if (!timestamp) return 'Unknown'
     return new Date(timestamp * 1000).toLocaleString('zh-CN')
   }
 
@@ -26,7 +26,7 @@ export function BalanceDialog({ credentialId, open, onOpenChange }: BalanceDialo
     return num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   }
 
-  // 超额时 remaining 为负、usagePercentage > 100，给出带正负号的展示
+  // Overagetime remaining asnegative,usagePercentage > 100,give the signed valueofdisplay
   const formatSigned = (num: number) => {
     const abs = Math.abs(num)
     const formatted = abs.toLocaleString('zh-CN', {
@@ -41,7 +41,7 @@ export function BalanceDialog({ credentialId, open, onOpenChange }: BalanceDialo
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            凭据 #{credentialId} 余额信息
+            Credential #{credentialId} Balance info
           </DialogTitle>
         </DialogHeader>
 
@@ -72,30 +72,30 @@ export function BalanceDialog({ credentialId, open, onOpenChange }: BalanceDialo
 
         {balance && (
           <div className="space-y-4">
-            {/* 订阅类型 */}
+            {/* subscription type */}
             <div className="text-center">
               <span className="text-lg font-semibold">
-                {balance.subscriptionTitle || '未知订阅类型'}
+                {balance.subscriptionTitle || 'Unknown subscription type'}
               </span>
             </div>
 
-            {/* 使用进度 */}
+            {/* Useprogress */}
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>已使用: ${formatNumber(balance.currentUsage)}</span>
-                <span>限额: ${formatNumber(balance.usageLimit)}</span>
+                <span>Used: ${formatNumber(balance.currentUsage)}</span>
+                <span>Quota: ${formatNumber(balance.usageLimit)}</span>
               </div>
               <Progress value={balance.usagePercentage} />
               <div className="text-center text-sm text-muted-foreground">
-                {balance.usagePercentage.toFixed(1)}% 已使用
+                {balance.usagePercentage.toFixed(1)}% Used
               </div>
             </div>
 
-            {/* 详细信息 */}
+            {/* detailed info */}
             <div className="grid grid-cols-2 gap-4 pt-4 border-t text-sm">
               <div>
                 <span className="text-muted-foreground">
-                  {balance.remaining < 0 ? '已超额：' : '剩余额度：'}
+                  {balance.remaining < 0 ? 'Over quota:' : 'Remaining quota:'}
                 </span>
                 <span
                   className={`font-medium ${
@@ -110,7 +110,7 @@ export function BalanceDialog({ credentialId, open, onOpenChange }: BalanceDialo
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">下次重置：</span>
+                <span className="text-muted-foreground">Next reset:</span>
                 <span className="font-medium">
                   {formatDate(balance.nextResetAt)}
                 </span>

@@ -41,7 +41,7 @@ import type { ProxyPoolEntry } from '@/types/api'
 interface ProxyPoolDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** 点击"分配"按钮时的回调（传入代理 URL，用于编辑凭据） */
+  /** click"assign"when the buttonofcallback(pass inProxy URL,Used forEdit credential) */
   onSelectProxy?: (url: string) => void
 }
 
@@ -69,10 +69,10 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
   const setGlobalProxyMutation = useMutation({
     mutationFn: (url: string | null) => setGlobalProxy({ proxyUrl: url }),
     onSuccess: (_, url) => {
-      toast.success(url ? `已设置全局代理: ${maskProxyUrl(url)}` : '已清除全局代理')
+      toast.success(url ? `Global proxy set: ${maskProxyUrl(url)}` : 'Global proxy cleared')
       queryClient.invalidateQueries({ queryKey: ['global-proxy'] })
     },
-    onError: (err) => toast.error(`操作失败: ${extractErrorMessage(err)}`),
+    onError: (err) => toast.error(`Operation failed: ${extractErrorMessage(err)}`),
   })
 
   const currentGlobalProxy = globalProxyData?.proxyUrl ?? null
@@ -80,12 +80,12 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
   const addMutation = useMutation({
     mutationFn: () => addProxy({ url: newUrl.trim(), label: newLabel.trim() || undefined }),
     onSuccess: (entry) => {
-      toast.success(`代理已添加：${entry.url}`)
+      toast.success(`Proxy added:${entry.url}`)
       setNewUrl('')
       setNewLabel('')
       queryClient.invalidateQueries({ queryKey: ['proxy-pool'] })
     },
-    onError: (err) => toast.error(`添加失败: ${extractErrorMessage(err)}`),
+    onError: (err) => toast.error(`Add failed: ${extractErrorMessage(err)}`),
   })
 
   const batchMutation = useMutation({
@@ -95,15 +95,15 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
       }),
     onSuccess: (res) => {
       if (res.errors === 0) {
-        toast.success(`批量导入完成：成功 ${res.added} 个`)
+        toast.success(`Bulk import complete: success ${res.added} items`)
       } else {
-        toast.info(`批量导入完成：成功 ${res.added} 个，跳过 ${res.errors} 个`)
+        toast.info(`Bulk import complete: success ${res.added} items, skipped ${res.errors} items`)
       }
       setBatchErrors(res.errorMessages)
       setBatchText('')
       queryClient.invalidateQueries({ queryKey: ['proxy-pool'] })
     },
-    onError: (err) => toast.error(`批量导入失败: ${extractErrorMessage(err)}`),
+    onError: (err) => toast.error(`Bulk import failed: ${extractErrorMessage(err)}`),
   })
 
   const deleteMutation = useMutation({
@@ -111,7 +111,7 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proxy-pool'] })
     },
-    onError: (err) => toast.error(`删除失败: ${extractErrorMessage(err)}`),
+    onError: (err) => toast.error(`Delete failed: ${extractErrorMessage(err)}`),
   })
 
   const toggleMutation = useMutation({
@@ -120,7 +120,7 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proxy-pool'] })
     },
-    onError: (err) => toast.error(`操作失败: ${extractErrorMessage(err)}`),
+    onError: (err) => toast.error(`Operation failed: ${extractErrorMessage(err)}`),
   })
 
   const [checkingId, setCheckingId] = useState<number | null>(null)
@@ -129,13 +129,13 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
     onMutate: (id) => setCheckingId(id),
     onSuccess: (res) => {
       if (res.health === 'healthy') {
-        toast.success(`代理可用，延迟 ${res.latencyMs ?? '-'} ms`)
+        toast.success(`Proxy available, latency ${res.latencyMs ?? '-'} ms`)
       } else {
-        toast.error(res.autoDisabled ? '代理探测失败，已自动禁用' : '代理探测失败')
+        toast.error(res.autoDisabled ? 'Proxy probe failed, automatically disabled' : 'Proxy probe failed')
       }
       queryClient.invalidateQueries({ queryKey: ['proxy-pool'] })
     },
-    onError: (err) => toast.error(`探测失败: ${extractErrorMessage(err)}`),
+    onError: (err) => toast.error(`Probe failed: ${extractErrorMessage(err)}`),
     onSettled: () => setCheckingId(null),
   })
 
@@ -143,21 +143,21 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
     mutationFn: () => checkAllProxies(),
     onSuccess: (res) => {
       toast.success(
-        `健康检查完成：健康 ${res.healthy}，异常 ${res.unhealthy}，自动禁用 ${res.autoDisabled}`
+        `Health check complete: healthy ${res.healthy}, error ${res.unhealthy}, automatically disabled ${res.autoDisabled}`
       )
       queryClient.invalidateQueries({ queryKey: ['proxy-pool'] })
     },
-    onError: (err) => toast.error(`检查失败: ${extractErrorMessage(err)}`),
+    onError: (err) => toast.error(`Check failed: ${extractErrorMessage(err)}`),
   })
 
   const assignRoundRobinMutation = useMutation({
     mutationFn: () => assignProxiesRoundRobin(null),
     onSuccess: (res) => {
-      toast.success(`已用 ${res.proxyCount} 个代理轮询分配给 ${res.assigned} 个凭据`)
+      toast.success(`Used ${res.proxyCount} proxies distributed round-robin to ${res.assigned} credentials`)
       queryClient.invalidateQueries({ queryKey: ['proxy-pool'] })
       queryClient.invalidateQueries({ queryKey: ['credentials'] })
     },
-    onError: (err) => toast.error(`分配失败: ${extractErrorMessage(err)}`),
+    onError: (err) => toast.error(`Assignment failed: ${extractErrorMessage(err)}`),
   })
 
   const handleAdd = (e: React.FormEvent) => {
@@ -171,7 +171,7 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
       return (
         <Badge variant="outline" className="text-xs gap-1 border-green-500/50 text-green-600 dark:text-green-400">
           <CheckCircle2 className="h-3 w-3" />
-          {proxy.latencyMs != null ? `${proxy.latencyMs}ms` : '可用'}
+          {proxy.latencyMs != null ? `${proxy.latencyMs}ms` : 'Available'}
         </Badge>
       )
     }
@@ -179,14 +179,14 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
       return (
         <Badge variant="outline" className="text-xs gap-1 border-destructive/50 text-destructive">
           <XCircle className="h-3 w-3" />
-          异常{proxy.consecutiveFailures > 0 ? ` ×${proxy.consecutiveFailures}` : ''}
+          Error{proxy.consecutiveFailures > 0 ? ` ×${proxy.consecutiveFailures}` : ''}
         </Badge>
       )
     }
     return (
       <Badge variant="outline" className="text-xs gap-1 text-muted-foreground">
         <HelpCircle className="h-3 w-3" />
-        未检测
+        Not checked
       </Badge>
     )
   }
@@ -195,28 +195,28 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>代理 IP 池管理</DialogTitle>
+          <DialogTitle>Proxy IP Pool management</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-4 py-2">
-          {/* 单条添加 */}
+          {/* singleitemsAdd */}
           {!showBatch && (
             <form onSubmit={handleAdd} className="flex gap-2">
               <Input
-                placeholder="代理 URL（如 socks5://user:pass@host:port）"
+                placeholder="Proxy URL(such as socks5://user:pass@host:port)"
                 value={newUrl}
                 onChange={(e) => setNewUrl(e.target.value)}
                 className="flex-1 font-mono text-sm"
               />
               <Input
-                placeholder="备注（可选）"
+                placeholder="Note (optional)"
                 value={newLabel}
                 onChange={(e) => setNewLabel(e.target.value)}
                 className="w-32"
               />
               <Button type="submit" size="sm" disabled={addMutation.isPending || !newUrl.trim()}>
                 <Plus className="h-4 w-4 mr-1" />
-                添加
+                Add
               </Button>
               <Button
                 type="button"
@@ -225,19 +225,19 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
                 onClick={() => setShowBatch(true)}
               >
                 <Upload className="h-4 w-4 mr-1" />
-                批量
+                Bulk
               </Button>
             </form>
           )}
 
-          {/* 批量导入 */}
+          {/* Bulk import */}
           {showBatch && (
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                批量导入（每行一个代理 URL，# 开头为注释）
+                Bulk import (one proxy per line URL,# starting with is a comment)
               </label>
               <textarea
-                placeholder={'# 每行一个代理 URL\nsocks5://user:pass@host1:1080\nsocks5://user:pass@host2:1080\nhttp://user:pass@host3:8080'}
+                placeholder={'# One proxy per line URL\nsocks5://user:pass@host1:1080\nsocks5://user:pass@host2:1080\nhttp://user:pass@host3:8080'}
                 value={batchText}
                 onChange={(e) => setBatchText(e.target.value)}
                 className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/30"
@@ -248,20 +248,20 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
                   onClick={() => batchMutation.mutate()}
                   disabled={batchMutation.isPending || !batchText.trim()}
                 >
-                  导入
+                  Import
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => { setShowBatch(false); setBatchText(''); setBatchErrors([]) }}
                 >
-                  {batchMutation.isSuccess ? '关闭' : '取消'}
+                  {batchMutation.isSuccess ? 'Close' : 'Cancel'}
                 </Button>
               </div>
-              {/* 批量导入失败明细 */}
+              {/* Bulk import failedDetails */}
               {batchErrors.length > 0 && (
                 <div className="text-xs text-muted-foreground space-y-1 max-h-24 overflow-y-auto border rounded-md p-2">
-                  <div className="font-medium text-yellow-600 dark:text-yellow-400">跳过的条目：</div>
+                  <div className="font-medium text-yellow-600 dark:text-yellow-400">Skipped entries:</div>
                   {batchErrors.map((msg, i) => (
                     <div key={i}>{msg}</div>
                   ))}
@@ -270,12 +270,12 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
             </div>
           )}
 
-          {/* 全局代理显示 */}
+          {/* Global proxyShow */}
           <div className="rounded-md border p-3 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">全局代理</span>
+                <span className="text-sm font-medium">Global proxy</span>
               </div>
               {currentGlobalProxy && (
                 <Button
@@ -285,20 +285,20 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
                   onClick={() => setGlobalProxyMutation.mutate(null)}
                   disabled={setGlobalProxyMutation.isPending}
                 >
-                  清除
+                  Clear
                 </Button>
               )}
             </div>
             <div className="text-xs font-mono text-muted-foreground">
-              {currentGlobalProxy ? maskProxyUrl(currentGlobalProxy) : '未配置（直连）'}
+              {currentGlobalProxy ? maskProxyUrl(currentGlobalProxy) : 'Not configured (direct connection)'}
             </div>
           </div>
 
-          {/* 代理列表 */}
+          {/* ProxyList */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
-                共 {data?.total ?? 0} 个代理
+                total {data?.total ?? 0} proxies
               </div>
               {(data?.total ?? 0) > 0 && (
                 <div className="flex items-center gap-1">
@@ -308,10 +308,10 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
                     className="h-7 text-xs"
                     onClick={() => checkAllMutation.mutate()}
                     disabled={checkAllMutation.isPending}
-                    title="对所有已启用代理执行健康检查"
+                    title="Run a health check on all enabled proxies"
                   >
                     <Activity className="h-3 w-3 mr-1" />
-                    {checkAllMutation.isPending ? '检测中...' : '全部检测'}
+                    {checkAllMutation.isPending ? 'Checking...' : 'Check all'}
                   </Button>
                   <Button
                     size="sm"
@@ -319,22 +319,22 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
                     className="h-7 text-xs"
                     onClick={() => assignRoundRobinMutation.mutate()}
                     disabled={assignRoundRobinMutation.isPending}
-                    title="将可用代理轮询分配给所有凭据"
+                    title="Distribute available proxies round-robin to all credentials"
                   >
                     <Shuffle className="h-3 w-3 mr-1" />
-                    轮询分配
+                    Round-robin assign
                   </Button>
                 </div>
               )}
             </div>
 
             {isLoading && (
-              <div className="text-sm text-muted-foreground py-4 text-center">加载中...</div>
+              <div className="text-sm text-muted-foreground py-4 text-center">Loading...</div>
             )}
 
             {data?.proxies.length === 0 && !isLoading && (
               <div className="text-sm text-muted-foreground py-4 text-center">
-                暂无代理，请添加
+                No proxies yet. Please add one
               </div>
             )}
 
@@ -352,19 +352,19 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
                       {renderHealthBadge(proxy)}
                       {!proxy.enabled && (
                         <Badge variant="outline" className="text-xs text-muted-foreground">
-                          {proxy.autoDisabled ? '自动禁用' : '已禁用'}
+                          {proxy.autoDisabled ? 'Auto-disable' : 'Disabled'}
                         </Badge>
                       )}
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
                       {proxy.credentialCount > 0 && (
                         <span className="text-xs text-muted-foreground">
-                          {proxy.credentialCount} 个凭据使用中
+                          {proxy.credentialCount} credentials in use
                         </span>
                       )}
                       {proxy.lastCheckedAt && (
                         <span className="text-xs text-muted-foreground">
-                          检测于 {new Date(proxy.lastCheckedAt).toLocaleString()}
+                          Checked at {new Date(proxy.lastCheckedAt).toLocaleString()}
                         </span>
                       )}
                     </div>
@@ -376,10 +376,10 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
                       className="h-7 text-xs"
                       onClick={() => checkMutation.mutate(proxy.id)}
                       disabled={checkingId === proxy.id}
-                      title="测试此代理连通性"
+                      title="Test this proxy connectivity"
                     >
                       <Activity className="h-3 w-3 mr-1" />
-                      {checkingId === proxy.id ? '测试中' : '测试'}
+                      {checkingId === proxy.id ? 'Testing' : 'Test'}
                     </Button>
                     {onSelectProxy && proxy.enabled && (
                       <Button
@@ -391,7 +391,7 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
                           onOpenChange(false)
                         }}
                       >
-                        选用
+                        Select
                       </Button>
                     )}
                     {proxy.enabled && proxy.url !== currentGlobalProxy && (
@@ -401,21 +401,21 @@ export function ProxyPoolDialog({ open, onOpenChange, onSelectProxy }: ProxyPool
                         className="h-7 text-xs"
                         onClick={() => setGlobalProxyMutation.mutate(proxy.url)}
                         disabled={setGlobalProxyMutation.isPending}
-                        title="设为全局代理"
+                        title="Set as global proxy"
                       >
                         <Globe className="h-3 w-3 mr-1" />
-                        全局
+                        Global
                       </Button>
                     )}
                     {proxy.url === currentGlobalProxy && (
-                      <Badge variant="secondary" className="text-xs h-7">全局</Badge>
+                      <Badge variant="secondary" className="text-xs h-7">Global</Badge>
                     )}
                     <Button
                       size="sm"
                       variant="ghost"
                       className="h-7 w-7 p-0"
                       onClick={() => toggleMutation.mutate({ id: proxy.id, enabled: !proxy.enabled })}
-                      title={proxy.enabled ? '禁用此代理' : '启用此代理'}
+                      title={proxy.enabled ? 'Disable this proxy' : 'Enable this proxy'}
                     >
                       {proxy.enabled ? (
                         <ToggleRight className="h-4 w-4 text-green-500" />

@@ -45,53 +45,53 @@ import {
 import { extractErrorMessage } from '@/lib/utils'
 import type { TraceAttempt, TraceQuery, TraceRecord } from '@/types/api'
 
-/** 失败分类 → 中文标签 + Badge 颜色 */
+/** Failedcategory → Chinese label + Badge color */
 function outcomeStyle(outcome: string): {
   label: string
   variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning'
 } {
   switch (outcome) {
     case 'success':
-      return { label: '成功', variant: 'success' }
+      return { label: 'Success', variant: 'success' }
     case 'quota_exhausted':
-      return { label: '额度耗尽', variant: 'warning' }
+      return { label: 'Quota exhausted', variant: 'warning' }
     case 'account_throttled':
-      return { label: '账号风控', variant: 'warning' }
+      return { label: 'Account throttle', variant: 'warning' }
     case 'auth_failed':
-      return { label: '鉴权失败', variant: 'destructive' }
+      return { label: 'Authentication failed', variant: 'destructive' }
     case 'transient':
-      return { label: '瞬态错误', variant: 'outline' }
+      return { label: 'Transient error', variant: 'outline' }
     case 'network_error':
-      return { label: '网络错误', variant: 'destructive' }
+      return { label: 'Network error', variant: 'destructive' }
     case 'bad_request':
-      return { label: '请求错误', variant: 'destructive' }
+      return { label: 'Request error', variant: 'destructive' }
     case 'stream_interrupted':
-      return { label: '流中断', variant: 'warning' }
+      return { label: 'Stream interrupted', variant: 'warning' }
     default:
-      return { label: outcome || '未知', variant: 'secondary' }
+      return { label: outcome || 'Unknown', variant: 'secondary' }
   }
 }
 
-/** 最终状态 → 徽章 */
+/** finalStatus → badge */
 function StatusBadge({ status }: { status: string }) {
   if (status === 'success')
     return (
       <Badge variant="success">
         <CheckCircle2 className="mr-1 h-3 w-3" />
-        成功
+        Success
       </Badge>
     )
   if (status === 'interrupted')
     return (
       <Badge variant="warning">
         <Unplug className="mr-1 h-3 w-3" />
-        中断
+        Interrupted
       </Badge>
     )
   return (
     <Badge variant="destructive">
       <AlertTriangle className="mr-1 h-3 w-3" />
-      失败
+      Failed
     </Badge>
   )
 }
@@ -113,7 +113,7 @@ function formatTokens(n: number): string {
   return String(n)
 }
 
-/** 千位分隔的完整数值（用于明细悬浮框） */
+/** thousands separatoroffull value(Used forDetailsfloating box) */
 function formatTokenFull(n: number): string {
   return n.toLocaleString('en-US')
 }
@@ -129,25 +129,25 @@ function keyLabel(keyId: number, keyName?: string | null): string {
 }
 
 const STATUS_OPTIONS = [
-  { value: '', label: '全部状态' },
-  { value: 'success', label: '成功' },
-  { value: 'error', label: '失败' },
-  { value: 'interrupted', label: '中断' },
+  { value: '', label: 'All statuses' },
+  { value: 'success', label: 'Success' },
+  { value: 'error', label: 'Failed' },
+  { value: 'interrupted', label: 'Interrupted' },
 ]
 
 const ERROR_TYPE_OPTIONS = [
-  { value: '', label: '全部错误类型' },
-  { value: 'quota_exhausted', label: '额度耗尽' },
-  { value: 'account_throttled', label: '账号风控' },
-  { value: 'auth_failed', label: '鉴权失败' },
-  { value: 'transient', label: '瞬态错误' },
-  { value: 'network_error', label: '网络错误' },
-  { value: 'bad_request', label: '请求错误' },
-  { value: 'stream_interrupted', label: '流中断' },
-  { value: 'unknown', label: '未知' },
+  { value: '', label: 'All error types' },
+  { value: 'quota_exhausted', label: 'Quota exhausted' },
+  { value: 'account_throttled', label: 'Account throttle' },
+  { value: 'auth_failed', label: 'Authentication failed' },
+  { value: 'transient', label: 'Transient error' },
+  { value: 'network_error', label: 'Network error' },
+  { value: 'bad_request', label: 'Request error' },
+  { value: 'stream_interrupted', label: 'Stream interrupted' },
+  { value: 'unknown', label: 'Unknown' },
 ]
 
-/** 单跳明细行 */
+/** singlejumpDetailsrow */
 function AttemptRow({ a }: { a: TraceAttempt }) {
   const style = outcomeStyle(a.outcome)
   return (
@@ -155,7 +155,7 @@ function AttemptRow({ a }: { a: TraceAttempt }) {
       <div className="flex flex-wrap items-center gap-2 text-[13px]">
         <span className="font-mono text-muted-foreground">#{a.attempt}</span>
         <Badge variant={style.variant}>{style.label}</Badge>
-        <span className="text-muted-foreground">凭据</span>
+        <span className="text-muted-foreground">Credential</span>
         <span className="font-medium">{credLabel(a.credentialId, a.email)}</span>
         {a.endpoint && <Badge variant="outline">{a.endpoint}</Badge>}
         <span className="text-muted-foreground">HTTP</span>
@@ -173,24 +173,24 @@ function AttemptRow({ a }: { a: TraceAttempt }) {
   )
 }
 
-/** 可展开的链路行 */
-/** Token 用量单元格：紧凑展示总量，hover 显示分项明细 */
+/** expandableoftrace row */
+/** Token Usagecell:compact displaytotalamount,hover Showline itemDetails */
 function TokenCell({ rec }: { rec: TraceRecord }) {
   const input = rec.inputTokens ?? 0
   const output = rec.outputTokens ?? 0
   const cacheCreation = rec.cacheCreationTokens ?? 0
   const cacheRead = rec.cacheReadTokens ?? 0
   const total = rec.totalTokens ?? input + output + cacheCreation + cacheRead
-  // 全 0（早期失败、未走到上游）时不显示明细，仅占位
+  // all 0(earlyFailed,did not reachUpstream)at that time notShowDetails,placeholder only
   if (total === 0) {
     return <span className="text-muted-foreground">—</span>
   }
   const rows: Array<[string, number]> = [
-    ['输入 Token', input],
-    ['输出 Token', output],
+    ['Input Token', input],
+    ['Output Token', output],
   ]
-  if (cacheCreation > 0) rows.push(['缓存创建 Token', cacheCreation])
-  if (cacheRead > 0) rows.push(['缓存读取 Token', cacheRead])
+  if (cacheCreation > 0) rows.push(['Cache create Token', cacheCreation])
+  if (cacheRead > 0) rows.push(['Cache read Token', cacheRead])
   return (
     <TooltipProvider delayDuration={150}>
       <Tooltip>
@@ -206,7 +206,7 @@ function TokenCell({ rec }: { rec: TraceRecord }) {
         </TooltipTrigger>
         <TooltipContent className="p-0">
           <div className="min-w-[180px] px-3 py-2">
-            <div className="mb-1.5 text-[13px] font-semibold">Token 明细</div>
+            <div className="mb-1.5 text-[13px] font-semibold">Token Details</div>
             <div className="space-y-1 text-[12px]">
               {rows.map(([label, val]) => (
                 <div key={label} className="flex items-center justify-between gap-6">
@@ -215,7 +215,7 @@ function TokenCell({ rec }: { rec: TraceRecord }) {
                 </div>
               ))}
               <div className="mt-1 flex items-center justify-between gap-6 border-t border-border/50 pt-1">
-                <span className="font-medium">总 Token</span>
+                <span className="font-medium">total Token</span>
                 <span className="font-mono font-semibold tabular-nums">
                   {formatTokenFull(total)}
                 </span>
@@ -249,7 +249,7 @@ function TraceRow({ rec }: { rec: TraceRecord }) {
         </td>
         <td className="py-2.5 pr-3 text-[13px]">
           <span className="inline-block max-w-[220px] truncate align-middle">{rec.model}</span>
-          {rec.isStream && <Badge variant="outline" className="ml-1.5">流式</Badge>}
+          {rec.isStream && <Badge variant="outline" className="ml-1.5">Streaming</Badge>}
         </td>
         <td className="py-2.5 pr-3 text-[13px]">
           <Badge variant="outline">{keyLabel(rec.keyId, rec.keyName)}</Badge>
@@ -302,7 +302,7 @@ function ExpandedTraceRow({ rec }: { rec: TraceRecord }) {
   )
 }
 
-/** 展开后的链路详情：错误摘要 + 每跳时间线 */
+/** after expandingoftrace detail:Errorsummary + eachjumpTimeline */
 function ExpandedDetail({ rec }: { rec: TraceRecord }) {
   return (
     <div className="space-y-3">
@@ -313,16 +313,16 @@ function ExpandedDetail({ rec }: { rec: TraceRecord }) {
       )}
       {rec.interruptedAfterBytes != null && (
         <div className="text-[12px] text-muted-foreground">
-          中断前已发送 {rec.interruptedAfterBytes} 字节
+          sent before interruption {rec.interruptedAfterBytes} bytes
         </div>
       )}
       <div className="text-[12px] font-medium text-muted-foreground">
-        尝试链路（{rec.attempts.length} 次
-        {rec.attempts.length > 1 ? `，含 ${rec.attempts.length - 1} 次重试` : "，未重试"}）
+        Attempt trace ({rec.attempts.length} times
+        {rec.attempts.length > 1 ? `, including ${rec.attempts.length - 1} retries` : ", not retried"})
       </div>
       <div className="space-y-2">
         {rec.attempts.length === 0 ? (
-          <div className="text-[13px] text-muted-foreground">无尝试记录（请求未到达上游）</div>
+          <div className="text-[13px] text-muted-foreground">No attempt records (the request did not reach the upstream)</div>
         ) : (
           rec.attempts.map((a) => <AttemptRow key={a.attempt} a={a} />)
         )}
@@ -331,7 +331,7 @@ function ExpandedDetail({ rec }: { rec: TraceRecord }) {
   )
 }
 
-/** 下拉筛选器 */
+/** dropdown filter */
 function Select({
   value,
   onChange,
@@ -341,7 +341,7 @@ function Select({
   onChange: (v: string) => void
   options: { value: string; label: string }[]
 }) {
-  // radix Select 不允许空字符串 value，用哨兵 "__all__" 代表「空/全部」，对外透明。
+  // radix Select empty not allowedstring value,use a sentinel "__all__" represents [empty/All],transparent to the outside.
   const SENTINEL = '__all__'
   return (
     <UiSelect
@@ -362,7 +362,7 @@ function Select({
   )
 }
 
-/** 日志治理设置下拉：trace 启用开关 + trace 保留天数 + usage 保留天数 */
+/** LogsGovernance settingsdropdown:trace Enabletoggle + trace keepDays + usage keepDays */
 function GovernanceButton() {
   const [open, setOpen] = useState(false)
   const { data: cfg, isLoading } = useLogGovernanceConfig()
@@ -375,7 +375,7 @@ function GovernanceButton() {
   const save = (patch: Record<string, unknown>, ok: string) => {
     mutate(patch, {
       onSuccess: () => toast.success(ok),
-      onError: (err) => toast.error('保存失败：' + extractErrorMessage(err)),
+      onError: (err) => toast.error('Save failed:' + extractErrorMessage(err)),
     })
   }
 
@@ -388,10 +388,10 @@ function GovernanceButton() {
     e.preventDefault()
     const n = parseInt(raw, 10)
     if (isNaN(n) || n < 1 || n > 365) {
-      toast.error('保留天数需在 1..=365')
+      toast.error('Retention days must be within 1..=365')
       return
     }
-    save({ [field]: n }, '保留天数已更新')
+    save({ [field]: n }, 'Retention days updated')
     reset()
   }
 
@@ -400,34 +400,34 @@ function GovernanceButton() {
       <DropdownMenuTrigger asChild>
         <Button size="sm" variant="outline">
           <Settings2 className="h-3.5 w-3.5" />
-          治理设置
+          Governance settings
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
-        <DropdownMenuLabel>请求链路追踪</DropdownMenuLabel>
+        <DropdownMenuLabel>Request trace</DropdownMenuLabel>
         <div className="px-2 pb-2">
           <div className="flex items-center justify-between gap-2 rounded-md bg-secondary/40 px-2.5 py-2">
             <div className="text-xs">
               <div className="font-medium text-foreground">
-                {enabled ? '已启用' : '已关闭'}
+                {enabled ? 'Enabled' : 'Disabled'}
               </div>
               <div className="leading-snug text-muted-foreground">
                 {enabled
-                  ? '记录每次请求的完整重试链路到 traces.db'
-                  : '不再写入新链路（历史记录仍可查询）'}
+                  ? 'Record the full retry trace of each request to traces.db'
+                  : 'No new traces are written (historical records remain queryable)'}
               </div>
             </div>
             <Switch
               checked={enabled}
               disabled={isLoading || isPending}
               onCheckedChange={(v) =>
-                save({ traceEnabled: v }, v ? '已开启链路追踪' : '已关闭链路追踪')
+                save({ traceEnabled: v }, v ? 'Request trace enabled' : 'Request trace disabled')
               }
             />
           </div>
         </div>
         <DropdownMenuLabel className="pt-1">
-          trace 保留天数（当前 {cfg?.traceRetentionDays ?? '—'}）
+          trace Retention days (currently {cfg?.traceRetentionDays ?? '—'})
         </DropdownMenuLabel>
         <form
           onSubmit={(e) => submitDays(e, 'traceRetentionDays', traceDays, () => setTraceDays(''))}
@@ -437,18 +437,18 @@ function GovernanceButton() {
             type="number"
             min={1}
             max={365}
-            placeholder="天数"
+            placeholder="Days"
             value={traceDays}
             onChange={(e) => setTraceDays(e.target.value)}
             disabled={isPending}
             className="h-7 text-xs"
           />
           <Button type="submit" size="sm" variant="outline" className="h-7 text-xs" disabled={isPending || !traceDays.trim()}>
-            保存
+            Save
           </Button>
         </form>
         <DropdownMenuLabel className="pt-1">
-          usage 日志保留天数（当前 {cfg?.usageLogRetentionDays ?? '—'}）
+          usage Log retention days (currently {cfg?.usageLogRetentionDays ?? '—'})
         </DropdownMenuLabel>
         <form
           onSubmit={(e) => submitDays(e, 'usageLogRetentionDays', usageDays, () => setUsageDays(''))}
@@ -458,14 +458,14 @@ function GovernanceButton() {
             type="number"
             min={1}
             max={365}
-            placeholder="天数"
+            placeholder="Days"
             value={usageDays}
             onChange={(e) => setUsageDays(e.target.value)}
             disabled={isPending}
             className="h-7 text-xs"
           />
           <Button type="submit" size="sm" variant="outline" className="h-7 text-xs" disabled={isPending || !usageDays.trim()}>
-            保存
+            Save
           </Button>
         </form>
       </DropdownMenuContent>
@@ -486,17 +486,17 @@ export function TraceLogPage() {
 
   const { data: keysData } = useClientKeys()
   const keyOptions = [
-    { value: '', label: '全部 Key' },
+    { value: '', label: 'All Key' },
     ...(keysData?.keys ?? []).map((k) => ({ value: String(k.id), label: k.name })),
   ]
 
   const groupOptions = useGroupOptions()
   const groupSelectOptions = [
-    { value: '', label: '全部分组' },
+    { value: '', label: 'All groups' },
     ...groupOptions.map((g) => ({ value: g, label: g })),
   ]
 
-  // 筛选条件变化时回到第一页
+  // filteritemsreturn when the file changesNo.onepage
   const resetTo = <T,>(setter: (v: T) => void) => (v: T) => {
     setter(v)
     setPage(0)
@@ -518,11 +518,11 @@ export function TraceLogPage() {
 
   return (
     <div className="space-y-5">
-      {/* 筛选栏 */}
+      {/* filter bar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <ScrollText className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold tracking-tight">请求日志</h2>
+          <h2 className="text-lg font-semibold tracking-tight">Request logs</h2>
           {total > 0 && <Badge variant="secondary">{total}</Badge>}
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -542,12 +542,12 @@ export function TraceLogPage() {
               setPage(0)
             }}
           >
-            只看失败
+            Show failures only
           </Button>
           <GovernanceButton />
           <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
             <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
-            刷新
+            Refresh
           </Button>
         </div>
       </div>
@@ -555,10 +555,10 @@ export function TraceLogPage() {
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-6 text-sm text-muted-foreground">加载中…</div>
+            <div className="p-6 text-sm text-muted-foreground">Loading…</div>
           ) : records.length === 0 ? (
             <div className="p-6 text-sm text-muted-foreground">
-              暂无记录。发起几次 /v1/messages 请求后即可看到链路。
+              No records yet. Make a few /v1/messages requests, then you can see the trace.
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -566,17 +566,17 @@ export function TraceLogPage() {
                 <thead>
                   <tr className="whitespace-nowrap border-b border-border/60 text-[12px] uppercase tracking-wider text-muted-foreground">
                     <th className="py-2 pl-3 pr-2 font-medium"></th>
-                    <th className="py-2 pr-3 font-medium">时间</th>
-                    <th className="py-2 pr-3 font-medium">模型</th>
-                    <th className="py-2 pr-3 font-medium">入口 Key</th>
-                    <th className="py-2 pr-3 font-medium">状态</th>
-                    <th className="py-2 pr-3 font-medium">最终凭据</th>
+                    <th className="py-2 pr-3 font-medium">Time</th>
+                    <th className="py-2 pr-3 font-medium">Model</th>
+                    <th className="py-2 pr-3 font-medium">Entry Key</th>
+                    <th className="py-2 pr-3 font-medium">Status</th>
+                    <th className="py-2 pr-3 font-medium">Final credential</th>
                     <th className="py-2 pr-3 font-medium">Token</th>
-                    <th className="py-2 pr-3 font-medium">费用</th>
-                    <th className="py-2 pr-3 font-medium">首Token</th>
-                    <th className="py-2 pr-3 font-medium">错误类型</th>
-                    <th className="py-2 pr-3 font-medium">重试</th>
-                    <th className="py-2 pr-3 font-medium">耗时</th>
+                    <th className="py-2 pr-3 font-medium">Cost</th>
+                    <th className="py-2 pr-3 font-medium">firstToken</th>
+                    <th className="py-2 pr-3 font-medium">Error type</th>
+                    <th className="py-2 pr-3 font-medium">Retry</th>
+                    <th className="py-2 pr-3 font-medium">Duration</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -599,12 +599,12 @@ export function TraceLogPage() {
             disabled={page === 0 || isFetching}
           >
             <ChevronLeft className="h-3.5 w-3.5" />
-            上一页
+            Previous page
           </Button>
           <div className="px-3 text-sm tabular-nums text-muted-foreground">
-            第 <span className="font-medium text-foreground">{page + 1}</span> /{' '}
-            {totalPages} 页
-            <span className="mx-1.5 text-muted-foreground/50">·</span>共 {total} 条
+            No. <span className="font-medium text-foreground">{page + 1}</span> /{' '}
+            {totalPages} page
+            <span className="mx-1.5 text-muted-foreground/50">·</span>total {total} items
           </div>
           <Button
             variant="outline"
@@ -612,7 +612,7 @@ export function TraceLogPage() {
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1 || isFetching}
           >
-            下一页
+            Next page
             <ChevronRight className="h-3.5 w-3.5" />
           </Button>
         </div>

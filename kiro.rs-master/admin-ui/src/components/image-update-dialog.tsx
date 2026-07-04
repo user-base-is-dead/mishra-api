@@ -51,7 +51,7 @@ interface ImageUpdateDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-/** 把 RFC3339 时间转成本地时区可读字符串。解析失败时原样返回。 */
+/** put RFC3339 Timeconvert to readable local timezonestring.Parse failedkeep as is at that timeBack. */
 function formatDateTime(value: string): string {
   if (!value) return '—'
   const t = Date.parse(value)
@@ -72,7 +72,7 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
     enabled: open,
   })
 
-  // 弹窗打开时复用 dashboard 已发起的请求；后台 30 分钟缓存避免重复打 GitHub。
+  // reuse when the dialog opens dashboard already startedofRequest;backend 30 minutescache to avoidDuplicatehit GitHub.
   const { data: updateCheck, isFetching: checkingUpdate } = useQuery({
     queryKey: ['system-update-check'],
     queryFn: () => checkSystemUpdate(false),
@@ -80,7 +80,7 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
     staleTime: 5 * 60 * 1000,
   })
 
-  // 限流状态：弹窗打开时自动跑一次（用已保存 token），随 update-config 变化复刷
+  // Rate limitStatus:run once automatically when the dialog openstimes (useSaved token),follow update-config refetch on change
   const { data: rateLimit, isFetching: checkingRate } = useQuery({
     queryKey: ['github-rate-limit', data?.githubTokenSet],
     queryFn: () => checkGitHubRateLimit(),
@@ -96,18 +96,18 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
       if (info.warning) {
         toast.error(info.warning)
       } else if (info.hasUpdate) {
-        toast.success(`发现新版本 v${info.latestVersion}`)
+        toast.success(`New version found v${info.latestVersion}`)
       } else {
-        toast.success('当前已是最新版本')
+        toast.success('Already on the latest version')
       }
     },
-    onError: (err) => toast.error(`检查更新失败: ${extractErrorMessage(err)}`),
+    onError: (err) => toast.error(`Check for updates failed: ${extractErrorMessage(err)}`),
   })
 
   const autoApplyMutation = useMutation({
     mutationFn: (autoApply: boolean) => setUpdateConfig({ autoApply }),
     onMutate: async (autoApply) => {
-      // 先做乐观更新，开关切换的视觉反馈瞬时生效
+      // do an optimistic update first,toggle switchofvisual feedback takes effect instantly
       const prev = queryClient.getQueryData<typeof data>(['update-config'])
       if (prev) {
         queryClient.setQueryData(['update-config'], { ...prev, autoApply })
@@ -116,13 +116,13 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
     },
     onSuccess: (res) => {
       queryClient.setQueryData(['update-config'], res)
-      toast.success(res.autoApply ? '已开启自动更新' : '已关闭自动更新')
+      toast.success(res.autoApply ? 'Auto-update enabled' : 'Auto-update disabled')
     },
     onError: (err, _variables, ctx) => {
       if (ctx?.prev) {
         queryClient.setQueryData(['update-config'], ctx.prev)
       }
-      toast.error(`切换失败: ${extractErrorMessage(err)}`)
+      toast.error(`Switch failed: ${extractErrorMessage(err)}`)
     },
   })
 
@@ -130,15 +130,15 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
     mutationFn: (autoApplyTime: string) => setUpdateConfig({ autoApplyTime }),
     onSuccess: (res) => {
       queryClient.setQueryData(['update-config'], res)
-      toast.success(`自动更新时间已设为 ${res.autoApplyTime}`)
+      toast.success(`Auto-update time set to ${res.autoApplyTime}`)
     },
-    onError: (err) => toast.error(`保存时间失败: ${extractErrorMessage(err)}`),
+    onError: (err) => toast.error(`Save time failed: ${extractErrorMessage(err)}`),
   })
 
   useEffect(() => {
     if (!data) return
     setAutoApplyTime(data.autoApplyTime || '03:00')
-    // 弹窗打开时把 token 输入框清空：后端不回显明文，输入框为空时表示"保持原值"
+    // when the dialog opensput token Inputbox cleared:the backend does not echo plaintext,Inputboxasempty means"keep the original value"
     setGithubToken('')
   }, [data])
 
@@ -146,30 +146,30 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
     mutationFn: (token: string) => setUpdateConfig({ githubToken: token }),
     onSuccess: (res) => {
       queryClient.setQueryData(['update-config'], res)
-      // 保存成功后立刻强制重新检查，让用户看到新 token 是否能解锁限流
+      // SaveSuccessforce a recheck right after,let the user see the new token whether it can unlockRate limit
       queryClient.invalidateQueries({ queryKey: ['system-update-check'] })
       queryClient.invalidateQueries({ queryKey: ['github-rate-limit'] })
       setGithubToken('')
-      toast.success(res.githubTokenSet ? 'GitHub Token 已保存' : 'GitHub Token 已清除')
+      toast.success(res.githubTokenSet ? 'GitHub Token Saved' : 'GitHub Token Cleared')
     },
-    onError: (err) => toast.error(`保存失败: ${extractErrorMessage(err)}`),
+    onError: (err) => toast.error(`Save failed: ${extractErrorMessage(err)}`),
   })
 
-  // "验证"按钮：用输入框的 token 调一次 /rate_limit，不保存到 config
+  // "Validate"button:useInputboxof token call onetimes /rate_limit,notSaveto config
   const verifyTokenMutation = useMutation({
     mutationFn: (token: string) => checkGitHubRateLimit(token),
     onSuccess: (info) => {
       if (info.valid) {
         toast.success(
           info.login
-            ? `Token 有效，账号 ${info.login}，剩余 ${info.remaining}/${info.limit}`
-            : `Token 有效，剩余 ${info.remaining}/${info.limit}`,
+            ? `Token Valid, account ${info.login}, remaining ${info.remaining}/${info.limit}`
+            : `Token Valid, remaining ${info.remaining}/${info.limit}`,
         )
       } else {
-        toast.error(info.warning || 'Token 验证失败')
+        toast.error(info.warning || 'Token Validation failed')
       }
     },
-    onError: (err) => toast.error(`验证失败: ${extractErrorMessage(err)}`),
+    onError: (err) => toast.error(`Validation failed: ${extractErrorMessage(err)}`),
   })
 
   const pullMutation = useMutation({
@@ -178,7 +178,7 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
       setLastOutput(res.output || res.message)
       toast.success(res.message)
     },
-    onError: (err) => toast.error(`拉取失败: ${extractErrorMessage(err)}`),
+    onError: (err) => toast.error(`Fetch failed: ${extractErrorMessage(err)}`),
   })
 
   const applyMutation = useMutation({
@@ -188,7 +188,7 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
       toast.success(res.message)
       queryClient.invalidateQueries({ queryKey: ['update-config'] })
     },
-    onError: (err) => toast.error(`更新失败: ${extractErrorMessage(err)}`),
+    onError: (err) => toast.error(`Update failed: ${extractErrorMessage(err)}`),
   })
 
   const rollbackMutation = useMutation({
@@ -198,7 +198,7 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
       toast.success(res.message)
       queryClient.invalidateQueries({ queryKey: ['update-config'] })
     },
-    onError: (err) => toast.error(`回退失败: ${extractErrorMessage(err)}`),
+    onError: (err) => toast.error(`Rollback failed: ${extractErrorMessage(err)}`),
   })
 
   const busy =
@@ -217,21 +217,21 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
         aria-describedby={undefined}
         className="sm:max-w-2xl max-h-[85vh] overflow-y-auto"
         onOpenAutoFocus={(e) => {
-          // 阻止 Radix 默认把焦点丢到第一个可聚焦子元素（信息按钮），
-          // 否则 Tooltip 的受控开关会被 onFocus 立刻触发。
+          // prevent Radix Defaultputfocus lost toNo.oneitemsfocusable child element(info button),
+          // otherwise Tooltip ofthe controlled switch is onFocus trigger immediately.
           e.preventDefault()
         }}
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UploadCloud className="h-4 w-4" />
-            在线更新
+            Online update
             <TooltipProvider delayDuration={0} disableHoverableContent={false}>
               <Tooltip open={tipsOpen} onOpenChange={setTipsOpen}>
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    aria-label="在线更新前置条件"
+                    aria-label="Online update prerequisites"
                     onClick={() => setTipsOpen((v) => !v)}
                     onMouseEnter={() => setTipsOpen(true)}
                     onMouseLeave={() => setTipsOpen(false)}
@@ -248,11 +248,11 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
                   onMouseEnter={() => setTipsOpen(true)}
                   onMouseLeave={() => setTipsOpen(false)}
                 >
-                  <div className="mb-1 font-medium">在线更新机制</div>
+                  <div className="mb-1 font-medium">Online update mechanism</div>
                   <ul className="list-disc space-y-1 pl-4">
-                    <li>从 GitHub Releases 下载新版本二进制并校验 SHA256</li>
-                    <li>原子替换当前 <code className="font-mono">kiro-rs</code>，旧版备份到 <code className="font-mono">.backup</code></li>
-                    <li>进程退出后由容器重启策略接管重启</li>
+                    <li>from GitHub Releases Download the new version binary and verify it SHA256</li>
+                    <li>Atomically replace the current <code className="font-mono">kiro-rs</code>, the old version is backed up to <code className="font-mono">.backup</code></li>
+                    <li>After the process exits, the container restart policy takes over the restart</li>
                   </ul>
                 </TooltipContent>
               </Tooltip>
@@ -265,7 +265,7 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <Sparkles className="h-4 w-4" />
-                版本信息
+                Version info
               </div>
               <Button
                 type="button"
@@ -279,42 +279,42 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
                 ) : (
                   <RefreshCw className="h-3.5 w-3.5" />
                 )}
-                <span className="ml-1.5">立即检查</span>
+                <span className="ml-1.5">Check now</span>
               </Button>
             </div>
 
             <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1.5 text-xs sm:grid-cols-2">
               <div className="flex items-baseline gap-2">
-                <dt className="w-20 shrink-0 text-muted-foreground">当前版本</dt>
+                <dt className="w-20 shrink-0 text-muted-foreground">Current version</dt>
                 <dd className="font-mono">
                   {updateCheck?.currentVersion
                     ? `v${updateCheck.currentVersion}`
-                    : '加载中…'}
+                    : 'Loading…'}
                 </dd>
               </div>
               <div className="flex items-baseline gap-2">
-                <dt className="w-20 shrink-0 text-muted-foreground">最新版本</dt>
+                <dt className="w-20 shrink-0 text-muted-foreground">Latest version</dt>
                 <dd className="font-mono">
                   {updateCheck?.latestVersion
                     ? `v${updateCheck.latestVersion}`
                     : updateCheck
-                      ? '未知'
-                      : '加载中…'}
+                      ? 'Unknown'
+                      : 'Loading…'}
                   {updateCheck?.hasUpdate && (
                     <Badge variant="success" className="ml-2 align-middle">
-                      可更新
+                      Update available
                     </Badge>
                   )}
                 </dd>
               </div>
               <div className="flex items-baseline gap-2">
-                <dt className="w-20 shrink-0 text-muted-foreground">构建类型</dt>
+                <dt className="w-20 shrink-0 text-muted-foreground">Build type</dt>
                 <dd className="font-mono">
-                  {updateCheck?.buildType || '加载中…'}
+                  {updateCheck?.buildType || 'Loading…'}
                 </dd>
               </div>
               <div className="flex items-baseline gap-2">
-                <dt className="w-20 shrink-0 text-muted-foreground">发布时间</dt>
+                <dt className="w-20 shrink-0 text-muted-foreground">Release time</dt>
                 <dd className="font-mono">
                   {updateCheck?.publishedAt
                     ? formatDateTime(updateCheck.publishedAt)
@@ -340,7 +340,7 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
                   rel="noreferrer"
                   className="underline hover:no-underline"
                 >
-                  查看 Release Notes
+                  View Release Notes
                 </a>
               </div>
             )}
@@ -353,24 +353,24 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
           <section className="space-y-3 border-t pt-4">
             {data?.previousVersion && (
               <div className="text-xs text-muted-foreground">
-                上一版本：
+                Previous version:
                 <code className="font-mono">{data.previousVersion}</code>
-                （可一键回退）
+                (one-click rollback available)
               </div>
             )}
 
             {data?.lastAppliedAt && (
               <div className="text-xs text-muted-foreground">
-                上次更新于：
+                Last updated at:
                 <span className="font-mono">{formatDateTime(data.lastAppliedAt)}</span>
               </div>
             )}
 
             <div className="flex items-start justify-between gap-3">
               <div className="text-xs">
-                <div className="font-medium text-foreground">无人值守自动更新</div>
+                <div className="font-medium text-foreground">Unattended auto-update</div>
                 <div className="text-muted-foreground">
-                  开启后服务每天到指定时间自动检查新版本，发现新版即下载二进制并重启。
+                  When enabled the service checks for new versions daily at the set time, and downloads the binary and restarts once a new version is found.
                 </div>
               </div>
               <Switch
@@ -385,7 +385,7 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
                 data?.autoApply ? '' : 'opacity-60'
               }`}
             >
-              <span className="text-muted-foreground">触发时间（本地时区，HH:MM）</span>
+              <span className="text-muted-foreground">Trigger time (local time zone,HH:MM)</span>
               <Input
                 type="time"
                 value={autoApplyTime}
@@ -407,11 +407,11 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
                 <KeyRound className="h-3.5 w-3.5" />
                 GitHub Token
                 {data?.githubTokenSet && (
-                  <Badge variant="success" className="ml-1">已配置</Badge>
+                  <Badge variant="success" className="ml-1">Configured</Badge>
                 )}
               </div>
               <div className="text-muted-foreground">
-                把 GitHub API 限流从匿名 60/小时 提升到认证 5000/小时；只读权限即可。
+                put GitHub API Rate limit from anonymous 60/hours raised to authenticated 5000/hours; read-only permission is enough.
               </div>
             </div>
             <div className="flex gap-2">
@@ -419,7 +419,7 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
                 type="password"
                 autoComplete="new-password"
                 placeholder={
-                  data?.githubTokenSet ? '已保存（输入新值会覆盖）' : 'ghp_xxxxxxxxxxxx'
+                  data?.githubTokenSet ? 'Saved (entering a new value overwrites it)' : 'ghp_xxxxxxxxxxxx'
                 }
                 value={githubToken}
                 onChange={(e) => setGithubToken(e.target.value)}
@@ -432,14 +432,14 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
                 size="sm"
                 disabled={busy || !githubToken.trim()}
                 onClick={() => verifyTokenMutation.mutate(githubToken.trim())}
-                title="不保存，先用此 token 调用 /rate_limit 测试"
+                title="Do not save, use this for now token Calls /rate_limit Test"
               >
                 {verifyTokenMutation.isPending ? (
                   <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                 ) : (
                   <ShieldCheck className="h-3.5 w-3.5" />
                 )}
-                <span className="ml-1.5">验证</span>
+                <span className="ml-1.5">Validate</span>
               </Button>
               <Button
                 type="button"
@@ -453,7 +453,7 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
                 ) : (
                   <Save className="h-3.5 w-3.5" />
                 )}
-                <span className="ml-1.5">保存</span>
+                <span className="ml-1.5">Save</span>
               </Button>
               {data?.githubTokenSet && (
                 <Button
@@ -462,9 +462,9 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
                   size="sm"
                   disabled={busy}
                   onClick={() => githubTokenMutation.mutate('')}
-                  title="清除已保存的 GitHub Token"
+                  title="Clear the saved GitHub Token"
                 >
-                  清除
+                  Clear
                 </Button>
               )}
             </div>
@@ -479,7 +479,7 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
 
           {lastOutput && (
             <div className="rounded-md border bg-muted/40 p-3">
-              <div className="mb-2 text-xs font-medium text-muted-foreground">最近输出</div>
+              <div className="mb-2 text-xs font-medium text-muted-foreground">Recent output</div>
               <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words text-xs">
                 {lastOutput}
               </pre>
@@ -500,7 +500,7 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
               ) : (
                 <Download className="h-4 w-4 mr-2" />
               )}
-              拉取镜像
+              Pull image
             </Button>
             <Button
               type="button"
@@ -509,8 +509,8 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
               onClick={() => rollbackMutation.mutate()}
               title={
                 data?.previousVersion
-                  ? `回退到 ${data.previousVersion}`
-                  : '尚未记录可回退的版本'
+                  ? `Roll back to ${data.previousVersion}`
+                  : 'No rollback version recorded yet'
               }
             >
               {rollbackMutation.isPending ? (
@@ -518,7 +518,7 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
               ) : (
                 <RotateCcw className="h-4 w-4 mr-2" />
               )}
-              回退到上一版本
+              Roll back to the previous version
             </Button>
           </div>
           <Button
@@ -527,10 +527,10 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
             onClick={() => applyMutation.mutate()}
             title={
               updateCheck?.hasUpdate
-                ? `更新到 v${updateCheck.latestVersion} 并重启`
+                ? `Update to v${updateCheck.latestVersion} and restart`
                 : updateCheck?.currentVersion
-                  ? `当前已是最新版本 v${updateCheck.currentVersion}`
-                  : '正在检查更新…'
+                  ? `Already on the latest version v${updateCheck.currentVersion}`
+                  : 'Checking for updates…'
             }
           >
             {applyMutation.isPending ? (
@@ -538,7 +538,7 @@ export function ImageUpdateDialog({ open, onOpenChange }: ImageUpdateDialogProps
             ) : (
               <UploadCloud className="h-4 w-4 mr-2" />
             )}
-            更新并重启
+            Update and restart
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -554,8 +554,8 @@ interface ReleaseNotesPanelProps {
 }
 
 /**
- * 折叠面板：展示当前版本的 Changelog（GitHub Release body 原文）。
- * 使用轻量 markdown 渲染器还原标题/列表/代码块/链接等，复杂样式仍可点击「在 GitHub 查看」打开。
+ * collapsible panel:displayCurrent versionof Changelog(GitHub Release body original text).
+ * Uselightweight markdown the renderer restores the title/List/code block/linketc.,complex styling still clickable [in GitHub View] open.
  */
 function ReleaseNotesPanel({ version, title, notes, href }: ReleaseNotesPanelProps) {
   const [open, setOpen] = useState(false)
@@ -568,7 +568,7 @@ function ReleaseNotesPanel({ version, title, notes, href }: ReleaseNotesPanelPro
         aria-expanded={open}
       >
         <span className="flex items-center gap-2">
-          <span>查看 v{version} 更新内容</span>
+          <span>View v{version} Changelog</span>
           {title && (
             <span className="font-normal text-muted-foreground">— {title}</span>
           )}
@@ -591,7 +591,7 @@ function ReleaseNotesPanel({ version, title, notes, href }: ReleaseNotesPanelPro
                 className="inline-flex items-center gap-1 text-xs underline hover:no-underline"
               >
                 <ExternalLink className="h-3 w-3" />
-                在 GitHub 查看完整 Release
+                in GitHub View full Release
               </a>
             </div>
           )}
@@ -608,20 +608,20 @@ interface RateLimitSummaryProps {
 }
 
 /**
- * GitHub API 限流摘要卡片：
- * - 是否带 token（认证 vs 匿名）
- * - 已用 / 上限 / 剩余 + 进度条
- * - 限流窗口重置时间（本地时区）
- * - 失败时把 warning 直接展示出来
+ * GitHub API Rate limitsummaryCard:
+ * - whether it carries token(authentication vs Anonymous)
+ * - Used / limit / Remaining + progressitems
+ * - Rate limitwindowResetTime(local timezone)
+ * - Failedtimeput warning show it directly
  *
- * `/rate_limit` 端点本身不消耗配额，可以放心点「刷新」按钮重查。
+ * `/rate_limit` Endpointdoes not consume quota itself,safe to click [Refresh] button requery.
  */
 function RateLimitSummary({ info, loading, onRefresh }: RateLimitSummaryProps) {
   if (loading && !info) {
     return (
       <div className="flex items-center gap-1.5 px-1 py-1 text-xs text-muted-foreground">
         <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-        正在查询 GitHub API 限流…
+        Querying GitHub API Rate limit…
       </div>
     )
   }
@@ -643,9 +643,9 @@ function RateLimitSummary({ info, loading, onRefresh }: RateLimitSummaryProps) {
           ) : (
             <XCircle className="h-3.5 w-3.5 text-destructive" />
           )}
-          API 限流
+          API Rate limit
           <Badge variant={info.authenticated ? 'success' : 'secondary'} className="ml-1">
-            {info.authenticated ? '已认证' : '匿名'}
+            {info.authenticated ? 'Authenticated' : 'Anonymous'}
           </Badge>
           {info.login && (
             <span className="ml-1 text-muted-foreground">@{info.login}</span>
@@ -660,10 +660,10 @@ function RateLimitSummary({ info, loading, onRefresh }: RateLimitSummaryProps) {
         <>
           <div className="mt-1.5 flex items-baseline gap-2 font-mono">
             <span className={danger ? 'text-amber-700 dark:text-amber-400' : ''}>
-              已用 {used} / {limit}
+              Used {used} / {limit}
             </span>
             <span className="text-muted-foreground">·</span>
-            <span>剩余 {remaining}</span>
+            <span>Remaining {remaining}</span>
           </div>
           <div className="mt-1 h-1.5 rounded-full bg-muted">
             <div
@@ -674,11 +674,11 @@ function RateLimitSummary({ info, loading, onRefresh }: RateLimitSummaryProps) {
             />
           </div>
           <div className="mt-1.5 text-muted-foreground">
-            重置于：<span className="font-mono">{resetText}</span>
+            Reset at:<span className="font-mono">{resetText}</span>
           </div>
         </>
       ) : (
-        <div className="mt-1.5 text-destructive">{info.warning || 'Token 验证失败'}</div>
+        <div className="mt-1.5 text-destructive">{info.warning || 'Token Validation failed'}</div>
       )}
     </div>
   )

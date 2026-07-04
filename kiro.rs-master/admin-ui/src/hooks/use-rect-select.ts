@@ -1,34 +1,34 @@
 import { useEffect, useRef, useState } from 'react'
 
-/** 框选起点超过该像素阈值才进入"拖拽框选"模式，避免误把普通点击识别成框选。 */
+/** box select starts only after the pixel threshold is passed"drag box select"mode,avoid mistakenputa normal click mistaken as box select. */
 const DRAG_THRESHOLD = 5
 
 export interface RectSelectionState {
-  /** 是否处于框选过程（鼠标拖动距离已经超过阈值） */
+  /** whether in the box select process(mouse drag distance already exceeded the threshold) */
   active: boolean
-  /** 框选矩形（fixed 定位坐标） */
+  /** box select rectangle(fixed position coordinate) */
   rect: { left: number; top: number; width: number; height: number } | null
 }
 
 export interface UseRectSelectOptions {
   containerRef: React.RefObject<HTMLElement | null>
-  /** 命中元素的 CSS 选择器；要求该元素带有 data-{idAttribute}，存放 number id */
+  /** hit elementof CSS selector;require the element to carryhas data-{idAttribute},store number id */
   itemSelector: string
-  /** 数据属性名（不带 `data-` 前缀），从命中元素读取 id */
+  /** data attribute name(without `data-` prefix),fromread from the hit element id */
   idAttribute: string
-  /** 框选完成时的回调，参数是命中元素的 id 集合 + 是否按住了 Ctrl/Meta */
+  /** when box select completesofcallback,the parameter is the hit elementof id set + whether it is held down Ctrl/Meta */
   onSelectionChange: (ids: Set<number>, additive: boolean) => void
   enabled?: boolean
 }
 
 /**
- * 在指定容器内启用鼠标左键拖拽框选。
+ * inwithin the given containerEnableleft mouse drag box select.
  *
- * 设计要点：
- * - 仅在按下点不是按钮 / 输入框 / 下拉等交互元素时才启动，避免误触。
- * - 按住 Ctrl/Meta 框选时附加到既有选区，否则替换。
- * - 拖动距离不足阈值时降级为普通点击，由原有 onClick 接管。
- * - 用 fixed 定位虚线矩形显示选区，避免污染父级布局。
+ * design point:
+ * - only inthe press point is not a button / Inputbox / dropdownetc.start only on interactive elements,avoid accidental touch.
+ * - hold down Ctrl/Meta append to the existing set on box selecthasselection,otherwiseReplace.
+ * - downgrade when drag distance is below the thresholdasnormal click,byoriginalhas onClick take over.
+ * - use fixed positioned dashed rectangleShowselection,avoid polluting the parent layout.
  */
 export function useRectSelect(options: UseRectSelectOptions): RectSelectionState {
   const { containerRef, itemSelector, idAttribute, onSelectionChange, enabled = true } = options
@@ -83,7 +83,7 @@ export function useRectSelect(options: UseRectSelectOptions): RectSelectionState
       const start = startRef.current
       startRef.current = null
       if (!start) return
-      if (!activeRef.current) return // 普通点击不改变选区
+      if (!activeRef.current) return // a normal click does not change the selection
       activeRef.current = false
       document.body.style.userSelect = ''
 
