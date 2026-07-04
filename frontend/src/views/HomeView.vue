@@ -16,8 +16,13 @@
   <div
     v-else
     ref="root"
-    class="relative flex min-h-screen flex-col bg-[#fdfcf9] text-neutral-900 antialiased dark:bg-dark-950 dark:text-neutral-100"
+    class="landing-root relative flex min-h-screen flex-col bg-[#fdfcf9] text-neutral-900 antialiased dark:bg-dark-950 dark:text-neutral-100"
   >
+    <!-- ============ Custom Cursor ============ -->
+    <div ref="cursorRing" class="cursor-ring" aria-hidden="true">
+      <span ref="cursorLabel" class="cursor-label"></span>
+    </div>
+    <div ref="cursorDot" class="cursor-dot" aria-hidden="true"></div>
     <!-- ============ Sticky Header ============ -->
     <header
       class="sticky top-0 z-40 backdrop-blur-xl transition-colors duration-300"
@@ -106,7 +111,8 @@
           <router-link
             v-if="isAuthenticated"
             :to="dashboardPath"
-            class="ml-1 inline-flex items-center gap-1.5 rounded-full border border-neutral-200/70 bg-white py-1 pl-1 pr-3 transition-colors hover:border-neutral-300 dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20"
+            data-cursor="enter"
+            class="magnetic ml-1 inline-flex items-center gap-1.5 rounded-full border border-neutral-200/70 bg-white py-1 pl-1 pr-3 transition-colors hover:border-neutral-300 dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20"
           >
             <span
               class="flex h-5 w-5 items-center justify-center rounded-full bg-primary-500 text-[10px] font-semibold text-neutral-900"
@@ -118,7 +124,8 @@
           <router-link
             v-else
             to="/login"
-            class="ml-1 inline-flex items-center rounded-full bg-primary-500 px-4 py-1.5 text-xs font-semibold text-neutral-900 transition-colors hover:bg-primary-400"
+            data-cursor="enter"
+            class="magnetic ml-1 inline-flex items-center rounded-full bg-primary-500 px-4 py-1.5 text-xs font-semibold text-neutral-900 transition-colors hover:bg-primary-400"
           >
             {{ t('home.login') }}
           </router-link>
@@ -161,7 +168,8 @@
               <div class="hero-cta mt-9 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
                 <router-link
                   :to="isAuthenticated ? dashboardPath : '/login'"
-                  class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-500 px-7 py-3 text-sm font-semibold text-neutral-900 transition-colors hover:bg-primary-400 sm:w-auto"
+                  data-cursor="launch"
+                  class="magnetic inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-500 px-7 py-3 text-sm font-semibold text-neutral-900 transition-colors hover:bg-primary-400 sm:w-auto"
                 >
                   {{ isAuthenticated ? t('home.goToDashboard') : t('landing.hero.getStarted') }}
                   <Icon name="arrowRight" size="sm" :stroke-width="2" />
@@ -170,7 +178,8 @@
                   :href="SOCIAL_LINKS.telegramChannel"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-300 px-7 py-3 text-sm font-semibold text-neutral-700 transition-colors hover:border-primary-500/50 hover:text-neutral-900 dark:border-white/15 dark:text-neutral-200 dark:hover:border-primary-400/40 dark:hover:text-white sm:w-auto"
+                  data-cursor="say hi"
+                  class="magnetic inline-flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-300 px-7 py-3 text-sm font-semibold text-neutral-700 transition-colors hover:border-primary-500/50 hover:text-neutral-900 dark:border-white/15 dark:text-neutral-200 dark:hover:border-primary-400/40 dark:hover:text-white sm:w-auto"
                 >
                   {{ t('landing.hero.talkToUs') }}
                 </a>
@@ -222,19 +231,23 @@
         </div>
       </section>
 
-      <!-- ============ Trust / Providers Strip ============ -->
-      <section class="border-y border-neutral-200/70 px-6 py-10 dark:border-white/10">
-        <div class="mx-auto max-w-6xl">
-          <p class="reveal mb-7 text-center text-xs font-medium uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500">
-            {{ t('landing.trust.heading') }}
-          </p>
-          <div class="reveal flex flex-wrap items-center justify-center gap-x-3 gap-y-3">
+      <!-- ============ Trust / Providers Marquee ============ -->
+      <section class="relative border-y border-neutral-200/70 py-10 dark:border-white/10">
+        <p class="reveal mb-7 px-6 text-center text-xs font-medium uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500">
+          {{ t('landing.trust.heading') }}
+        </p>
+        <!-- edge fades -->
+        <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-[#fdfcf9] to-transparent dark:from-dark-950"></div>
+        <div class="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-[#fdfcf9] to-transparent dark:from-dark-950"></div>
+        <div class="marquee">
+          <div ref="providerTrack" class="marquee-track flex w-max items-center gap-3">
             <span
-              v-for="p in providers"
-              :key="p.name"
-              class="inline-flex items-center gap-2 rounded-lg border border-neutral-200/70 px-4 py-2 text-sm font-medium dark:border-white/10"
+              v-for="(p, i) in providersLoop"
+              :key="p.name + i"
+              class="inline-flex shrink-0 items-center gap-2 rounded-lg border border-neutral-200/70 px-4 py-2 text-sm font-medium dark:border-white/10"
               :class="p.soon ? 'text-neutral-400 dark:text-neutral-600' : 'text-neutral-600 dark:text-neutral-300'"
             >
+              <span class="h-1.5 w-1.5 rounded-full" :class="p.soon ? 'bg-neutral-300 dark:bg-white/20' : 'bg-primary-500'"></span>
               {{ p.name }}
               <span v-if="p.soon" class="text-[10px] uppercase tracking-wider text-neutral-400 dark:text-neutral-600">{{ t('landing.trust.soon') }}</span>
             </span>
@@ -262,13 +275,17 @@
             <div
               v-for="f in features"
               :key="f.title"
-              class="feature-cell border-b border-r border-neutral-200/70 p-8 transition-colors hover:bg-neutral-50/70 dark:border-white/10 dark:hover:bg-white/[0.02]"
+              class="feature-cell tilt group relative overflow-hidden border-b border-r border-neutral-200/70 p-8 transition-colors dark:border-white/10"
+              data-cursor="explore"
             >
-              <div class="mb-6 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-200/70 text-primary-600 dark:border-white/10 dark:text-primary-400">
-                <Icon :name="f.icon" size="md" />
+              <span class="feature-spot pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300 group-hover:opacity-100"></span>
+              <div class="tilt-inner relative">
+                <div class="mb-6 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-200/70 text-primary-600 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110 dark:border-white/10 dark:text-primary-400">
+                  <Icon :name="f.icon" size="md" />
+                </div>
+                <h3 class="mb-2 text-base font-semibold tracking-tight">{{ t(f.title) }}</h3>
+                <p class="text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">{{ t(f.desc) }}</p>
               </div>
-              <h3 class="mb-2 text-base font-semibold tracking-tight">{{ t(f.title) }}</h3>
-              <p class="text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">{{ t(f.desc) }}</p>
             </div>
           </div>
         </div>
@@ -323,7 +340,7 @@
             <p class="reveal mb-4 text-xs font-medium uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">
               {{ t('landing.company.eyebrow', { company: PARENT_COMPANY }) }}
             </p>
-            <h2 class="reveal text-3xl font-semibold tracking-tight md:text-4xl">
+            <h2 class="reveal scramble text-3xl font-semibold tracking-tight md:text-4xl">
               {{ t('landing.company.title', { company: PARENT_COMPANY }) }}
             </h2>
           </div>
@@ -337,6 +354,18 @@
               <span class="inline-flex items-center gap-2"><Icon name="checkCircle" size="sm" class="text-primary-600 dark:text-primary-400" /> {{ t('landing.company.routing') }}</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- ============ Giant Brand Marquee ============ -->
+      <section class="marquee-hero relative overflow-hidden border-t border-neutral-200/70 py-16 dark:border-white/10 md:py-24">
+        <div ref="bigMarquee" class="flex w-max items-center gap-8 whitespace-nowrap will-change-transform">
+          <template v-for="n in 4" :key="'bm' + n">
+            <span class="big-type text-neutral-900 dark:text-neutral-100">{{ siteName }}</span>
+            <span class="big-type-outline">✳</span>
+            <span class="big-type text-primary-500">{{ COMPANY_TAGLINE }}</span>
+            <span class="big-type-outline">✳</span>
+          </template>
         </div>
       </section>
 
@@ -554,6 +583,17 @@ const heroBlob = ref<HTMLElement | null>(null)
 const featureGrid = ref<HTMLElement | null>(null)
 const statsBand = ref<HTMLElement | null>(null)
 const stepsWrap = ref<HTMLElement | null>(null)
+const cursorDot = ref<HTMLElement | null>(null)
+const cursorRing = ref<HTMLElement | null>(null)
+const cursorLabel = ref<HTMLElement | null>(null)
+const providerTrack = ref<HTMLElement | null>(null)
+const bigMarquee = ref<HTMLElement | null>(null)
+
+// Providers duplicated once for a seamless -50% marquee loop
+const providersLoop = [...providers, ...providers]
+
+// Cleanup handles for interaction listeners
+const cleanupFns: Array<() => void> = []
 
 let ctx: gsap.Context | undefined
 
@@ -585,13 +625,36 @@ function initAnimations() {
   }
 
   ctx = gsap.context(() => {
-    // Hero headline lines slide up (on load, no scrolltrigger)
-    gsap.from('.hero-line', {
-      yPercent: 120,
+    // Hero headline — split into words, mask-reveal with slight rotation
+    const heroLines = gsap.utils.toArray<HTMLElement>('.hero-line')
+    const heroWords: HTMLElement[] = []
+    heroLines.forEach((line) => {
+      const text = line.textContent ?? ''
+      line.textContent = ''
+      text.split(/(\s+)/).forEach((chunk) => {
+        if (chunk.trim() === '') {
+          line.appendChild(document.createTextNode(chunk))
+          return
+        }
+        const mask = document.createElement('span')
+        mask.className = 'word-mask'
+        const word = document.createElement('span')
+        word.className = 'hero-word'
+        word.textContent = chunk
+        mask.appendChild(word)
+        line.appendChild(mask)
+        heroWords.push(word)
+      })
+    })
+
+    gsap.from(heroWords, {
+      yPercent: 115,
+      rotate: 6,
       opacity: 0,
-      duration: 0.9,
-      ease: 'power3.out',
-      stagger: 0.12
+      duration: 1,
+      ease: 'power4.out',
+      stagger: 0.045,
+      delay: 0.1
     })
 
     // Hero eyebrow
@@ -615,15 +678,16 @@ function initAnimations() {
       })
     })
 
-    // Feature grid cells — stagger fade-up on scroll
+    // Feature grid cells — playful overshoot pop-in on scroll
     if (featureGrid.value) {
       gsap.from('.feature-cell', {
         opacity: 0,
-        y: 30,
+        y: 40,
+        scale: 0.94,
         duration: 0.7,
-        ease: 'power3.out',
-        stagger: 0.08,
-        scrollTrigger: { trigger: featureGrid.value, start: 'top 80%' }
+        ease: 'back.out(1.7)',
+        stagger: { each: 0.07, from: 'start' },
+        scrollTrigger: { trigger: featureGrid.value, start: 'top 82%' }
       })
     }
 
@@ -673,7 +737,191 @@ function initAnimations() {
         scrollTrigger: { trigger: root.value, start: 'top top', end: 'bottom top', scrub: true }
       })
     }
+
+    // Terminal idle float (gentle, endless)
+    gsap.to('.terminal-window', {
+      y: -10,
+      duration: 2.6,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true,
+      delay: 1.6
+    })
+
+    // Provider marquee — seamless left drift (track holds 2 copies -> -50%)
+    if (providerTrack.value) {
+      gsap.to(providerTrack.value, {
+        xPercent: -50,
+        duration: 28,
+        ease: 'none',
+        repeat: -1
+      })
+    }
+
+    // Giant brand marquee — scroll-reactive drift + base auto-scroll
+    if (bigMarquee.value) {
+      gsap.to(bigMarquee.value, {
+        xPercent: -50,
+        duration: 22,
+        ease: 'none',
+        repeat: -1
+      })
+      gsap.fromTo(
+        bigMarquee.value,
+        { x: 120 },
+        {
+          x: -120,
+          ease: 'none',
+          scrollTrigger: { trigger: bigMarquee.value, start: 'top bottom', end: 'bottom top', scrub: true }
+        }
+      )
+    }
+
+    // Scramble headline when it scrolls into view
+    gsap.utils.toArray<HTMLElement>('.scramble').forEach((el) => {
+      ScrollTrigger.create({
+        trigger: el,
+        start: 'top 80%',
+        once: true,
+        onEnter: () => scrambleText(el)
+      })
+    })
   }, root.value ?? undefined)
+}
+
+// Decode/scramble text animation (creative-dev signature)
+function scrambleText(el: HTMLElement) {
+  const finalText = el.textContent ?? ''
+  const chars = '!<>-_\\/[]{}—=+*^?#________'
+  let frame = 0
+  const total = 26
+  const interval = window.setInterval(() => {
+    frame++
+    const progress = frame / total
+    const revealCount = Math.floor(finalText.length * progress)
+    let out = ''
+    for (let i = 0; i < finalText.length; i++) {
+      if (finalText[i] === ' ') { out += ' '; continue }
+      if (i < revealCount) {
+        out += finalText[i]
+      } else {
+        out += chars[Math.floor(Math.random() * chars.length)]
+      }
+    }
+    el.textContent = out
+    if (frame >= total) {
+      el.textContent = finalText
+      window.clearInterval(interval)
+    }
+  }, 28)
+  cleanupFns.push(() => { window.clearInterval(interval); el.textContent = finalText })
+}
+
+// Custom cursor + magnetic buttons + card tilt
+function initInteractions() {
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (!finePointer || prefersReduced) return
+
+  const dot = cursorDot.value
+  const ring = cursorRing.value
+  const label = cursorLabel.value
+  const rootEl = root.value
+  if (!dot || !ring || !rootEl) return
+
+  rootEl.classList.add('cursor-active')
+
+  let mouseX = window.innerWidth / 2
+  let mouseY = window.innerHeight / 2
+  let ringX = mouseX
+  let ringY = mouseY
+  const setDotX = gsap.quickSetter(dot, 'x', 'px')
+  const setDotY = gsap.quickSetter(dot, 'y', 'px')
+
+  const onMove = (e: MouseEvent) => {
+    mouseX = e.clientX
+    mouseY = e.clientY
+    setDotX(mouseX)
+    setDotY(mouseY)
+  }
+  window.addEventListener('mousemove', onMove, { passive: true })
+  cleanupFns.push(() => window.removeEventListener('mousemove', onMove))
+
+  const tick = () => {
+    ringX += (mouseX - ringX) * 0.18
+    ringY += (mouseY - ringY) * 0.18
+    gsap.set(ring, { x: ringX, y: ringY })
+  }
+  gsap.ticker.add(tick)
+  cleanupFns.push(() => gsap.ticker.remove(tick))
+
+  // Interactive hover state: grow ring + show label
+  const interactive = rootEl.querySelectorAll<HTMLElement>('a, button, [data-cursor], .tilt')
+  interactive.forEach((elm) => {
+    const enter = () => {
+      ring.classList.add('is-hover')
+      const lbl = elm.getAttribute('data-cursor')
+      if (label) label.textContent = lbl ?? ''
+      ring.classList.toggle('has-label', !!lbl)
+    }
+    const leave = () => {
+      ring.classList.remove('is-hover')
+      ring.classList.remove('has-label')
+      if (label) label.textContent = ''
+    }
+    elm.addEventListener('mouseenter', enter)
+    elm.addEventListener('mouseleave', leave)
+    cleanupFns.push(() => {
+      elm.removeEventListener('mouseenter', enter)
+      elm.removeEventListener('mouseleave', leave)
+    })
+  })
+
+  // Magnetic buttons — translate toward pointer, spring back
+  rootEl.querySelectorAll<HTMLElement>('.magnetic').forEach((el) => {
+    const strength = 0.35
+    const move = (e: MouseEvent) => {
+      const rect = el.getBoundingClientRect()
+      const relX = e.clientX - (rect.left + rect.width / 2)
+      const relY = e.clientY - (rect.top + rect.height / 2)
+      gsap.to(el, { x: relX * strength, y: relY * strength, duration: 0.4, ease: 'power3.out' })
+    }
+    const reset = () => gsap.to(el, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.4)' })
+    el.addEventListener('mousemove', move)
+    el.addEventListener('mouseleave', reset)
+    cleanupFns.push(() => {
+      el.removeEventListener('mousemove', move)
+      el.removeEventListener('mouseleave', reset)
+    })
+  })
+
+  // 3D tilt + spotlight on feature cells
+  rootEl.querySelectorAll<HTMLElement>('.tilt').forEach((el) => {
+    const inner = el.querySelector<HTMLElement>('.tilt-inner')
+    const spot = el.querySelector<HTMLElement>('.feature-spot')
+    const move = (e: MouseEvent) => {
+      const rect = el.getBoundingClientRect()
+      const px = (e.clientX - rect.left) / rect.width
+      const py = (e.clientY - rect.top) / rect.height
+      gsap.to(inner, {
+        rotateY: (px - 0.5) * 10,
+        rotateX: (0.5 - py) * 10,
+        duration: 0.4,
+        ease: 'power2.out',
+        transformPerspective: 800
+      })
+      if (spot) {
+        spot.style.background = `radial-gradient(240px circle at ${px * 100}% ${py * 100}%, rgba(212,160,23,0.14), transparent 60%)`
+      }
+    }
+    const reset = () => gsap.to(inner, { rotateY: 0, rotateX: 0, duration: 0.6, ease: 'power3.out' })
+    el.addEventListener('mousemove', move)
+    el.addEventListener('mouseleave', reset)
+    cleanupFns.push(() => {
+      el.removeEventListener('mousemove', move)
+      el.removeEventListener('mouseleave', reset)
+    })
+  })
 }
 
 onMounted(() => {
@@ -691,10 +939,13 @@ onMounted(() => {
   onScroll()
 
   initAnimations()
+  initInteractions()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', onScroll)
+  cleanupFns.forEach((fn) => fn())
+  cleanupFns.length = 0
   ctx?.revert()
   ScrollTrigger.getAll().forEach((trigger) => trigger.kill())
 })
@@ -865,6 +1116,123 @@ onBeforeUnmount(() => {
   }
   .terminal-window {
     transform: none;
+  }
+}
+
+/* ===================== Creative motion layer ===================== */
+
+/* Custom cursor */
+.cursor-dot,
+.cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  pointer-events: none;
+  border-radius: 9999px;
+  opacity: 0;
+}
+.cursor-active .cursor-dot,
+.cursor-active .cursor-ring {
+  opacity: 1;
+}
+.cursor-dot {
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  background: #d4a017;
+}
+.cursor-ring {
+  width: 42px;
+  height: 42px;
+  margin: -21px 0 0 -21px;
+  border: 1px solid rgba(212, 160, 23, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 0.25s ease, height 0.25s ease, margin 0.25s ease,
+    background-color 0.25s ease, border-color 0.25s ease;
+}
+.cursor-ring.is-hover {
+  width: 72px;
+  height: 72px;
+  margin: -36px 0 0 -36px;
+  background: rgba(212, 160, 23, 0.09);
+  border-color: rgba(212, 160, 23, 0.35);
+}
+.cursor-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #b7860f;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+}
+.dark .cursor-label {
+  color: #ecc968;
+}
+.cursor-ring.has-label .cursor-label {
+  opacity: 1;
+}
+.cursor-active,
+.cursor-active * {
+  cursor: none !important;
+}
+
+/* Hero word mask reveal */
+.word-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding: 0.02em 0.04em 0.08em 0;
+}
+.hero-word {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* Marquees */
+.marquee {
+  overflow: hidden;
+}
+.marquee-track,
+.marquee-hero > div {
+  will-change: transform;
+}
+.big-type {
+  font-size: clamp(2.25rem, 9vw, 6.5rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+.big-type-outline {
+  font-size: clamp(1.5rem, 5vw, 3.5rem);
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(212, 160, 23, 0.55);
+}
+
+/* Feature tilt + spotlight */
+.tilt {
+  transform-style: preserve-3d;
+}
+.tilt-inner {
+  transform-style: preserve-3d;
+}
+.feature-spot {
+  z-index: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track,
+  .marquee-hero > div,
+  .terminal-window {
+    transform: none !important;
+  }
+  .hero-word {
+    transform: none !important;
   }
 }
 </style>
