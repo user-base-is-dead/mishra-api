@@ -110,6 +110,89 @@ export default {
     }
   },
 
+  landing: {
+    hero: {
+      line1: 'One key.',
+      line2: 'Every AI model.',
+      line3: 'Zero friction.',
+      subtitle: 'A unified gateway to the world\u2019s leading AI providers. Ship faster with one API, transparent billing, and reliability you can trust.',
+      getStarted: 'Get Started',
+      talkToUs: 'Talk to us',
+      trustSecurity: 'Enterprise security',
+      trustUptime: '99.9% uptime',
+      trustPayg: 'Pay-as-you-go'
+    },
+    trust: {
+      heading: 'Trusted infrastructure for teams building on',
+      soon: 'soon'
+    },
+    features: {
+      eyebrow: 'Platform',
+      title: 'Everything you need to build with AI',
+      subtitle: 'A production-ready platform engineered for teams that ship. One integration, infinite possibilities.',
+      unifiedTitle: 'Unified Gateway',
+      unifiedDesc: 'A single, OpenAI-compatible endpoint that routes to Claude, GPT, Gemini and more. Integrate once, switch models freely.',
+      poolTitle: 'Multi-Account Pool',
+      poolDesc: 'Pool multiple upstream accounts with sticky sessions and automatic load balancing for higher throughput and resilience.',
+      billingTitle: 'Pay-as-you-go Billing',
+      billingDesc: 'Transparent, usage-based pricing with real-time balance tracking. No surprises, no lock-in \u2014 pay only for what you use.',
+      routingTitle: 'Smart Routing & Failover',
+      routingDesc: 'Intelligent request routing with automatic retries and failover so your applications keep running even when an upstream hiccups.',
+      analyticsTitle: 'Real-time Analytics',
+      analyticsDesc: 'Monitor usage, latency, and spend across every model and key with live dashboards and detailed request logs.',
+      securityTitle: 'Enterprise Security',
+      securityDesc: 'Scoped API keys, granular quotas, and hardened infrastructure built to meet the demands of production workloads.'
+    },
+    stats: {
+      models: 'AI Models',
+      uptime: 'Uptime SLA',
+      latency: 'Response Latency',
+      support: 'Support'
+    },
+    steps: {
+      eyebrow: 'Get started',
+      title: 'Live in minutes, not weeks',
+      subtitle: 'Three simple steps from sign-up to your first request.',
+      step1Title: 'Create your account',
+      step1Desc: 'Sign up in seconds and access your dashboard to manage keys, usage, and billing in one place.',
+      step2Title: 'Add a key or pick a plan',
+      step2Desc: 'Generate an API key and choose a pay-as-you-go plan that fits your workload and budget.',
+      step3Title: 'Start building',
+      step3Desc: 'Point your existing SDK at our endpoint and start shipping. One key unlocks every supported model.'
+    },
+    company: {
+      eyebrow: 'Backed by {company}',
+      title: 'Enterprise-grade AI infrastructure, operated by {company}',
+      body: '{siteName} is built, managed, and operated by {company} \u2014 combining deep infrastructure expertise with a relentless focus on reliability, security, and developer experience. When you build on {siteName}, you\u2019re backed by the {company} team.',
+      soc: 'SOC-minded practices',
+      monitoring: '24/7 monitoring',
+      routing: 'Global routing'
+    },
+    cta: {
+      eyebrow: 'Get started today',
+      title: 'Start building with {siteName}',
+      subtitle: 'One key, every AI model. Join developers and teams shipping faster on enterprise-grade infrastructure.'
+    },
+    footer: {
+      product: 'Product',
+      community: 'Community',
+      company: 'Company',
+      features: 'Features',
+      howItWorks: 'How it works',
+      login: 'Login',
+      docs: 'Documentation',
+      about: 'About {company}',
+      privacy: 'Privacy Policy',
+      rights: '\u00A9 {year} {siteName} \u2014 Managed & operated by {company}. All rights reserved.'
+    },
+    nav: {
+      product: 'Product',
+      features: 'Features',
+      howItWorks: 'How it works',
+      company: 'Company'
+    }
+  },
+
   // Key Usage Query Page
   keyUsage: {
     title: 'API Key Usage',

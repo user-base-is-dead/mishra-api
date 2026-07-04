@@ -46,7 +46,7 @@
             :key="link.href"
             :href="link.href"
             class="text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-          >{{ link.label }}</a>
+          >{{ t(link.label) }}</a>
         </div>
 
         <!-- Actions -->
@@ -149,14 +149,13 @@
               </p>
 
               <h1 class="text-[2.75rem] font-semibold leading-[1.05] tracking-tight md:text-6xl lg:text-[4.25rem]">
-                <span class="block overflow-hidden pb-1"><span class="hero-line inline-block">One key.</span></span>
-                <span class="block overflow-hidden pb-1"><span class="hero-line inline-block">Every AI model.</span></span>
-                <span class="block overflow-hidden pb-1"><span class="hero-line inline-block text-primary-600 dark:text-primary-400">Zero friction.</span></span>
+                <span class="block overflow-hidden pb-1"><span class="hero-line inline-block">{{ t('landing.hero.line1') }}</span></span>
+                <span class="block overflow-hidden pb-1"><span class="hero-line inline-block">{{ t('landing.hero.line2') }}</span></span>
+                <span class="block overflow-hidden pb-1"><span class="hero-line inline-block text-primary-600 dark:text-primary-400">{{ t('landing.hero.line3') }}</span></span>
               </h1>
 
               <p class="hero-sub mx-auto mt-7 max-w-xl text-lg leading-relaxed text-neutral-500 dark:text-neutral-400 lg:mx-0">
-                {{ siteSubtitle }} — a unified gateway to the world's leading AI providers.
-                Ship faster with one API, transparent billing, and reliability you can trust.
+                {{ t('landing.hero.subtitle') }}
               </p>
 
               <div class="hero-cta mt-9 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
@@ -164,7 +163,7 @@
                   :to="isAuthenticated ? dashboardPath : '/login'"
                   class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-500 px-7 py-3 text-sm font-semibold text-neutral-900 transition-colors hover:bg-primary-400 sm:w-auto"
                 >
-                  {{ isAuthenticated ? t('home.goToDashboard') : 'Get Started' }}
+                  {{ isAuthenticated ? t('home.goToDashboard') : t('landing.hero.getStarted') }}
                   <Icon name="arrowRight" size="sm" :stroke-width="2" />
                 </router-link>
                 <a
@@ -173,15 +172,15 @@
                   rel="noopener noreferrer"
                   class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-300 px-7 py-3 text-sm font-semibold text-neutral-700 transition-colors hover:border-primary-500/50 hover:text-neutral-900 dark:border-white/15 dark:text-neutral-200 dark:hover:border-primary-400/40 dark:hover:text-white sm:w-auto"
                 >
-                  Talk to us
+                  {{ t('landing.hero.talkToUs') }}
                 </a>
               </div>
 
               <!-- Trust line -->
               <div class="hero-cta mt-9 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-neutral-500 dark:text-neutral-400 lg:justify-start">
-                <span class="inline-flex items-center gap-1.5"><Icon name="shield" size="sm" class="text-primary-600 dark:text-primary-400" /> Enterprise security</span>
-                <span class="inline-flex items-center gap-1.5"><Icon name="bolt" size="sm" class="text-primary-600 dark:text-primary-400" /> 99.9% uptime</span>
-                <span class="inline-flex items-center gap-1.5"><Icon name="dollar" size="sm" class="text-primary-600 dark:text-primary-400" /> Pay-as-you-go</span>
+                <span class="inline-flex items-center gap-1.5"><Icon name="shield" size="sm" class="text-primary-600 dark:text-primary-400" /> {{ t('landing.hero.trustSecurity') }}</span>
+                <span class="inline-flex items-center gap-1.5"><Icon name="bolt" size="sm" class="text-primary-600 dark:text-primary-400" /> {{ t('landing.hero.trustUptime') }}</span>
+                <span class="inline-flex items-center gap-1.5"><Icon name="dollar" size="sm" class="text-primary-600 dark:text-primary-400" /> {{ t('landing.hero.trustPayg') }}</span>
               </div>
             </div>
 
@@ -227,7 +226,7 @@
       <section class="border-y border-neutral-200/70 px-6 py-10 dark:border-white/10">
         <div class="mx-auto max-w-6xl">
           <p class="reveal mb-7 text-center text-xs font-medium uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500">
-            Trusted infrastructure for teams building on
+            {{ t('landing.trust.heading') }}
           </p>
           <div class="reveal flex flex-wrap items-center justify-center gap-x-3 gap-y-3">
             <span
@@ -237,7 +236,7 @@
               :class="p.soon ? 'text-neutral-400 dark:text-neutral-600' : 'text-neutral-600 dark:text-neutral-300'"
             >
               {{ p.name }}
-              <span v-if="p.soon" class="text-[10px] uppercase tracking-wider text-neutral-400 dark:text-neutral-600">soon</span>
+              <span v-if="p.soon" class="text-[10px] uppercase tracking-wider text-neutral-400 dark:text-neutral-600">{{ t('landing.trust.soon') }}</span>
             </span>
           </div>
         </div>
@@ -247,12 +246,12 @@
       <section id="features" class="px-6 py-24">
         <div class="mx-auto max-w-7xl">
           <div class="mb-14 max-w-2xl">
-            <p class="reveal mb-4 text-xs font-medium uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">Platform</p>
+            <p class="reveal mb-4 text-xs font-medium uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">{{ t('landing.features.eyebrow') }}</p>
             <h2 class="reveal text-3xl font-semibold tracking-tight md:text-4xl">
-              Everything you need to build with AI
+              {{ t('landing.features.title') }}
             </h2>
             <p class="reveal mt-4 text-lg text-neutral-500 dark:text-neutral-400">
-              A production-ready platform engineered for teams that ship. One integration, infinite possibilities.
+              {{ t('landing.features.subtitle') }}
             </p>
           </div>
 
@@ -268,8 +267,8 @@
               <div class="mb-6 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-200/70 text-primary-600 dark:border-white/10 dark:text-primary-400">
                 <Icon :name="f.icon" size="md" />
               </div>
-              <h3 class="mb-2 text-base font-semibold tracking-tight">{{ f.title }}</h3>
-              <p class="text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">{{ f.desc }}</p>
+              <h3 class="mb-2 text-base font-semibold tracking-tight">{{ t(f.title) }}</h3>
+              <p class="text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">{{ t(f.desc) }}</p>
             </div>
           </div>
         </div>
@@ -283,7 +282,7 @@
               {{ s.prefix }}{{ s.display.toFixed(s.decimals) }}{{ s.suffix }}
             </div>
             <div class="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">
-              {{ s.label }}
+              {{ t(s.label) }}
             </div>
           </div>
         </div>
@@ -293,9 +292,9 @@
       <section id="how" class="px-6 py-24">
         <div class="mx-auto max-w-6xl">
           <div class="mb-16 max-w-2xl">
-            <p class="reveal mb-4 text-xs font-medium uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">Get started</p>
-            <h2 class="reveal text-3xl font-semibold tracking-tight md:text-4xl">Live in minutes, not weeks</h2>
-            <p class="reveal mt-4 text-lg text-neutral-500 dark:text-neutral-400">Three simple steps from sign-up to your first request.</p>
+            <p class="reveal mb-4 text-xs font-medium uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">{{ t('landing.steps.eyebrow') }}</p>
+            <h2 class="reveal text-3xl font-semibold tracking-tight md:text-4xl">{{ t('landing.steps.title') }}</h2>
+            <p class="reveal mt-4 text-lg text-neutral-500 dark:text-neutral-400">{{ t('landing.steps.subtitle') }}</p>
           </div>
 
           <div ref="stepsWrap" class="relative">
@@ -309,8 +308,8 @@
                 <div class="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl border border-neutral-200/70 bg-[#fdfcf9] text-sm font-semibold text-primary-600 dark:border-white/10 dark:bg-dark-950 dark:text-primary-400">
                   {{ String(i + 1).padStart(2, '0') }}
                 </div>
-                <h3 class="mb-2 text-base font-semibold tracking-tight">{{ step.title }}</h3>
-                <p class="text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">{{ step.desc }}</p>
+                <h3 class="mb-2 text-base font-semibold tracking-tight">{{ t(step.title) }}</h3>
+                <p class="text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">{{ t(step.desc) }}</p>
               </div>
             </div>
           </div>
@@ -322,22 +321,20 @@
         <div class="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2">
           <div>
             <p class="reveal mb-4 text-xs font-medium uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">
-              Backed by {{ PARENT_COMPANY }}
+              {{ t('landing.company.eyebrow', { company: PARENT_COMPANY }) }}
             </p>
             <h2 class="reveal text-3xl font-semibold tracking-tight md:text-4xl">
-              Enterprise-grade AI infrastructure, operated by {{ PARENT_COMPANY }}
+              {{ t('landing.company.title', { company: PARENT_COMPANY }) }}
             </h2>
           </div>
           <div class="reveal">
             <p class="text-lg leading-relaxed text-neutral-500 dark:text-neutral-400">
-              {{ siteName }} is built, managed, and operated by {{ PARENT_COMPANY }} — combining deep infrastructure
-              expertise with a relentless focus on reliability, security, and developer experience. When you build on
-              {{ siteName }}, you're backed by the {{ PARENT_COMPANY }} team.
+              {{ t('landing.company.body', { siteName, company: PARENT_COMPANY }) }}
             </p>
             <div class="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-sm text-neutral-500 dark:text-neutral-400">
-              <span class="inline-flex items-center gap-2"><Icon name="checkCircle" size="sm" class="text-primary-600 dark:text-primary-400" /> SOC-minded practices</span>
-              <span class="inline-flex items-center gap-2"><Icon name="checkCircle" size="sm" class="text-primary-600 dark:text-primary-400" /> 24/7 monitoring</span>
-              <span class="inline-flex items-center gap-2"><Icon name="checkCircle" size="sm" class="text-primary-600 dark:text-primary-400" /> Global routing</span>
+              <span class="inline-flex items-center gap-2"><Icon name="checkCircle" size="sm" class="text-primary-600 dark:text-primary-400" /> {{ t('landing.company.soc') }}</span>
+              <span class="inline-flex items-center gap-2"><Icon name="checkCircle" size="sm" class="text-primary-600 dark:text-primary-400" /> {{ t('landing.company.monitoring') }}</span>
+              <span class="inline-flex items-center gap-2"><Icon name="checkCircle" size="sm" class="text-primary-600 dark:text-primary-400" /> {{ t('landing.company.routing') }}</span>
             </div>
           </div>
         </div>
@@ -346,18 +343,18 @@
       <!-- ============ Final CTA ============ -->
       <section class="px-6 pb-24">
         <div class="reveal mx-auto max-w-6xl overflow-hidden rounded-3xl border border-neutral-200/70 bg-white px-8 py-16 text-center dark:border-white/10 dark:bg-white/[0.02]">
-          <p class="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">Get started today</p>
+          <p class="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">{{ t('landing.cta.eyebrow') }}</p>
           <h2 class="mx-auto max-w-2xl text-3xl font-semibold tracking-tight md:text-4xl">
-            Start building with {{ siteName }}
+            {{ t('landing.cta.title', { siteName }) }}
           </h2>
           <p class="mx-auto mt-4 max-w-xl text-lg text-neutral-500 dark:text-neutral-400">
-            One key, every AI model. Join developers and teams shipping faster on enterprise-grade infrastructure.
+            {{ t('landing.cta.subtitle') }}
           </p>
           <router-link
             :to="isAuthenticated ? dashboardPath : '/login'"
             class="mt-9 inline-flex items-center gap-2 rounded-xl bg-primary-500 px-8 py-3 text-sm font-semibold text-neutral-900 transition-colors hover:bg-primary-400"
           >
-            {{ isAuthenticated ? t('home.goToDashboard') : 'Get Started' }}
+            {{ isAuthenticated ? t('home.goToDashboard') : t('landing.hero.getStarted') }}
             <Icon name="arrowRight" size="sm" :stroke-width="2" />
           </router-link>
         </div>
@@ -409,18 +406,18 @@
 
           <!-- Product -->
           <div>
-            <h4 class="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">Product</h4>
+            <h4 class="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">{{ t('landing.footer.product') }}</h4>
             <ul class="space-y-3">
-              <li><a href="#features" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">Features</a></li>
-              <li><a href="#how" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">How it works</a></li>
-              <li><router-link to="/login" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">Login</router-link></li>
-              <li v-if="docUrl"><a :href="docUrl" target="_blank" rel="noopener noreferrer" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">Documentation</a></li>
+              <li><a href="#features" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">{{ t('landing.footer.features') }}</a></li>
+              <li><a href="#how" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">{{ t('landing.footer.howItWorks') }}</a></li>
+              <li><router-link to="/login" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">{{ t('landing.footer.login') }}</router-link></li>
+              <li v-if="docUrl"><a :href="docUrl" target="_blank" rel="noopener noreferrer" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">{{ t('landing.footer.docs') }}</a></li>
             </ul>
           </div>
 
           <!-- Community -->
           <div>
-            <h4 class="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">Community</h4>
+            <h4 class="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">{{ t('landing.footer.community') }}</h4>
             <ul class="space-y-3">
               <li v-for="social in socialLinks" :key="social.label">
                 <a :href="social.url" target="_blank" rel="noopener noreferrer" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">
@@ -432,10 +429,10 @@
 
           <!-- Company + Legal -->
           <div>
-            <h4 class="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">Company</h4>
+            <h4 class="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">{{ t('landing.footer.company') }}</h4>
             <ul class="space-y-3">
-              <li><a href="#company" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">About {{ PARENT_COMPANY }}</a></li>
-              <li><router-link to="/privacy" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">Privacy Policy</router-link></li>
+              <li><a href="#company" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">{{ t('landing.footer.about', { company: PARENT_COMPANY }) }}</a></li>
+              <li><router-link to="/privacy" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">{{ t('landing.footer.privacy') }}</router-link></li>
             </ul>
           </div>
         </div>
@@ -443,7 +440,7 @@
         <!-- Bottom bar -->
         <div class="mt-12 border-t border-neutral-200/70 pt-8 dark:border-white/10">
           <p class="text-center text-sm text-neutral-400 dark:text-neutral-500">
-            &copy; {{ currentYear }} {{ siteName }} — Managed &amp; operated by {{ PARENT_COMPANY }}. All rights reserved.
+            {{ t('landing.footer.rights', { year: currentYear, siteName, company: PARENT_COMPANY }) }}
           </p>
         </div>
       </div>
@@ -471,7 +468,6 @@ const appStore = useAppStore()
 // Site settings - directly from appStore (already initialized from injected config)
 const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'Mishra API')
 const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
-const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || 'AI API Gateway Platform')
 const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
 
@@ -505,10 +501,10 @@ function onScroll() {
 
 // Center navigation anchors
 const navLinks = [
-  { label: 'Product', href: '#product' },
-  { label: 'Features', href: '#features' },
-  { label: 'How it works', href: '#how' },
-  { label: 'Company', href: '#company' }
+  { label: 'landing.nav.product', href: '#product' },
+  { label: 'landing.nav.features', href: '#features' },
+  { label: 'landing.nav.howItWorks', href: '#how' },
+  { label: 'landing.nav.company', href: '#company' }
 ]
 
 // Social / community links (shown in header, footer)
@@ -529,27 +525,27 @@ const providers = [
 
 // Feature cards
 const features = [
-  { icon: 'server', title: 'Unified Gateway', desc: 'A single, OpenAI-compatible endpoint that routes to Claude, GPT, Gemini and more. Integrate once, switch models freely.' },
-  { icon: 'users', title: 'Multi-Account Pool', desc: 'Pool multiple upstream accounts with sticky sessions and automatic load balancing for higher throughput and resilience.' },
-  { icon: 'dollar', title: 'Pay-as-you-go Billing', desc: 'Transparent, usage-based pricing with real-time balance tracking. No surprises, no lock-in — pay only for what you use.' },
-  { icon: 'sync', title: 'Smart Routing & Failover', desc: 'Intelligent request routing with automatic retries and failover so your applications keep running even when an upstream hiccups.' },
-  { icon: 'chart', title: 'Real-time Analytics', desc: 'Monitor usage, latency, and spend across every model and key with live dashboards and detailed request logs.' },
-  { icon: 'shield', title: 'Enterprise Security', desc: 'Scoped API keys, granular quotas, and hardened infrastructure built to meet the demands of production workloads.' }
+  { icon: 'server', title: 'landing.features.unifiedTitle', desc: 'landing.features.unifiedDesc' },
+  { icon: 'users', title: 'landing.features.poolTitle', desc: 'landing.features.poolDesc' },
+  { icon: 'dollar', title: 'landing.features.billingTitle', desc: 'landing.features.billingDesc' },
+  { icon: 'sync', title: 'landing.features.routingTitle', desc: 'landing.features.routingDesc' },
+  { icon: 'chart', title: 'landing.features.analyticsTitle', desc: 'landing.features.analyticsDesc' },
+  { icon: 'shield', title: 'landing.features.securityTitle', desc: 'landing.features.securityDesc' }
 ] as const
 
 // Stats band (animated count-up)
 const stats = ref([
-  { label: 'AI Models', target: 50, prefix: '', suffix: '+', decimals: 0, display: 0 },
-  { label: 'Uptime SLA', target: 99.9, prefix: '', suffix: '%', decimals: 1, display: 0 },
-  { label: 'Response Latency', target: 1, prefix: '<', suffix: 's', decimals: 0, display: 0 },
-  { label: 'Support', target: 24, prefix: '', suffix: '/7', decimals: 0, display: 0 }
+  { label: 'landing.stats.models', target: 50, prefix: '', suffix: '+', decimals: 0, display: 0 },
+  { label: 'landing.stats.uptime', target: 99.9, prefix: '', suffix: '%', decimals: 1, display: 0 },
+  { label: 'landing.stats.latency', target: 1, prefix: '<', suffix: 's', decimals: 0, display: 0 },
+  { label: 'landing.stats.support', target: 24, prefix: '', suffix: '/7', decimals: 0, display: 0 }
 ])
 
 // How it works steps
 const steps = [
-  { title: 'Create your account', desc: 'Sign up in seconds and access your dashboard to manage keys, usage, and billing in one place.' },
-  { title: 'Add a key or pick a plan', desc: 'Generate an API key and choose a pay-as-you-go plan that fits your workload and budget.' },
-  { title: 'Start building', desc: 'Point your existing SDK at our endpoint and start shipping. One key unlocks every supported model.' }
+  { title: 'landing.steps.step1Title', desc: 'landing.steps.step1Desc' },
+  { title: 'landing.steps.step2Title', desc: 'landing.steps.step2Desc' },
+  { title: 'landing.steps.step3Title', desc: 'landing.steps.step3Desc' }
 ]
 
 // Template refs
