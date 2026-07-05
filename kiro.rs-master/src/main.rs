@@ -246,8 +246,8 @@ async fn main() {
     // When an old deployment upgrades, it takes the existing apiKey complete into system Key, ensuring the root key is always usable for /v1 traffic.
     if let Some(initial_key) = bootstrap_key.as_ref() {
         client_key_manager.ensure_system_key(
-            "defaultkey".to_string(),
-            Some("by config.json apiKey auto import (system key)".to_string()),
+            "Default Key".to_string(),
+            Some("Auto-imported from config.json apiKey (system key)".to_string()),
             initial_key.clone(),
         );
     }
