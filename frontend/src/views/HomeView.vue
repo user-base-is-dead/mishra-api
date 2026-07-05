@@ -291,20 +291,6 @@
         </div>
       </section>
 
-      <!-- ============ Stats Band ============ -->
-      <section ref="statsBand" class="border-y border-neutral-200/70 px-6 py-16 dark:border-white/10">
-        <div class="mx-auto grid max-w-6xl grid-cols-2 gap-y-10 lg:grid-cols-4">
-          <div v-for="s in stats" :key="s.label" class="text-center">
-            <div class="text-4xl font-semibold tracking-tight md:text-5xl">
-              {{ s.prefix }}{{ s.display.toFixed(s.decimals) }}{{ s.suffix }}
-            </div>
-            <div class="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">
-              {{ t(s.label) }}
-            </div>
-          </div>
-        </div>
-      </section>
-
       <!-- ============ How it works ============ -->
       <section id="how" class="px-6 py-24">
         <div class="mx-auto max-w-6xl">
@@ -562,13 +548,7 @@ const features = [
   { icon: 'shield', title: 'landing.features.securityTitle', desc: 'landing.features.securityDesc' }
 ] as const
 
-// Stats band (animated count-up)
-const stats = ref([
-  { label: 'landing.stats.models', target: 50, prefix: '', suffix: '+', decimals: 0, display: 0 },
-  { label: 'landing.stats.uptime', target: 99.9, prefix: '', suffix: '%', decimals: 1, display: 0 },
-  { label: 'landing.stats.latency', target: 1, prefix: '<', suffix: 's', decimals: 0, display: 0 },
-  { label: 'landing.stats.support', target: 24, prefix: '', suffix: '/7', decimals: 0, display: 0 }
-])
+// Stats band removed — no fabricated/dummy metrics on the public site.
 
 // How it works steps
 const steps = [
@@ -581,7 +561,6 @@ const steps = [
 const root = ref<HTMLElement | null>(null)
 const heroBlob = ref<HTMLElement | null>(null)
 const featureGrid = ref<HTMLElement | null>(null)
-const statsBand = ref<HTMLElement | null>(null)
 const stepsWrap = ref<HTMLElement | null>(null)
 const cursorDot = ref<HTMLElement | null>(null)
 const cursorRing = ref<HTMLElement | null>(null)
@@ -619,8 +598,7 @@ function initTheme() {
 function initAnimations() {
   const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   if (prefersReduced) {
-    // Everything visible; fill in stat numbers immediately
-    stats.value.forEach((s) => { s.display = s.target })
+    // Everything visible; no scroll animations
     return
   }
 
@@ -691,23 +669,7 @@ function initAnimations() {
       })
     }
 
-    // Stats count-up — runs once when the band enters the viewport
-    if (statsBand.value) {
-      ScrollTrigger.create({
-        trigger: statsBand.value,
-        start: 'top 80%',
-        once: true,
-        onEnter: () => {
-          stats.value.forEach((s) => {
-            gsap.to(s, {
-              display: s.target,
-              duration: 2,
-              ease: 'power2.out'
-            })
-          })
-        }
-      })
-    }
+    // Stats count-up removed along with the dummy stats band.
 
     // How-it-works: connecting line scaleX from 0
     if (stepsWrap.value) {
