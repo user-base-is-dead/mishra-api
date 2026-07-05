@@ -5,19 +5,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary — Gold/Amber (Mishra API brand)
+        // Primary — luminous Gold (Mishra API brand)
         primary: {
-          50:  '#fdf9ed',
-          100: '#faf0cf',
-          200: '#f4e0a0',
-          300: '#ecc968',
-          400: '#e0a82e',
-          500: '#d4a017',
-          600: '#b8860b',
-          700: '#96690c',
-          800: '#7a5311',
-          900: '#6b4a1e',
-          950: '#3d2a0f'
+          50:  '#fef9e6',
+          100: '#fdefbf',
+          200: '#fadd7d',
+          300: '#f5c73a',
+          400: '#eeb111',
+          500: '#e0a008',
+          600: '#c68410',
+          700: '#9d6410',
+          800: '#7f4f14',
+          900: '#6b4217',
+          950: '#3e2409'
         },
         // Accent — warm neutral (replaces cold slate)
         accent: {

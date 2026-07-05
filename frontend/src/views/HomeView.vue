@@ -140,10 +140,13 @@
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
           <div
             ref="heroBlob"
-            class="hero-blob absolute -right-32 -top-24 h-[32rem] w-[32rem] rounded-full bg-primary-400/10 blur-[120px] dark:bg-primary-500/10"
+            class="hero-blob absolute -right-32 -top-24 h-[32rem] w-[32rem] rounded-full bg-primary-400/25 blur-[120px] dark:bg-primary-500/20"
           ></div>
           <div
-            class="absolute inset-0 bg-[linear-gradient(rgba(120,113,108,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(120,113,108,0.045)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)] dark:bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)]"
+            class="pointer-events-none absolute -left-40 top-1/3 h-[26rem] w-[26rem] rounded-full bg-primary-300/20 blur-[130px] dark:bg-primary-600/15"
+          ></div>
+          <div
+            class="absolute inset-0 bg-[linear-gradient(rgba(224,160,8,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(224,160,8,0.05)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)] dark:bg-[linear-gradient(rgba(238,177,17,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(238,177,17,0.05)_1px,transparent_1px)]"
           ></div>
         </div>
 
@@ -349,7 +352,7 @@
           <template v-for="n in 4" :key="'bm' + n">
             <span class="big-type text-neutral-900 dark:text-neutral-100">{{ siteName }}</span>
             <span class="big-type-outline">✳</span>
-            <span class="big-type text-primary-500">{{ COMPANY_TAGLINE }}</span>
+            <span class="big-type text-gradient">{{ COMPANY_TAGLINE }}</span>
             <span class="big-type-outline">✳</span>
           </template>
         </div>
@@ -1173,7 +1176,7 @@ onBeforeUnmount(() => {
   font-size: clamp(1.5rem, 5vw, 3.5rem);
   line-height: 1;
   color: transparent;
-  -webkit-text-stroke: 1px rgba(212, 160, 23, 0.55);
+  -webkit-text-stroke: 1px rgba(224, 160, 8, 0.7);
 }
 
 /* Feature tilt + spotlight */
