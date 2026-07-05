@@ -1,0 +1,10 @@
+{
+  "name": "mishra-miron-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mishra Miron API — one-command launcher for backend, frontend, Redis and kiro.rs",
+  "scripts": {
+    "start": "powershell -ExecutionPolicy Bypass -File ./start-all.ps1",
+    "stop": "powershell -ExecutionPolicy Bypass -File ./stop-all.ps1"
+  }
+}
