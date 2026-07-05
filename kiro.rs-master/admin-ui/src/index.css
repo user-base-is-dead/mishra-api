@@ -3,52 +3,52 @@
 
 @layer base {
   :root {
-    /* Apple light theme — macOS Sonoma inspired */
-    --background: 220 20% 97%;
-    --foreground: 220 10% 12%;
+    /* Mishra Miron API — gold light theme */
+    --background: 40 30% 98%;
+    --foreground: 30 12% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 220 10% 12%;
+    --card-foreground: 30 12% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 10% 12%;
-    /* Apple system blue (#007AFF) */
-    --primary: 211 100% 50%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 94%;
-    --secondary-foreground: 220 10% 12%;
-    --muted: 220 14% 94%;
-    --muted-foreground: 220 8% 45%;
-    --accent: 211 100% 96%;
-    --accent-foreground: 211 100% 35%;
-    /* Apple system red (#FF3B30) */
-    --destructive: 4 100% 59%;
+    --popover-foreground: 30 12% 12%;
+    /* Mishra gold (#d4a017) */
+    --primary: 43 80% 46%;
+    --primary-foreground: 40 45% 9%;
+    --secondary: 40 22% 94%;
+    --secondary-foreground: 30 12% 12%;
+    --muted: 40 22% 94%;
+    --muted-foreground: 35 8% 42%;
+    --accent: 43 90% 92%;
+    --accent-foreground: 40 80% 28%;
+    /* keep semantic danger red */
+    --destructive: 4 90% 58%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 88%;
-    --input: 220 13% 88%;
-    --ring: 211 100% 50%;
+    --border: 40 16% 86%;
+    --input: 40 16% 86%;
+    --ring: 43 80% 46%;
     --radius: 0.875rem;
   }
 
   .dark {
-    /* Apple dark theme — macOS Sonoma inspired */
-    --background: 220 14% 8%;
-    --foreground: 220 10% 96%;
-    --card: 220 14% 12%;
-    --card-foreground: 220 10% 96%;
-    --popover: 220 14% 12%;
-    --popover-foreground: 220 10% 96%;
-    --primary: 211 100% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 18%;
-    --secondary-foreground: 220 10% 96%;
-    --muted: 220 14% 16%;
-    --muted-foreground: 220 8% 62%;
-    --accent: 211 70% 22%;
-    --accent-foreground: 211 100% 80%;
-    --destructive: 4 90% 62%;
+    /* Mishra Miron API — warm charcoal dark theme */
+    --background: 30 9% 8%;
+    --foreground: 40 14% 95%;
+    --card: 30 9% 12%;
+    --card-foreground: 40 14% 95%;
+    --popover: 30 9% 12%;
+    --popover-foreground: 40 14% 95%;
+    --primary: 43 85% 52%;
+    --primary-foreground: 40 45% 8%;
+    --secondary: 30 8% 18%;
+    --secondary-foreground: 40 14% 95%;
+    --muted: 30 8% 16%;
+    --muted-foreground: 38 8% 62%;
+    --accent: 43 42% 22%;
+    --accent-foreground: 43 90% 78%;
+    --destructive: 4 85% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 14% 22%;
-    --input: 220 14% 22%;
-    --ring: 211 100% 60%;
+    --border: 30 8% 22%;
+    --input: 30 8% 22%;
+    --ring: 43 85% 52%;
   }
 }
 
@@ -80,15 +80,15 @@
     z-index: -1;
     pointer-events: none;
     background:
-      radial-gradient(60rem 40rem at 10% -10%, hsl(211 100% 60% / 0.08), transparent 60%),
-      radial-gradient(50rem 30rem at 110% 0%, hsl(280 90% 60% / 0.06), transparent 60%),
-      radial-gradient(40rem 30rem at 50% 110%, hsl(180 80% 50% / 0.05), transparent 60%);
+      radial-gradient(60rem 40rem at 10% -10%, hsl(43 90% 55% / 0.10), transparent 60%),
+      radial-gradient(50rem 30rem at 110% 0%, hsl(38 90% 50% / 0.07), transparent 60%),
+      radial-gradient(40rem 30rem at 50% 110%, hsl(48 90% 55% / 0.05), transparent 60%);
   }
   .dark body::before {
     background:
-      radial-gradient(60rem 40rem at 10% -10%, hsl(211 100% 50% / 0.16), transparent 60%),
-      radial-gradient(50rem 30rem at 110% 0%, hsl(280 90% 55% / 0.12), transparent 60%),
-      radial-gradient(40rem 30rem at 50% 110%, hsl(180 80% 50% / 0.08), transparent 60%);
+      radial-gradient(60rem 40rem at 10% -10%, hsl(43 90% 50% / 0.15), transparent 60%),
+      radial-gradient(50rem 30rem at 110% 0%, hsl(38 85% 45% / 0.10), transparent 60%),
+      radial-gradient(40rem 30rem at 50% 110%, hsl(48 85% 50% / 0.07), transparent 60%);
   }
 }
 
