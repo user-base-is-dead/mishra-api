@@ -4,7 +4,29 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a0603" />
     <title>Mishra Miron API - AI API Gateway</title>
+    <!-- Pre-paint theme: dark by default (light is an explicit opt-in) to avoid a white flash -->
+    <script>
+      ;(function () {
+        try {
+          if (localStorage.getItem('theme') !== 'light') document.documentElement.classList.add('dark')
+        } catch (e) {
+          document.documentElement.classList.add('dark')
+        }
+      })()
+    </script>
+    <style>
+      html { background: #fbfaf6; }
+      html.dark { background: #0a0603; color-scheme: dark; }
+    </style>
+    <!-- Display + body typefaces (loaded async, system-font fallback in tailwind config) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div id="app"></div>

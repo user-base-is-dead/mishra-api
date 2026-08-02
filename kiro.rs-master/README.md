@@ -418,6 +418,8 @@ KIRO_API_KEY=ksk_xxx ./kiro-rs
 
 当前静态列表包含：
 
+- `claude-opus-5` / `claude-opus-5-thinking`
+- `claude-sonnet-5` / `claude-sonnet-5-thinking`
 - `claude-opus-4-8` / `claude-opus-4-8-thinking`
 - `claude-sonnet-4-8` / `claude-sonnet-4-8-thinking`
 - `claude-opus-4-7` / `claude-opus-4-7-thinking`
@@ -431,6 +433,8 @@ KIRO_API_KEY=ksk_xxx ./kiro-rs
 
 | 请求模型关键词 | 上游模型 |
 |---|---|
+| `sonnet-5` | `claude-sonnet-5` |
+| `opus-5` | `claude-opus-5` |
 | `sonnet` + `4-8` / `4.8` | `claude-sonnet-4.8` |
 | `sonnet` + `4-6` / `4.6` | `claude-sonnet-4.6` |
 | `sonnet` + `4-5` / `4.5` | `claude-sonnet-4.5` |
@@ -444,7 +448,7 @@ KIRO_API_KEY=ksk_xxx ./kiro-rs
 
 上下文窗口估算：
 
-- `claude-sonnet-4.6`、`claude-sonnet-4.8`、`claude-opus-4.6`、`claude-opus-4.7`、`claude-opus-4.8`：`1_000_000`
+- `claude-sonnet-5`, `claude-opus-5`, `claude-sonnet-4.6`、`claude-sonnet-4.8`、`claude-opus-4.6`、`claude-opus-4.7`、`claude-opus-4.8`：`1_000_000`
 - 其它模型：`200_000`
 
 <a id="thinking-tools-websearch"></a>
@@ -474,7 +478,7 @@ KIRO_API_KEY=ksk_xxx ./kiro-rs
 
 模型名带 `-thinking` 后缀时会自动覆写 thinking 配置：
 
-- Opus 4.6：`thinking.type=adaptive`，并默认设置 `output_config.effort=high`。
+- Opus 4.6 / Sonnet 5 / Opus 5：`thinking.type=adaptive`，并默认设置 `output_config.effort=high`。
 - 其它 thinking 模型：`thinking.type=enabled`，`budget_tokens=20000`。
 
 Adaptive thinking：
@@ -495,7 +499,7 @@ Adaptive thinking：
 }
 ```
 
-`additionalModelRequestFields.output_config` 是 Kiro 上游的窄兼容字段。当前只会在已知可接受该字段的 Opus 4.6 adaptive thinking 路径上传递；Sonnet 4.5 / 4.8、Opus 4.6 非 adaptive thinking 等路径会跳过该字段，避免上游返回 `additionalModelRequestFields is not supported for this model`。`effort` 会先归一化大小写和空格；已知 4.5 / 4.6 系列不接受 `xhigh`，会降级为最接近的 `high`；Opus 4.7 / 4.8、Fable 5、Mythos 5 会保留 `xhigh`；其它未知模型的已知 effort 值也会保持原样，避免维护一张容易过期的模型白名单；未知 effort 值会回退到 `high`。
+`additionalModelRequestFields.output_config` 是 Kiro 上游的窄兼容字段。当前只会在已知可接受该字段的 Opus 4.6 / Sonnet 5 / Opus 5 adaptive thinking 路径上传递；Sonnet 4.5 / 4.8、Opus 4.6 非 adaptive thinking 等路径会跳过该字段，避免上游返回 `additionalModelRequestFields is not supported for this model`。`effort` 会先归一化大小写和空格；已知 4.5 / 4.6 系列不接受 `xhigh`，会降级为最接近的 `high`；Opus 4.7 / 4.8, Sonnet 5, Opus 5、Fable 5、Mythos 5 会保留 `xhigh`；其它未知模型的已知 effort 值也会保持原样，避免维护一张容易过期的模型白名单；未知 effort 值会回退到 `high`。
 
 Kiro 上游可能返回原生 `reasoningContentEvent`。`kiro-rs` 会把它转换为 Anthropic 兼容内容：
 

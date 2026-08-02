@@ -366,6 +366,42 @@ fn resolve_usage_input_tokens(
 fn available_models() -> Vec<Model> {
     vec![
         Model {
+            id: "claude-opus-5".to_string(),
+            object: "model".to_string(),
+            created: 1782777600, // Jun 30, 2026
+            owned_by: "anthropic".to_string(),
+            display_name: "Claude Opus 5".to_string(),
+            model_type: "chat".to_string(),
+            max_tokens: 128_000,
+        },
+        Model {
+            id: "claude-opus-5-thinking".to_string(),
+            object: "model".to_string(),
+            created: 1782777600, // Jun 30, 2026
+            owned_by: "anthropic".to_string(),
+            display_name: "Claude Opus 5 (Thinking)".to_string(),
+            model_type: "chat".to_string(),
+            max_tokens: 128_000,
+        },
+        Model {
+            id: "claude-sonnet-5".to_string(),
+            object: "model".to_string(),
+            created: 1782777600, // Jun 30, 2026
+            owned_by: "anthropic".to_string(),
+            display_name: "Claude Sonnet 5".to_string(),
+            model_type: "chat".to_string(),
+            max_tokens: 128_000,
+        },
+        Model {
+            id: "claude-sonnet-5-thinking".to_string(),
+            object: "model".to_string(),
+            created: 1782777600, // Jun 30, 2026
+            owned_by: "anthropic".to_string(),
+            display_name: "Claude Sonnet 5 (Thinking)".to_string(),
+            model_type: "chat".to_string(),
+            max_tokens: 128_000,
+        },
+        Model {
             id: "claude-opus-4-8".to_string(),
             object: "model".to_string(),
             created: 1779897600, // May 28, 2026
@@ -1231,26 +1267,32 @@ fn build_non_stream_content(
     content
 }
 
-/// detect whether the model name contains "thinking" suffix, if included then override thinking config
+/// Detect a `-thinking` model suffix and apply the upstream-compatible defaults.
 ///
-/// - Opus 4.6:overwriteas adaptive type
-/// - other models: override to enabled type
-/// - budget_tokens fixed to 20000
+/// - Opus 4.6, Sonnet 5, and Opus 5 use adaptive thinking plus effort=high.
+/// - Other models use enabled thinking.
+/// - budget_tokens is fixed to 20000.
 fn override_thinking_from_model_name(payload: &mut MessagesRequest) {
     let model_lower = payload.model.to_lowercase();
     if !model_lower.contains("thinking") {
         return;
     }
 
-    let is_opus_4_6 = model_lower.contains("opus")
-        && (model_lower.contains("4-6") || model_lower.contains("4.6"));
+    let is_adaptive_thinking = (model_lower.contains("opus")
+        && (model_lower.contains("4-6") || model_lower.contains("4.6")))
+        || model_lower.contains("sonnet-5")
+        || model_lower.contains("opus-5");
 
-    let thinking_type = if is_opus_4_6 { "adaptive" } else { "enabled" };
+    let thinking_type = if is_adaptive_thinking {
+        "adaptive"
+    } else {
+        "enabled"
+    };
 
     tracing::info!(
         model = %payload.model,
         thinking_type = thinking_type,
-        "model namecontains thinking afteraffix,overwrite thinking config"
+        "model name contains thinking suffix; overriding thinking config"
     );
 
     payload.thinking = Some(Thinking {
@@ -1258,7 +1300,7 @@ fn override_thinking_from_model_name(payload: &mut MessagesRequest) {
         budget_tokens: 20000,
     });
 
-    if is_opus_4_6 {
+    if is_adaptive_thinking {
         payload.output_config = Some(OutputConfig {
             effort: "high".to_string(),
         });
@@ -1824,5 +1866,35 @@ mod tests {
         assert!(ids.contains(&"claude-opus-4-8-thinking"));
         assert!(ids.contains(&"claude-sonnet-4-8"));
         assert!(ids.contains(&"claude-sonnet-4-8-thinking"));
+    }
+
+    #[test]
+    fn available_models_include_generation_5_variants() {
+        let models = available_models();
+        let ids: Vec<&str> = models.iter().map(|model| model.id.as_str()).collect();
+
+        assert!(ids.contains(&"claude-opus-5"));
+        assert!(ids.contains(&"claude-opus-5-thinking"));
+        assert!(ids.contains(&"claude-sonnet-5"));
+        assert!(ids.contains(&"claude-sonnet-5-thinking"));
+    }
+
+    #[test]
+    fn generation_5_thinking_models_use_adaptive_defaults() {
+        for model in ["claude-sonnet-5-thinking", "claude-opus-5-thinking"] {
+            let mut request: MessagesRequest = serde_json::from_value(serde_json::json!({
+                "model": model,
+                "max_tokens": 1024,
+                "messages": [{"role": "user", "content": "test"}]
+            }))
+            .unwrap();
+
+            override_thinking_from_model_name(&mut request);
+
+            let thinking = request.thinking.expect("thinking config should be injected");
+            assert_eq!(thinking.thinking_type, "adaptive");
+            assert_eq!(thinking.budget_tokens, 20000);
+            assert_eq!(request.output_config.unwrap().effort, "high");
+        }
     }
 }

@@ -2519,12 +2519,12 @@ mod tests {
 
         // two segments of short text (each 2 Chinese characters); the total length may still be insufficient to satisfy safe_len>0 ofoutputentryitem,
         // and therefore will leavein thinking_buffer inetc.pendingsubsequent chunk.
-        let ev1 = ctx.process_assistant_response("has mod");
+        let ev1 = ctx.process_assistant_response("mod");
         assert!(
             ev1.iter().all(|e| e.event != "content_block_delta"),
             "short prefix should be buffered under thinking mode"
         );
-        let ev2 = ctx.process_assistant_response("edit:");
+        let ev2 = ctx.process_assistant_response("ified:");
         assert!(
             ev2.iter().all(|e| e.event != "content_block_delta"),
             "short prefix should still be buffered under thinking mode"
@@ -3221,7 +3221,7 @@ mod tests {
 
         let text = collect_text_content(&all);
         assert!(
-            text.contains("parserillustrate") && text.contains("this text"),
+            text.contains("parser illustration") && text.contains("this text"),
             "The body should be fully preserved (including narrative before and after).: {:?}",
             text
         );
@@ -3944,7 +3944,7 @@ mod tests {
         all.extend(ctx.generate_final_events());
         let text = collect_text_content(&all);
         assert!(text.contains("Icountbriefly"), "normal body text should not be broken by the circuit breaker: {:?}", text);
-        assert!(text.contains("numberthreelinealso normal"), "normal body text should be fully preserved: {:?}", text);
+        assert!(text.contains("the third line is also normal"), "normal body text should be fully preserved: {:?}", text);
     }
 
     /// 🟢 across chunk Repeats can also be circuit broken (streaming pieces arrive, one per piece). count).

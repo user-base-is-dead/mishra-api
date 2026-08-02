@@ -3494,8 +3494,8 @@ mod tests {
         assert!(result.is_err());
         let err_msg = result.err().unwrap().to_string();
         assert!(
-            err_msg.contains("duplicatecredential ID"),
-            "the error message should contain 'duplicatecredential ID', actual: {}",
+            err_msg.contains("duplicate credential ID"),
+            "the error message should contain 'duplicate credential ID', actual: {}",
             err_msg
         );
     }

@@ -11,6 +11,19 @@
     @apply scroll-smooth antialiased;
   }
 
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+
+  .lenis.lenis-stopped {
+    overflow: clip;
+  }
+
   body {
     @apply bg-gray-50 text-gray-900 dark:bg-dark-950 dark:text-gray-100;
     @apply min-h-screen;
@@ -48,16 +61,16 @@
   }
 
   *:hover::-webkit-scrollbar-thumb {
-    @apply bg-gray-300/50 dark:bg-dark-600/50;
+    @apply bg-gray-300/50 dark:bg-primary-500/30;
   }
 
   *:hover::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400 dark:bg-dark-500;
+    @apply bg-gray-400 dark:bg-primary-500/60;
   }
 
   /* 选中文本样式 */
   ::selection {
-    @apply bg-primary-500/20 text-primary-900 dark:text-primary-100;
+    @apply bg-primary-500/25 text-primary-900 dark:bg-primary-500/35 dark:text-primary-50;
   }
 
 
@@ -75,14 +88,41 @@
   }
 
   .btn-primary {
+    @apply relative overflow-hidden;
     @apply bg-gradient-to-br from-primary-300 via-primary-500 to-primary-700;
-    @apply text-white;
-    box-shadow: 0 6px 26px rgba(224, 160, 8, 0.38);
-    @apply hover:from-primary-400 hover:via-primary-600 hover:to-primary-800;
+    @apply font-semibold text-dark-950;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 233, 163, 0.45),
+      inset 0 -1px 0 rgba(62, 36, 9, 0.35),
+      0 6px 26px rgba(240, 165, 10, 0.38);
+    @apply hover:from-primary-300 hover:via-primary-400 hover:to-primary-600;
     @apply active:scale-[0.97];
   }
   .btn-primary:hover {
-    box-shadow: 0 12px 50px rgba(238, 177, 17, 0.48);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 233, 163, 0.55),
+      inset 0 -1px 0 rgba(62, 36, 9, 0.3),
+      0 12px 50px rgba(255, 182, 28, 0.5);
+  }
+  /* Specular sweep across the gold on hover — the glossy signature */
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 25%, rgba(255, 244, 200, 0.5) 50%, transparent 75%);
+    background-size: 220% 100%;
+    background-position: 130% 0;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+  .btn-primary:hover::after {
+    opacity: 1;
+    animation: btn-sheen 1.1s ease forwards;
+  }
+  @keyframes btn-sheen {
+    from { background-position: 130% 0; }
+    to { background-position: -110% 0; }
   }
 
   .btn-secondary {
@@ -174,6 +214,14 @@
     @apply disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-dark-900;
   }
 
+  .dark .input[type='date'],
+  .dark .input[type='time'],
+  .dark .input[type='datetime-local'],
+  .dark .input[type='month'],
+  .dark .input[type='week'] {
+    color-scheme: dark;
+  }
+
   .input-error {
     @apply border-red-500 focus:border-red-500 focus:ring-red-500/30;
   }
@@ -223,13 +271,25 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(224,160,8,0.12);
     @apply transition-all duration-300;
   }
+  .dark .card {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 233, 163, 0.06),
+      0 1px 3px rgba(0, 0, 0, 0.4),
+      0 16px 40px -18px rgba(0, 0, 0, 0.6);
+  }
 
   .card-hover {
     @apply hover:-translate-y-0.5;
-    @apply hover:border-primary-200 dark:hover:border-dark-600;
+    @apply hover:border-primary-200 dark:hover:border-primary-500/25;
   }
   .card-hover:hover {
     box-shadow: 0 10px 44px rgba(224,160,8,0.26);
+  }
+  .dark .card-hover:hover {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 233, 163, 0.1),
+      0 12px 48px -12px rgba(0, 0, 0, 0.7),
+      0 0 32px rgba(240, 165, 10, 0.16);
   }
 
   .card-glass {
@@ -657,6 +717,7 @@
   .progress-bar {
     @apply h-full bg-gradient-to-r from-primary-600 via-primary-500 to-primary-300;
     @apply transition-all duration-300;
+    box-shadow: 0 0 10px rgba(255, 182, 28, 0.5);
   }
 
   /* ============ 开关 ============ */
@@ -667,7 +728,8 @@
   }
 
   .switch-active {
-    @apply bg-primary-500;
+    @apply bg-gradient-to-b from-primary-400 to-primary-600;
+    box-shadow: inset 0 1px 0 rgba(255, 233, 163, 0.4), 0 0 12px rgba(240, 165, 10, 0.35);
   }
 
   .switch-thumb {
@@ -770,5 +832,95 @@
 
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+
+
+/* ============ Miron full-site fluid background ============ */
+/*
+ * The shader's base color is the site's surface color, so admitting the canvas
+ * does not reduce average text contrast; it only reveals the drifting gold
+ * deviation. Keep one alpha-bearing route surface to avoid stacked opacity.
+ */
+html {
+  background: #fffdf8;
+}
+
+html.dark {
+  background: #150d07;
+}
+
+body {
+  background-color: transparent !important;
+}
+
+#app,
+.miron-fluid-content {
+  min-height: 100vh;
+}
+
+.miron-fluid-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* RouterView renders each page/layout as this wrapper's direct child. */
+.miron-fluid-content > [class*='min-h-screen'] {
+  background-color: rgba(251, 250, 246, 0.16) !important;
+  background-color: color-mix(in srgb, #fbfaf6 16%, transparent) !important;
+}
+
+.dark .miron-fluid-content > [class*='min-h-screen'] {
+  background-color: rgba(21, 13, 7, 0.16) !important;
+  background-color: color-mix(in srgb, #150d07 16%, transparent) !important;
+}
+
+/* Standalone setup/payment pages previously used an opaque full-page gradient. */
+.miron-fluid-content > [class*='min-h-screen'][class*='bg-gradient-to-'] {
+  background-image: none !important;
+}
+
+/* Chrome is a window onto the field, matching the transparent IDE side bars. */
+.miron-fluid-content .sidebar {
+  background-color: rgba(255, 253, 248, 0.28) !important;
+  backdrop-filter: blur(14px) saturate(1.08);
+}
+
+.dark .miron-fluid-content .sidebar {
+  background-color: rgba(21, 13, 7, 0.24) !important;
+}
+
+.miron-fluid-content .glass {
+  background-color: rgba(255, 253, 248, 0.38) !important;
+  backdrop-filter: blur(18px) saturate(1.1);
+}
+
+.dark .miron-fluid-content .glass {
+  background-color: rgba(21, 13, 7, 0.34) !important;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .miron-fluid-content > [class*='min-h-screen'],
+  .miron-fluid-content .sidebar,
+  .miron-fluid-content .glass {
+    background-color: #fffdf8 !important;
+    backdrop-filter: none;
+  }
+
+  .dark .miron-fluid-content > [class*='min-h-screen'],
+  .dark .miron-fluid-content .sidebar,
+  .dark .miron-fluid-content .glass {
+    background-color: #150d07 !important;
+  }
+}
+
+@media print {
+  .miron-fluid-background {
+    display: none !important;
+  }
+
+  .miron-fluid-content > [class*='min-h-screen'] {
+    background: white !important;
   }
 }

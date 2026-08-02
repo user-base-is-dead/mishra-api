@@ -25,6 +25,7 @@ import (
 
 	"mishra-api/internal/pkg/proxyurl"
 	"mishra-api/internal/pkg/proxyutil"
+	"mishra-api/internal/pkg/servertiming"
 	"mishra-api/internal/util/urlvalidator"
 )
 
@@ -92,6 +93,7 @@ func buildClient(opts Options) (*http.Client, error) {
 	if opts.ValidateResolvedIP && !opts.AllowPrivateHosts {
 		rt = newValidatedTransport(transport)
 	}
+	rt = servertiming.WrapRoundTripper(rt)
 	return &http.Client{
 		Transport: rt,
 		Timeout:   opts.Timeout,

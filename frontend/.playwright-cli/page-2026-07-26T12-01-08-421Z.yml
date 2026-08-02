@@ -1,0 +1,276 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e7]: Mishra Miron API
+    - generic [ref=e13]: "16"
+  - banner [ref=e14]:
+    - navigation [ref=e15]:
+      - link "Logo Mishra Miron API A Miron Company" [ref=e16]:
+        - /url: /
+        - img "Logo" [ref=e18]
+        - generic [ref=e19]:
+          - generic [ref=e20]: Mishra Miron API
+          - generic [ref=e21]: A Miron Company
+      - generic [ref=e22]:
+        - link "Home" [ref=e23]:
+          - /url: /
+        - link "IDE" [ref=e24]:
+          - /url: "#features"
+        - link "Docs" [ref=e25]:
+          - /url: "#"
+        - link "Contact" [ref=e26]:
+          - /url: https://t.me/thepowerxstore
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - link "Telegram Bot" [ref=e29]:
+            - /url: https://t.me/powerxstore_bot
+          - link "Telegram Channel" [ref=e32]:
+            - /url: https://t.me/thepowerxstore
+          - link "Discord" [ref=e35]:
+            - /url: https://discord.gg/ZDmq3zDkhR
+        - button "🇺🇸 EN" [ref=e40]:
+          - generic [ref=e41]: 🇺🇸
+          - generic [ref=e42]: EN
+        - button "Switch to Light Mode" [ref=e45]
+        - link "Login" [ref=e48]:
+          - /url: /login
+  - generic [ref=e50]:
+    - main [ref=e51]:
+      - generic [ref=e53]:
+        - generic [ref=e54]: Enterprise AI Gateway · 99.9% uptime
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - heading [level=1] [ref=e61]:
+              - generic "One key." [ref=e62]:
+                - generic [ref=e63]:
+                  - generic [ref=e64]: O
+                  - generic [ref=e65]: "n"
+                  - generic [ref=e66]: e
+                  - generic [ref=e67]: k
+                  - generic [ref=e68]: e
+                  - generic [ref=e69]: "y"
+                  - generic [ref=e70]: .
+              - generic "Every AI model." [ref=e71]:
+                - generic [ref=e72]:
+                  - generic [ref=e73]: E
+                  - generic [ref=e74]: v
+                  - generic [ref=e75]: e
+                  - generic [ref=e76]: r
+                  - generic [ref=e77]: "y"
+                  - generic [ref=e78]: A
+                  - generic [ref=e79]: I
+                  - generic [ref=e80]: m
+                  - generic [ref=e81]: o
+                  - generic [ref=e82]: d
+                  - generic [ref=e83]: e
+                  - generic [ref=e84]: l
+                  - generic [ref=e85]: .
+              - generic "Zero friction." [ref=e86]:
+                - generic [ref=e87]:
+                  - generic [ref=e88]: Z
+                  - generic [ref=e89]: e
+                  - generic [ref=e90]: r
+                  - generic [ref=e91]: o
+                  - generic [ref=e92]: f
+                  - generic [ref=e93]: r
+                  - generic [ref=e94]: i
+                  - generic [ref=e95]: c
+                  - generic [ref=e96]: t
+                  - generic [ref=e97]: i
+                  - generic [ref=e98]: o
+                  - generic [ref=e99]: "n"
+                  - generic [ref=e100]: .
+            - paragraph [ref=e101]: A unified gateway to the world’s leading AI providers. Ship faster with one API, transparent billing, and reliability you can trust.
+            - generic [ref=e102]:
+              - link "Get Started" [ref=e103]:
+                - /url: /login
+              - link "Talk to us" [ref=e106]:
+                - /url: https://t.me/thepowerxstore
+            - generic [ref=e107]:
+              - generic [ref=e108]: Enterprise security
+              - generic [ref=e111]: 99.9% uptime
+              - generic [ref=e114]: Pay-as-you-go
+          - generic [ref=e118]:
+            - generic [ref=e119]:
+              - generic [ref=e124]: POST /v1/messages
+              - generic [ref=e125]: "200"
+            - generic [ref=e126]:
+              - generic [ref=e127]:
+                - generic [ref=e128]: model
+                - generic [ref=e129]: ":"
+                - generic [ref=e130]: "\"claude-sonnet-5\""
+              - generic [ref=e131]: "# routing to best upstream…"
+              - generic [ref=e133]:
+                - generic [ref=e134]: anthropic
+                - generic [ref=e138]: openai
+                - generic [ref=e142]: gemini
+              - generic [ref=e146]:
+                - generic [ref=e147]: ✓ 200 OK
+                - generic [ref=e148]: · 142 tokens · 0.9s
+              - generic [ref=e149]:
+                - generic [ref=e150]: "{"
+                - generic [ref=e151]: "\"content\""
+                - generic [ref=e152]: ":"
+                - generic [ref=e153]: "\"Hello, world\""
+                - generic [ref=e154]: "}"
+              - generic [ref=e155]: $
+      - generic [ref=e158]:
+        - paragraph [ref=e159]: Trusted infrastructure for teams building on
+        - generic [ref=e161]:
+          - generic [ref=e162]: Claude
+          - generic [ref=e166]: GPT
+          - generic [ref=e170]: Gemini
+          - generic [ref=e174]: Antigravity
+          - generic [ref=e176]:
+            - text: More
+            - generic [ref=e178]: soon
+          - generic [ref=e179]: Claude
+          - generic [ref=e183]: GPT
+          - generic [ref=e187]: Gemini
+          - generic [ref=e191]: Antigravity
+          - generic [ref=e193]:
+            - text: More
+            - generic [ref=e195]: soon
+      - generic [ref=e197]:
+        - generic [ref=e198]:
+          - generic [ref=e199]: 0+
+          - paragraph [ref=e200]: AI Models
+        - generic [ref=e201]:
+          - generic [ref=e202]: 0%
+          - paragraph [ref=e203]: Uptime SLA
+        - generic [ref=e204]:
+          - generic [ref=e205]: 0s
+          - paragraph [ref=e206]: Response Latency
+        - generic [ref=e207]:
+          - generic [ref=e208]: 0/7
+          - paragraph [ref=e209]: Support
+      - generic [ref=e211]:
+        - generic [ref=e212]:
+          - generic [ref=e213]:
+            - paragraph [ref=e214]: 01 — Platform
+            - heading "Everything you need to build with AI" [level=2] [ref=e215]
+          - paragraph [ref=e216]: A production-ready platform engineered for teams that ship. One integration, infinite possibilities.
+        - generic [ref=e217]:
+          - generic [ref=e219]:
+            - heading "Unified Gateway" [level=3] [ref=e223]
+            - paragraph [ref=e224]: A single, OpenAI-compatible endpoint that routes to Claude, GPT, Gemini and more. Integrate once, switch models freely.
+            - generic [ref=e226]:
+              - generic [ref=e227]: Claude
+              - generic [ref=e231]: GPT
+              - generic [ref=e235]: Gemini
+          - generic [ref=e240]:
+            - heading "Multi-Account Pool" [level=3] [ref=e244]
+            - paragraph [ref=e245]: Pool multiple upstream accounts with sticky sessions and automatic load balancing for higher throughput and resilience.
+          - generic [ref=e247]:
+            - heading "Pay-as-you-go Billing" [level=3] [ref=e251]
+            - paragraph [ref=e252]: Transparent, usage-based pricing with real-time balance tracking. No surprises, no lock-in — pay only for what you use.
+          - generic [ref=e254]:
+            - heading "Smart Routing & Failover" [level=3] [ref=e258]
+            - paragraph [ref=e259]: Intelligent request routing with automatic retries and failover so your applications keep running even when an upstream hiccups.
+          - generic [ref=e261]:
+            - heading "Real-time Analytics" [level=3] [ref=e265]
+            - paragraph [ref=e266]: Monitor usage, latency, and spend across every model and key with live dashboards and detailed request logs.
+          - generic [ref=e268]:
+            - heading "Enterprise Security" [level=3] [ref=e272]
+            - paragraph [ref=e273]: Scoped API keys, granular quotas, and hardened infrastructure built to meet the demands of production workloads.
+      - generic [ref=e276]:
+        - generic [ref=e277]:
+          - paragraph [ref=e278]: 02 — Get started
+          - heading "Live in minutes, not weeks" [level=2] [ref=e279]
+          - paragraph [ref=e280]: Three simple steps from sign-up to your first request.
+        - generic [ref=e282]:
+          - generic [ref=e283]:
+            - generic [ref=e284]: "01"
+            - heading "Create your account" [level=3] [ref=e285]
+            - paragraph [ref=e286]: Sign up in seconds and access your dashboard to manage keys, usage, and billing in one place.
+          - generic [ref=e287]:
+            - generic [ref=e288]: "02"
+            - heading "Add a key or pick a plan" [level=3] [ref=e289]
+            - paragraph [ref=e290]: Generate an API key and choose a pay-as-you-go plan that fits your workload and budget.
+          - generic [ref=e291]:
+            - generic [ref=e292]: "03"
+            - heading "Start building" [level=3] [ref=e293]
+            - paragraph [ref=e294]: Point your existing SDK at our endpoint and start shipping. One key unlocks every supported model.
+      - generic [ref=e296]:
+        - generic [ref=e297]:
+          - paragraph [ref=e298]: 03 — Backed by Miron
+          - heading "Enterprise-grade AI infrastructure, operated by Miron" [level=2] [ref=e299]
+        - generic [ref=e300]:
+          - paragraph [ref=e301]: Mishra Miron API is built, managed, and operated by Miron — combining deep infrastructure expertise with a relentless focus on reliability, security, and developer experience. When you build on Mishra Miron API, you’re backed by the Miron team.
+          - generic [ref=e302]:
+            - generic [ref=e303]: SOC-minded practices
+            - generic [ref=e306]: 24/7 monitoring
+            - generic [ref=e309]: Global routing
+      - generic [ref=e313]:
+        - generic [ref=e314]: Mishra Miron API
+        - generic [ref=e315]: ✳
+        - generic [ref=e316]: Enterprise AI Gateway
+        - generic [ref=e317]: ✳
+        - generic [ref=e318]: Mishra Miron API
+        - generic [ref=e319]: ✳
+        - generic [ref=e320]: Enterprise AI Gateway
+        - generic [ref=e321]: ✳
+        - generic [ref=e322]: Mishra Miron API
+        - generic [ref=e323]: ✳
+        - generic [ref=e324]: Enterprise AI Gateway
+        - generic [ref=e325]: ✳
+        - generic [ref=e326]: Mishra Miron API
+        - generic [ref=e327]: ✳
+        - generic [ref=e328]: Enterprise AI Gateway
+        - generic [ref=e329]: ✳
+      - generic [ref=e332]:
+        - paragraph [ref=e333]: Get started today
+        - heading "Start building with Mishra Miron API" [level=2] [ref=e334]
+        - paragraph [ref=e335]: One key, every AI model. Join developers and teams shipping faster on enterprise-grade infrastructure.
+        - link "Get Started" [ref=e336]:
+          - /url: /login
+    - contentinfo [ref=e339]:
+      - generic [ref=e340]:
+        - generic [ref=e341]:
+          - generic [ref=e342]:
+            - generic [ref=e343]:
+              - img "Logo" [ref=e345]
+              - generic [ref=e346]:
+                - generic [ref=e347]: Mishra Miron API
+                - generic [ref=e348]: A Miron Company
+            - paragraph [ref=e349]: Enterprise AI Gateway
+            - generic [ref=e350]:
+              - link "Telegram Bot" [ref=e351]:
+                - /url: https://t.me/powerxstore_bot
+              - link "Telegram Channel" [ref=e354]:
+                - /url: https://t.me/thepowerxstore
+              - link "Discord" [ref=e357]:
+                - /url: https://discord.gg/ZDmq3zDkhR
+          - generic [ref=e360]:
+            - heading "Product" [level=4] [ref=e361]
+            - list [ref=e362]:
+              - listitem [ref=e363]:
+                - link "Features" [ref=e364]:
+                  - /url: "#features"
+              - listitem [ref=e365]:
+                - link "How it works" [ref=e366]:
+                  - /url: "#how"
+              - listitem [ref=e367]:
+                - link "Login" [ref=e368]:
+                  - /url: /login
+          - generic [ref=e369]:
+            - heading "Community" [level=4] [ref=e370]
+            - list [ref=e371]:
+              - listitem [ref=e372]:
+                - link "Telegram Bot" [ref=e373]:
+                  - /url: https://t.me/powerxstore_bot
+              - listitem [ref=e374]:
+                - link "Telegram Channel" [ref=e375]:
+                  - /url: https://t.me/thepowerxstore
+              - listitem [ref=e376]:
+                - link "Discord" [ref=e377]:
+                  - /url: https://discord.gg/ZDmq3zDkhR
+          - generic [ref=e378]:
+            - heading "Company" [level=4] [ref=e379]
+            - list [ref=e380]:
+              - listitem [ref=e381]:
+                - link "About Miron" [ref=e382]:
+                  - /url: "#company"
+              - listitem [ref=e383]:
+                - link "Privacy Policy" [ref=e384]:
+                  - /url: /privacy
+        - paragraph [ref=e386]: © 2026 Mishra Miron API — Managed & operated by Miron. All rights reserved.

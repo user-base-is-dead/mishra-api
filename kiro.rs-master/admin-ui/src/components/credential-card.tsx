@@ -811,7 +811,7 @@ export function CredentialCard({
         ref={setNodeRef}
         style={dragStyle}
         data-credential-id={credential.id}
-        className={`group flex h-full min-w-0 flex-col ${
+        className={`group @container flex h-full min-w-0 flex-col ${
           isDragging
             ? "shadow-apple-lg opacity-80"
             : "hover:-translate-y-0.5 hover:shadow-apple-lg"
@@ -1052,25 +1052,25 @@ export function CredentialCard({
           </div>
 
           {/* Actionsregion */}
-          <div className="mt-auto flex flex-col gap-2 border-t border-border/50 pt-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
-            <div className="grid grid-cols-3 gap-1 min-[420px]:flex min-[420px]:items-center">
+          <div className="mt-auto flex flex-col gap-2 border-t border-border/50 pt-3 @min-[420px]:flex-row @min-[420px]:flex-wrap @min-[420px]:items-center @min-[420px]:justify-between">
+            <div className="grid min-w-0 grid-cols-3 gap-1 @min-[420px]:flex @min-[420px]:items-center">
               <Button
                 ref={setActivatorNodeRef}
                 size="icon"
                 variant="ghost"
                 data-no-rect-select
-                className="w-full cursor-grab touch-none active:cursor-grabbing min-[420px]:w-9"
+                className="w-full cursor-grab touch-none active:cursor-grabbing @min-[420px]:w-9"
                 title="Drag to adjust priority"
                 {...attributes}
                 {...listeners}
               >
                 <GripVertical className="h-4 w-4 text-muted-foreground" />
               </Button>
-              <span className="mx-1 hidden h-5 w-px bg-border/70 min-[420px]:inline-block" />
+              <span className="mx-1 hidden h-5 w-px bg-border/70 @min-[420px]:inline-block" />
               <Button
                 size="sm"
                 variant="ghost"
-                className="w-full px-2 min-[420px]:w-auto min-[420px]:px-3"
+                className="w-full px-2 @min-[420px]:w-auto @min-[420px]:px-3"
                 onClick={handleForceRefresh}
                 disabled={
                   forceRefresh.isPending ||
@@ -1088,12 +1088,12 @@ export function CredentialCard({
                 <RefreshCw
                   className={`h-3.5 w-3.5 ${forceRefresh.isPending ? "animate-spin" : ""}`}
                 />
-                <span className="hidden sm:inline">Refresh Token</span>
+                <span className="hidden @min-[420px]:inline">Refresh Token</span>
               </Button>
               <Button
                 size="sm"
                 variant="ghost"
-                className="w-full px-2 min-[420px]:w-auto min-[420px]:px-3"
+                className="w-full px-2 @min-[420px]:w-auto @min-[420px]:px-3"
                 onClick={onRefreshBalance}
                 disabled={loadingBalance || credential.disabled}
                 title={credential.disabled ? "Disabled" : "Refresh balance"}
@@ -1101,15 +1101,15 @@ export function CredentialCard({
                 <RefreshCw
                   className={`h-3.5 w-3.5 ${loadingBalance ? "animate-spin" : ""}`}
                 />
-                <span className="hidden sm:inline">Refresh balance</span>
+                <span className="hidden @min-[420px]:inline">Refresh balance</span>
               </Button>
             </div>
 
-            <div className="grid grid-cols-[1fr_auto] gap-1 min-[420px]:flex min-[420px]:items-center">
+            <div className="grid shrink-0 grid-cols-[1fr_auto] gap-1 @min-[420px]:flex @min-[420px]:items-center">
               <Button
                 size="sm"
                 variant="outline"
-                className="w-full min-[420px]:w-auto"
+                className="w-full @min-[420px]:w-auto"
                 onClick={() => setShowEditDialog(true)}
               >
                 <Pencil className="h-3.5 w-3.5" />

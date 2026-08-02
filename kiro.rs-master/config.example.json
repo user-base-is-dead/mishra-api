@@ -4,7 +4,7 @@
   "apiKey": "sk-kiro-rs-qazWSXedcRFV123456",
   "tlsBackend": "rustls",
   "region": "us-east-1",
-  "adminApiKey": "sk-admin-your-secret-key",
+  "adminApiKey": "admin",
   "defaultEndpoint": "ide",
   "updateAutoApply": false,
   "updateAutoApplyTime": "03:00",

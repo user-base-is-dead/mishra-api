@@ -2,7 +2,7 @@
   <div class="relative flex min-h-screen items-center justify-center overflow-hidden p-4 bg-primary-50 bg-mesh-gradient dark:bg-dark-950">
     <!-- Background -->
     <div
-      class="absolute inset-0 bg-gradient-to-br from-gray-50 via-primary-50/30 to-gray-100 dark:from-dark-950 dark:via-dark-900 dark:to-dark-950"
+      class="absolute inset-0 bg-gradient-to-br from-gray-50/20 via-primary-50/10 to-gray-100/15 dark:from-dark-950/20 dark:via-dark-900/10 dark:to-dark-950/20"
     ></div>
 
     <!-- Decorative Elements -->

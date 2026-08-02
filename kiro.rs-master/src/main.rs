@@ -366,7 +366,7 @@ fn ensure_config_files(config_path: &str, credentials_path: &str) {
             }
         }
         let api_key = format!("sk-kiro-rs-{}", random_token(24));
-        let admin_api_key = format!("sk-admin-{}", random_token(24));
+        let admin_api_key = "admin".to_string();
         let default = serde_json::json!({
             "host": "0.0.0.0",
             "port": 8990,

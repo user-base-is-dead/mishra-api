@@ -142,7 +142,9 @@ pub fn map_model(model: &str) -> Option<String> {
     let model_lower = model.to_lowercase();
 
     if model_lower.contains("sonnet") {
-        if model_lower.contains("4-8") || model_lower.contains("4.8") {
+        if model_lower.contains("sonnet-5") {
+            Some("claude-sonnet-5".to_string())
+        } else if model_lower.contains("4-8") || model_lower.contains("4.8") {
             Some("claude-sonnet-4.8".to_string())
         } else if model_lower.contains("4-6") || model_lower.contains("4.6") {
             Some("claude-sonnet-4.6".to_string())
@@ -152,7 +154,9 @@ pub fn map_model(model: &str) -> Option<String> {
             None
         }
     } else if model_lower.contains("opus") {
-        if model_lower.contains("4-8") || model_lower.contains("4.8") {
+        if model_lower.contains("opus-5") {
+            Some("claude-opus-5".to_string())
+        } else if model_lower.contains("4-8") || model_lower.contains("4.8") {
             Some("claude-opus-4.8".to_string())
         } else if model_lower.contains("4-7") || model_lower.contains("4.7") {
             Some("claude-opus-4.7".to_string())
@@ -174,11 +178,13 @@ pub fn map_model(model: &str) -> Option<String> {
 ///
 /// reuse `map_model` mapping logic, ensuring the window size judgment is consistent with the model mapping.
 /// Kiro at 2026-03-24 will Opus 4.6 and Sonnet 4.6 upgrade to 1M context.
-/// 4.7 / 4.8 same 1M
+/// Sonnet 5 / Opus 5 / 4.7 / 4.8 use the same 1M context window.
 pub fn get_context_window_size(model: &str) -> i32 {
     match map_model(model) {
         Some(mapped)
-            if mapped == "claude-sonnet-4.6"
+            if mapped == "claude-sonnet-5"
+                || mapped == "claude-opus-5"
+                || mapped == "claude-sonnet-4.6"
                 || mapped == "claude-sonnet-4.8"
                 || mapped == "claude-opus-4.6"
                 || mapped == "claude-opus-4.7"
@@ -192,15 +198,17 @@ pub fn get_context_window_size(model: &str) -> i32 {
 
 /// Whether this request should use `additionalModelRequestFields.output_config`.
 ///
-/// The field is currently only known to be accepted by the Opus 4.6 adaptive-thinking path.
-/// Sending it to other models causes upstream 400 responses such as
-/// `additionalModelRequestFields is not supported for this model`.
+/// The field is accepted by the adaptive-thinking paths for Opus 4.6,
+/// Sonnet 5, and Opus 5. Sending it to other models can cause upstream 400
+/// responses such as `additionalModelRequestFields is not supported for this model`.
 fn should_emit_output_config(req: &MessagesRequest, model_id: &str) -> bool {
-    model_id == "claude-opus-4.6"
-        && req
-            .thinking
-            .as_ref()
-            .is_some_and(|t| t.thinking_type == "adaptive")
+    matches!(
+        model_id,
+        "claude-opus-4.6" | "claude-sonnet-5" | "claude-opus-5"
+    ) && req
+        .thinking
+        .as_ref()
+        .is_some_and(|t| t.thinking_type == "adaptive")
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1267,6 +1275,40 @@ mod tests {
     }
 
     #[test]
+    fn test_map_model_sonnet_5() {
+        assert_eq!(
+            map_model("claude-sonnet-5"),
+            Some("claude-sonnet-5".to_string())
+        );
+        assert_eq!(
+            map_model("claude-sonnet-5-thinking"),
+            Some("claude-sonnet-5".to_string())
+        );
+        assert_eq!(get_context_window_size("claude-sonnet-5"), 1_000_000);
+        assert_eq!(
+            map_model("claude-sonnet-4-5-20250929"),
+            Some("claude-sonnet-4.5".to_string())
+        );
+    }
+
+    #[test]
+    fn test_map_model_opus_5() {
+        assert_eq!(
+            map_model("claude-opus-5"),
+            Some("claude-opus-5".to_string())
+        );
+        assert_eq!(
+            map_model("claude-opus-5-thinking"),
+            Some("claude-opus-5".to_string())
+        );
+        assert_eq!(get_context_window_size("claude-opus-5"), 1_000_000);
+        assert_eq!(
+            map_model("claude-opus-4-5-20251101"),
+            Some("claude-opus-4.5".to_string())
+        );
+    }
+
+    #[test]
     fn test_map_model_haiku() {
         assert!(
             map_model("claude-haiku-4-20250514")
@@ -1426,6 +1468,18 @@ mod tests {
             "high",
             "effort should be passed through for the supported model"
         );
+    }
+
+    #[test]
+    fn test_output_config_emits_for_generation_5_adaptive_thinking() {
+        for model in ["claude-sonnet-5-thinking", "claude-opus-5-thinking"] {
+            let req = minimal_adaptive_thinking_request_with_output_config(model);
+            let result = convert_request(&req).unwrap();
+            let fields = result
+                .additional_model_request_fields
+                .unwrap_or_else(|| panic!("{model} should keep adaptive thinking effort"));
+            assert_eq!(fields.output_config.unwrap().effort, "high");
+        }
     }
 
     #[test]

@@ -19,10 +19,14 @@ import (
 	"mishra-api/ent/apikey"
 	"mishra-api/ent/authidentity"
 	"mishra-api/ent/authidentitychannel"
+	"mishra-api/ent/batchimageevent"
+	"mishra-api/ent/batchimageitem"
+	"mishra-api/ent/batchimagejob"
 	"mishra-api/ent/channelmonitor"
 	"mishra-api/ent/channelmonitordailyrollup"
 	"mishra-api/ent/channelmonitorhistory"
 	"mishra-api/ent/channelmonitorrequesttemplate"
+	"mishra-api/ent/compositemodelroute"
 	"mishra-api/ent/errorpassthroughrule"
 	"mishra-api/ent/group"
 	"mishra-api/ent/idempotencyrecord"
@@ -114,10 +118,14 @@ func checkColumn(t, c string) error {
 			announcementread.Table:              announcementread.ValidColumn,
 			authidentity.Table:                  authidentity.ValidColumn,
 			authidentitychannel.Table:           authidentitychannel.ValidColumn,
+			batchimageevent.Table:               batchimageevent.ValidColumn,
+			batchimageitem.Table:                batchimageitem.ValidColumn,
+			batchimagejob.Table:                 batchimagejob.ValidColumn,
 			channelmonitor.Table:                channelmonitor.ValidColumn,
 			channelmonitordailyrollup.Table:     channelmonitordailyrollup.ValidColumn,
 			channelmonitorhistory.Table:         channelmonitorhistory.ValidColumn,
 			channelmonitorrequesttemplate.Table: channelmonitorrequesttemplate.ValidColumn,
+			compositemodelroute.Table:           compositemodelroute.ValidColumn,
 			errorpassthroughrule.Table:          errorpassthroughrule.ValidColumn,
 			group.Table:                         group.ValidColumn,
 			idempotencyrecord.Table:             idempotencyrecord.ValidColumn,
