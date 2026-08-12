@@ -1,5 +1,23 @@
 export default {
 
+  // 一条命令安装 Claude Code 配置（密钥查询页与「使用密钥」弹窗共用）
+  installer: {
+    title: '使用 API 密钥',
+    badge: 'Claude Code',
+    description: '运行安装命令即可自动配置 Claude Code，API 密钥已自动填入。',
+    osGroupLabel: '操作系统',
+    osUnix: 'macOS / Linux',
+    osWindows: 'Windows',
+    hint: '自动设置 ANTHROPIC_BASE_URL、API 密钥以及 Claude Code 配置，一条命令即可开始使用。',
+    step1Reload: '重新加载 shell',
+    step1NewTerminal: '打开新的终端窗口',
+    step2Start: '开始编码',
+    viewSource: '查看脚本源码',
+    uninstallHint: '复制卸载命令可移除该配置。',
+    copy: '复制',
+    copied: '已复制',
+  },
+
   // Subscription Progress (Header component)
   subscriptionProgress: {
     title: '我的订阅',

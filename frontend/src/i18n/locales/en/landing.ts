@@ -1,4 +1,90 @@
 export default {
+  // Marketing landing page (HomeView.vue)
+  landing: {
+    hero: {
+      line1: 'One key.',
+      line2: 'Every AI model.',
+      line3: 'Zero friction.',
+      subtitle:
+        'A unified gateway to the world\u2019s leading AI providers. Build faster with one API, transparent billing and reliability you can trust.',
+      getStarted: 'Get started',
+      talkToUs: 'Talk to us',
+      trustSecurity: 'Enterprise security',
+      trustUptime: '99.9% uptime',
+      trustPayg: 'Pay as you go'
+    },
+    trust: {
+      heading: 'Infrastructure trusted by teams building on AI',
+      soon: 'Soon'
+    },
+    features: {
+      eyebrow: 'Platform',
+      title: 'Everything you need to build with AI',
+      subtitle: 'A production-ready platform for teams that ship fast.',
+      unifiedTitle: 'Unified gateway',
+      unifiedDesc:
+        'One OpenAI-compatible endpoint that routes to Claude, GPT, Gemini and more. Integrate once, switch models freely.',
+      poolTitle: 'Multi-account pool',
+      poolDesc: 'Pool multiple upstream accounts with sticky sessions and automatic load balancing.',
+      billingTitle: 'Pay-as-you-go billing',
+      billingDesc: 'Transparent, usage-based pricing. Pay only for what you actually use.',
+      routingTitle: 'Smart routing & failover',
+      routingDesc: 'Smart request routing with automatic retries and failover, so your apps keep running.',
+      analyticsTitle: 'Real-time analytics',
+      analyticsDesc: 'Track usage, latency and spend per model and per key with live dashboards and detailed logs.',
+      securityTitle: 'Enterprise security',
+      securityDesc: 'Scoped API keys, fine-grained quotas and hardened infrastructure for production.'
+    },
+    stats: {
+      models: 'AI models',
+      uptime: 'Uptime SLA',
+      latency: 'Response latency',
+      support: 'Support'
+    },
+    steps: {
+      eyebrow: 'Get started',
+      title: 'Live in minutes, not weeks',
+      subtitle: 'Three simple steps from sign-up to your first request.',
+      step1Title: 'Create your account',
+      step1Desc: 'Sign up in seconds and open your dashboard.',
+      step2Title: 'Add a key or pick a plan',
+      step2Desc: 'Generate an API key and choose the plan that fits your workload.',
+      step3Title: 'Start building',
+      step3Desc: 'Point your existing SDK at our endpoint and start shipping.'
+    },
+    company: {
+      eyebrow: 'Backed by {company}',
+      title: 'Enterprise-grade AI infrastructure operated by {company}',
+      body:
+        '{siteName} is built, managed and operated by {company} \u2014 with a deep focus on reliability, security and developer experience.',
+      soc: 'SOC-aligned practices',
+      monitoring: '24/7 monitoring',
+      routing: 'Global routing'
+    },
+    cta: {
+      eyebrow: 'Start today',
+      title: 'Start building with {siteName}',
+      subtitle: 'One key, every AI model. Ship faster on enterprise-grade infrastructure.'
+    },
+    footer: {
+      product: 'Product',
+      community: 'Community',
+      company: 'Company',
+      features: 'Features',
+      howItWorks: 'How it works',
+      login: 'Login',
+      docs: 'Documentation',
+      about: 'About {company}',
+      privacy: 'Privacy policy',
+      rights: '\u00A9 {year} {siteName} \u2014 managed and operated by {company}. All rights reserved.'
+    },
+    nav: {
+      home: 'Home',
+      ide: 'IDE',
+      docs: 'Docs',
+      contact: 'Contact'
+    }
+  },
   batchImageGuide: {
     title: 'Batch Image Generation',
     description: 'Submit multiple prompts in one job and download the generated images when complete'
@@ -133,6 +219,8 @@ export default {
     detailInfo: 'Detail Information',
     tokenStats: 'Token Statistics',
     dailyDetail: 'Daily Detail',
+    dailyRangeInvalid: 'End date must be on or after the start date',
+    dailyRangeTooLong: 'Select a range of at most {days} days',
     modelStats: 'Model Usage Statistics',
     // Table headers
     date: 'Date',
@@ -148,6 +236,8 @@ export default {
     // Status
     quotaMode: 'Key Quota Mode',
     walletBalance: 'Wallet Balance',
+    payAsYouGo: 'Pay As You Go',
+    keySpend: 'This Key Spent',
     // Ring card titles
     totalQuota: 'Total Quota',
     limit5h: '5-Hour Limit',

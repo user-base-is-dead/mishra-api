@@ -1,6 +1,12 @@
 export default {
   common: {
     loading: 'Loading...',
+    required: 'Required',
+    tryAgain: 'Try again',
+    sending: 'Sending...',
+    creating: 'Creating...',
+    clear: 'Clear',
+    apply: 'Apply',
     submitting: 'Submitting...',
     justNow: 'just now',
     peakRateTooltip: 'Peak rate: {window}',

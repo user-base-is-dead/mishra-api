@@ -1,4 +1,87 @@
 export default {
+  // 营销首页（HomeView.vue）
+  landing: {
+    hero: {
+      line1: '一把密钥。',
+      line2: '所有 AI 模型。',
+      line3: '零摩擦。',
+      subtitle: '统一接入全球主流 AI 提供商的网关。一个 API、透明计费、可靠稳定，让你更快构建。',
+      getStarted: '立即开始',
+      talkToUs: '联系我们',
+      trustSecurity: '企业级安全',
+      trustUptime: '99.9% 可用性',
+      trustPayg: '按量计费'
+    },
+    trust: {
+      heading: '被众多 AI 团队信赖的基础设施',
+      soon: '即将上线'
+    },
+    features: {
+      eyebrow: '平台能力',
+      title: '构建 AI 应用所需的一切',
+      subtitle: '面向快速迭代团队的生产级平台。',
+      unifiedTitle: '统一网关',
+      unifiedDesc: '一个兼容 OpenAI 的端点，可路由到 Claude、GPT、Gemini 等模型。一次接入，自由切换。',
+      poolTitle: '多账号池',
+      poolDesc: '聚合多个上游账号，支持粘性会话与自动负载均衡。',
+      billingTitle: '按量计费',
+      billingDesc: '透明的用量计费，只为实际使用付费。',
+      routingTitle: '智能路由与故障转移',
+      routingDesc: '智能请求路由，自动重试与故障转移，保障业务持续可用。',
+      analyticsTitle: '实时分析',
+      analyticsDesc: '通过实时看板与详细日志，按模型、按密钥查看用量、延迟与花费。',
+      securityTitle: '企业级安全',
+      securityDesc: '细粒度 API 密钥与配额，配合加固的生产环境基础设施。'
+    },
+    stats: {
+      models: 'AI 模型',
+      uptime: '可用性 SLA',
+      latency: '响应延迟',
+      support: '技术支持'
+    },
+    steps: {
+      eyebrow: '快速上手',
+      title: '几分钟上线，无需数周',
+      subtitle: '从注册到第一次调用，只需三步。',
+      step1Title: '创建账号',
+      step1Desc: '几秒完成注册，进入控制台。',
+      step2Title: '添加密钥或选择套餐',
+      step2Desc: '生成 API 密钥，并选择适合你业务量的套餐。',
+      step3Title: '开始构建',
+      step3Desc: '把现有 SDK 指向我们的端点，即可开始发布。'
+    },
+    company: {
+      eyebrow: '由 {company} 支持',
+      title: '由 {company} 运营的企业级 AI 基础设施',
+      body: '{siteName} 由 {company} 构建、管理与运营，专注于稳定性、安全性与开发者体验。',
+      soc: '对齐 SOC 实践',
+      monitoring: '7×24 监控',
+      routing: '全球路由'
+    },
+    cta: {
+      eyebrow: '立即开始',
+      title: '开始使用 {siteName} 构建',
+      subtitle: '一把密钥，所有 AI 模型。在企业级基础设施上更快交付。'
+    },
+    footer: {
+      product: '产品',
+      community: '社区',
+      company: '公司',
+      features: '功能特性',
+      howItWorks: '工作原理',
+      login: '登录',
+      docs: '文档',
+      about: '关于 {company}',
+      privacy: '隐私政策',
+      rights: '© {year} {siteName} — 由 {company} 管理与运营。保留所有权利。'
+    },
+    nav: {
+      home: '首页',
+      ide: 'IDE',
+      docs: '文档',
+      contact: '联系'
+    }
+  },
   batchImageGuide: {
     title: '图片批量生成',
     description: '一次提交多条提示词，任务完成后可统一下载图片结果'
@@ -133,6 +216,8 @@ export default {
     detailInfo: '详细信息',
     tokenStats: 'Token 统计',
     dailyDetail: '按日明细',
+    dailyRangeInvalid: '结束日期不能早于开始日期',
+    dailyRangeTooLong: '自定义范围最多 {days} 天',
     modelStats: '模型用量统计',
     // Table headers
     date: '日期',
@@ -148,6 +233,8 @@ export default {
     // Status
     quotaMode: 'Key 限额模式',
     walletBalance: '钱包余额',
+    payAsYouGo: '按量计费',
+    keySpend: '该密钥已消费',
     // Ring card titles
     totalQuota: '总额度',
     limit5h: '5 小时限额',

@@ -83,6 +83,12 @@ vi.mock('vue-i18n', async () => {
   }
 })
 
+vi.mock('@/composables/useClipboard', () => ({
+  useClipboard: () => ({
+    copyToClipboard: vi.fn().mockResolvedValue(true),
+  }),
+}))
+
 vi.mock('@/stores', () => ({
   useAppStore: () => ({
     cachedPublicSettings: null,
@@ -203,6 +209,114 @@ describe('KeyUsageView daily detail', () => {
     expect(text).toContain('30')
     expect(text).toContain('10')
     expect(text).toContain('$0.12')
+
+    // The one-command Claude Code installer is shared with the Use Key modal.
+    const installer = wrapper.find('[data-testid="claude-code-installer"]')
+    expect(installer.exists()).toBe(true)
+    expect(wrapper.get('[data-testid="installer-command"]').text()).toContain('?key=sk-test-key')
+
+    // Footer no longer links to the upstream GitHub repository.
+    expect(wrapper.html()).not.toContain('github.com')
+
+    wrapper.unmount()
+  })
+
+  it('reports the key spend instead of the account wallet balance', async () => {
+    // Pay-as-you-go key: the backend still returns the account balance for
+    // backward compatibility, but this page must stay key-scoped.
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        mode: 'unrestricted',
+        isValid: true,
+        status: 'active',
+        unit: 'USD',
+        remaining: 25.5,
+        balance: 25.5,
+        usage: {
+          today: { requests: 1, actual_cost: 0.01, total_tokens: 30 },
+          total: { requests: 12, actual_cost: 0.12, total_tokens: 340 },
+          rpm: 0,
+          tpm: 0,
+        },
+      }),
+    }))
+
+    const wrapper = mount(KeyUsageView, {
+      global: {
+        stubs: {
+          RouterLink: { template: '<a><slot /></a>' },
+          LocaleSwitcher: true,
+          Icon: true,
+        },
+      },
+    })
+
+    await wrapper.find('input').setValue('sk-test-key')
+    await wrapper.find('input').trigger('keydown.enter')
+    await flushPromises()
+    await nextTick()
+
+    const text = wrapper.text()
+    expect(text).toContain('keyUsage.keySpend')
+    expect(text).toContain('$0.12')
+    expect(text).toContain('keyUsage.payAsYouGo')
+    // The wallet must not leak onto the key lookup page.
+    expect(text).not.toContain('Wallet Balance')
+    expect(text).not.toContain('$25.50')
+
+    wrapper.unmount()
+  })
+
+  it('queries a custom daily range and rejects spans over 90 days', async () => {
+    const wrapper = mount(KeyUsageView, {
+      global: {
+        stubs: {
+          RouterLink: { template: '<a><slot /></a>' },
+          LocaleSwitcher: true,
+          Icon: true,
+        },
+      },
+    })
+
+    await wrapper.find('input[type="password"], input').setValue('sk-test-key')
+    await wrapper.find('input').trigger('keydown.enter')
+    await flushPromises()
+    await nextTick()
+
+    const fetchMock = vi.mocked(fetch)
+    expect(String(fetchMock.mock.calls[0][0])).toContain('days=30')
+
+    // Switch the daily table to a custom range; it prefills the last 7 days
+    // and waits for Apply instead of querying immediately.
+    await wrapper.get('[data-testid="daily-range-custom"]').trigger('click')
+    await nextTick()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    await wrapper.get('[data-testid="daily-custom-start"]').setValue('2026-05-01')
+    await wrapper.get('[data-testid="daily-custom-end"]').setValue('2026-05-20')
+    await nextTick()
+    expect(wrapper.find('[data-testid="daily-custom-error"]').exists()).toBe(false)
+
+    await wrapper.get('[data-testid="daily-custom-apply"]').trigger('click')
+    await flushPromises()
+    await nextTick()
+
+    const customUrl = String(fetchMock.mock.calls[fetchMock.mock.calls.length - 1][0])
+    expect(customUrl).toContain('daily_start_date=2026-05-01')
+    expect(customUrl).toContain('daily_end_date=2026-05-20')
+    expect(customUrl).not.toContain('days=')
+
+    // Over the 90-day cap: Apply is disabled and an error is shown.
+    await wrapper.get('[data-testid="daily-custom-end"]').setValue('2026-09-01')
+    await nextTick()
+    expect(wrapper.get('[data-testid="daily-custom-error"]').text()).not.toBe('')
+    expect(wrapper.get('[data-testid="daily-custom-apply"]').attributes('disabled')).toBeDefined()
+
+    const callsBefore = fetchMock.mock.calls.length
+    await wrapper.get('[data-testid="daily-custom-apply"]').trigger('click')
+    await flushPromises()
+    expect(fetchMock.mock.calls.length).toBe(callsBefore)
 
     wrapper.unmount()
   })

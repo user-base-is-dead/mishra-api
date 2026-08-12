@@ -167,6 +167,30 @@
             </div>
           </div>
 
+          <!-- One-command Claude Code installer -->
+          <div
+            v-if="showInstallCommand"
+            class="fade-up rounded-2xl border border-gray-200 bg-white/90 backdrop-blur-sm overflow-hidden dark:border-dark-700 dark:bg-dark-900/90"
+          >
+            <div class="px-8 py-5 border-b border-gray-200 dark:border-dark-700">
+              <div class="flex items-center gap-2">
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-dark-400">
+                  {{ t('installer.title') }}
+                </h3>
+                <span class="rounded-full bg-primary-500/10 px-2.5 py-0.5 text-xs font-medium text-primary-600 dark:text-primary-400">
+                  {{ t('installer.badge') }}
+                </span>
+              </div>
+              <p class="mt-1 text-sm text-gray-500 dark:text-dark-400">
+                {{ t('installer.description') }}
+              </p>
+            </div>
+
+            <div class="p-6 sm:p-8">
+              <ClaudeCodeInstaller :api-key="apiKey.trim()" :base-root="installBaseRoot" />
+            </div>
+          </div>
+
           <!-- Ring Cards Grid -->
           <div v-if="ringItems.length > 0" :class="ringGridClass">
             <div
@@ -296,20 +320,55 @@
           >
             <div class="flex flex-col gap-3 px-8 py-5 border-b border-gray-200 dark:border-dark-700 sm:flex-row sm:items-center sm:justify-between">
               <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-dark-400">{{ t('keyUsage.dailyDetail') }}</h3>
-              <div class="inline-flex rounded-lg border border-gray-200 bg-white p-0.5 dark:border-dark-700 dark:bg-dark-950">
-                <button
-                  v-for="option in dailyUsageOptions"
-                  :key="option.value"
-                  @click="setDailyUsageDays(option.value)"
-                  class="min-w-12 rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
-                  :class="dailyUsageDays === option.value
-                    ? 'bg-primary-500 text-white'
-                    : 'text-gray-600 hover:bg-gray-100 dark:text-dark-300 dark:hover:bg-dark-800'"
-                >
-                  {{ option.label }}
-                </button>
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="inline-flex rounded-lg border border-gray-200 bg-white p-0.5 dark:border-dark-700 dark:bg-dark-950">
+                  <button
+                    v-for="option in dailyUsageOptions"
+                    :key="option.value"
+                    :data-testid="`daily-range-${option.value}`"
+                    @click="setDailyUsageRange(option.value)"
+                    class="min-w-12 rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
+                    :class="dailyUsageRange === option.value
+                      ? 'bg-primary-500 text-white'
+                      : 'text-gray-600 hover:bg-gray-100 dark:text-dark-300 dark:hover:bg-dark-800'"
+                  >
+                    {{ option.label }}
+                  </button>
+                </div>
+
+                <!-- Custom day range for the daily table -->
+                <div v-if="dailyUsageRange === 'custom'" class="flex flex-wrap items-center gap-2">
+                  <input
+                    v-model="dailyCustomStart"
+                    type="date"
+                    :max="dailyCustomStartMax"
+                    data-testid="daily-custom-start"
+                    class="input-ring rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-900 dark:border-dark-700 dark:bg-dark-900 dark:text-white"
+                  />
+                  <span class="text-xs text-gray-400">-</span>
+                  <input
+                    v-model="dailyCustomEnd"
+                    type="date"
+                    :min="dailyCustomStart || undefined"
+                    :max="today"
+                    data-testid="daily-custom-end"
+                    class="input-ring rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-900 dark:border-dark-700 dark:bg-dark-900 dark:text-white"
+                  />
+                  <button
+                    type="button"
+                    data-testid="daily-custom-apply"
+                    :disabled="!dailyCustomRangeValid"
+                    @click="applyDailyCustomRange"
+                    class="rounded-lg bg-primary-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  >{{ t('keyUsage.apply') }}</button>
+                </div>
               </div>
             </div>
+            <p
+              v-if="dailyUsageRange === 'custom' && dailyCustomError"
+              data-testid="daily-custom-error"
+              class="px-8 pt-3 text-xs text-rose-500"
+            >{{ dailyCustomError }}</p>
             <div v-if="dailyUsageRows.length > 0" class="overflow-x-auto">
               <table class="w-full">
                 <thead>
@@ -404,12 +463,6 @@
             rel="noopener noreferrer"
             class="text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-white"
           >{{ t('home.docs') }}</a>
-          <a
-            :href="githubUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-white"
-          >GitHub</a>
         </div>
       </div>
     </footer>
@@ -422,6 +475,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
+import ClaudeCodeInstaller from '@/components/keys/ClaudeCodeInstaller.vue'
 import { buildGatewayUrl } from '@/api/client'
 import { formatDateLocalInput } from '@/utils/format'
 import { sanitizeUrl } from '@/utils/url'
@@ -434,7 +488,6 @@ const appStore = useAppStore()
 const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'Mishra Miron API')
 const siteLogo = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
 const docUrl = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.doc_url || appStore.docUrl || ''))
-const githubUrl = 'https://github.com/Wei-Shaw/sub2api'
 
 // ==================== Theme (same as HomeView) ====================
 
@@ -467,7 +520,13 @@ type DateRangeKey = 'today' | '7d' | '30d' | 'custom'
 const currentRange = ref<DateRangeKey>('today')
 const customStartDate = ref('')
 const customEndDate = ref('')
-const dailyUsageDays = ref<7 | 30 | 90>(30)
+
+// Daily detail table range: fixed day windows or an explicit custom range.
+type DailyRangeKey = 7 | 30 | 90 | 'custom'
+const MAX_DAILY_SPAN_DAYS = 90
+const dailyUsageRange = ref<DailyRangeKey>(30)
+const dailyCustomStart = ref('')
+const dailyCustomEnd = ref('')
 
 const dateRanges = computed(() => [
   { key: 'today' as const, label: t('keyUsage.dateRangeToday') },
@@ -480,7 +539,33 @@ const dailyUsageOptions = computed(() => [
   { value: 7 as const, label: t('keyUsage.dateRange7d') },
   { value: 30 as const, label: t('keyUsage.dateRange30d') },
   { value: 90 as const, label: t('keyUsage.dateRange90d') },
+  { value: 'custom' as const, label: t('keyUsage.dateRangeCustom') },
 ])
+
+const today = computed(() => formatDateLocalInput(new Date()))
+const dailyCustomStartMax = computed(() => dailyCustomEnd.value || today.value)
+
+// Inclusive span in days, or null when either bound is missing/unparsable.
+const dailyCustomSpanDays = computed<number | null>(() => {
+  if (!dailyCustomStart.value || !dailyCustomEnd.value) return null
+  const start = new Date(`${dailyCustomStart.value}T00:00:00`)
+  const end = new Date(`${dailyCustomEnd.value}T00:00:00`)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null
+  return Math.round((end.getTime() - start.getTime()) / 86400000) + 1
+})
+
+const dailyCustomRangeValid = computed(() => {
+  const span = dailyCustomSpanDays.value
+  return span !== null && span >= 1 && span <= MAX_DAILY_SPAN_DAYS
+})
+
+const dailyCustomError = computed(() => {
+  const span = dailyCustomSpanDays.value
+  if (span === null) return ''
+  if (span < 1) return t('keyUsage.dailyRangeInvalid')
+  if (span > MAX_DAILY_SPAN_DAYS) return t('keyUsage.dailyRangeTooLong', { days: MAX_DAILY_SPAN_DAYS })
+  return ''
+})
 
 function setDateRange(key: DateRangeKey) {
   currentRange.value = key
@@ -510,14 +595,37 @@ function getDateParams(): string {
     params.set('start_date', start)
     params.set('end_date', end)
   }
-  params.set('days', String(dailyUsageDays.value))
+  if (dailyUsageRange.value === 'custom' && dailyCustomRangeValid.value) {
+    params.set('daily_start_date', dailyCustomStart.value)
+    params.set('daily_end_date', dailyCustomEnd.value)
+  } else {
+    const days = typeof dailyUsageRange.value === 'number' ? dailyUsageRange.value : 30
+    params.set('days', String(days))
+  }
   params.set('timezone', getBrowserTimezone())
   return params.toString()
 }
 
-function setDailyUsageDays(days: 7 | 30 | 90) {
-  if (dailyUsageDays.value === days) return
-  dailyUsageDays.value = days
+function setDailyUsageRange(value: DailyRangeKey) {
+  if (dailyUsageRange.value === value) return
+  dailyUsageRange.value = value
+
+  if (value === 'custom') {
+    // Prefill the last 7 days; the query only runs once the user hits Apply.
+    if (!dailyCustomStart.value || !dailyCustomEnd.value) {
+      dailyCustomEnd.value = today.value
+      dailyCustomStart.value = formatDateLocalInput(new Date(Date.now() - 6 * 86400000))
+    }
+    return
+  }
+
+  if (resultData.value && apiKey.value.trim()) {
+    queryKey()
+  }
+}
+
+function applyDailyCustomRange() {
+  if (!dailyCustomRangeValid.value) return
   if (resultData.value && apiKey.value.trim()) {
     queryKey()
   }
@@ -601,10 +709,19 @@ const statusInfo = computed(() => {
   }
 
   return {
-    label: data.planName || t('keyUsage.walletBalance'),
+    label: data.planName || t('keyUsage.payAsYouGo'),
     statusText: 'Active',
     isActive: true,
   }
+})
+
+// Total spend of THIS key (never the account wallet). Falls back to raw cost
+// when the billed/actual cost is not available.
+const keyTotalSpend = computed<number | null>(() => {
+  const total = resultData.value?.usage?.total
+  if (!total) return null
+  const value = total.actual_cost != null ? total.actual_cost : total.cost
+  return typeof value === 'number' ? value : null
 })
 
 const ringItems = computed<RingItem[]>(() => {
@@ -647,8 +764,16 @@ const ringItems = computed<RingItem[]>(() => {
         }
       }
     }
-    if (!data.subscription && data.balance != null) {
-      items.push({ title: t('keyUsage.walletBalance'), pct: 0, amount: usd(data.balance), isBalance: true, iconType: 'dollar' })
+    if (!data.subscription) {
+      // No key quota and no subscription: show what this key itself spent,
+      // never the account wallet balance.
+      items.push({
+        title: t('keyUsage.keySpend'),
+        pct: 0,
+        amount: usd(keyTotalSpend.value ?? 0),
+        isBalance: true,
+        iconType: 'dollar',
+      })
     }
   }
 
@@ -728,7 +853,7 @@ const detailRows = computed<DetailRow[]>(() => {
   } else {
     rows.push({
       iconBg: 'bg-emerald-500/10', iconColor: 'text-emerald-500', iconSvg: ICON_CHECK,
-      label: t('keyUsage.subscriptionType'), value: data.planName || t('keyUsage.walletBalance'), valueClass: '',
+      label: t('keyUsage.subscriptionType'), value: data.planName || t('keyUsage.payAsYouGo'), valueClass: '',
     })
 
     if (data.subscription) {
@@ -762,13 +887,24 @@ const detailRows = computed<DetailRow[]>(() => {
       }
     }
 
-    const remainColor = data.remaining != null
-      ? (data.remaining <= 0 ? 'text-rose-500' : data.remaining < 10 ? 'text-amber-500' : 'text-emerald-500')
-      : ''
-    rows.push({
-      iconBg: 'bg-emerald-500/10', iconColor: 'text-emerald-500', iconSvg: ICON_SHIELD,
-      label: t('keyUsage.remainingQuota'), value: data.remaining != null ? usd(data.remaining) : '-', valueClass: remainColor,
-    })
+    if (data.subscription) {
+      // Subscription remaining is key/group scoped, so it stays.
+      const remainColor = data.remaining != null
+        ? (data.remaining <= 0 ? 'text-rose-500' : data.remaining < 10 ? 'text-amber-500' : 'text-emerald-500')
+        : ''
+      rows.push({
+        iconBg: 'bg-emerald-500/10', iconColor: 'text-emerald-500', iconSvg: ICON_SHIELD,
+        label: t('keyUsage.remainingQuota'), value: data.remaining != null ? usd(data.remaining) : '-', valueClass: remainColor,
+      })
+    } else {
+      // Pay-as-you-go key: report this key's own spend instead of the wallet.
+      rows.push({
+        iconBg: 'bg-primary-500/10', iconColor: 'text-primary-500', iconSvg: ICON_DOLLAR,
+        label: t('keyUsage.keySpend'),
+        value: keyTotalSpend.value != null ? usd(keyTotalSpend.value) : '-',
+        valueClass: '',
+      })
+    }
   }
 
   return rows
@@ -826,6 +962,18 @@ const dailyUsageRows = computed<DailyUsageRow[]>(() => {
 })
 
 const showDailyUsage = computed(() => Boolean(resultData.value && Array.isArray(resultData.value.daily_usage)))
+
+// ==================== One-command Claude Code installer ====================
+
+const showInstallCommand = computed(() => Boolean(resultData.value))
+
+const installBaseRoot = computed(() => {
+  try {
+    return new URL(buildGatewayUrl('/')).origin
+  } catch {
+    return window.location.origin
+  }
+})
 
 // ==================== Utility Functions ====================
 

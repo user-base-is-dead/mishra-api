@@ -5,7 +5,7 @@ export const PARENT_COMPANY = 'Miron'
 
 // Social / community links (replace with your real invite links)
 export const SOCIAL_LINKS = {
-  telegramBot: 'https://t.me/powerxstore_bot',
+  telegramBot: 'https://t.me/thepowerxbot',
   telegramChannel: 'https://t.me/thepowerxstore',
   discord: 'https://discord.gg/ZDmq3zDkhR'
 }

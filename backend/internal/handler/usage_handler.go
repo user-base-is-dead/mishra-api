@@ -435,6 +435,46 @@ func apiKeyDailyUsageRange(days int, userTZ string) (time.Time, time.Time) {
 	return startTime, endTime
 }
 
+// parseAPIKeyDailyUsageWindow resolves the daily-detail window for the public
+// key-usage lookup. An explicit daily_start_date / daily_end_date pair
+// (YYYY-MM-DD, interpreted in the caller timezone) wins over the relative
+// `days` window. Both bounds are required together, the range must not be
+// inverted, and the inclusive span stays capped at maxAPIKeyDailyUsageDays so a
+// custom range cannot turn into an unbounded scan.
+func parseAPIKeyDailyUsageWindow(startRaw, endRaw string, days int, userTZ string) (time.Time, time.Time, bool) {
+	startRaw = strings.TrimSpace(startRaw)
+	endRaw = strings.TrimSpace(endRaw)
+
+	if startRaw == "" && endRaw == "" {
+		start, end := apiKeyDailyUsageRange(days, userTZ)
+		return start, end, true
+	}
+	if startRaw == "" || endRaw == "" {
+		return time.Time{}, time.Time{}, false
+	}
+
+	start, err := timezone.ParseInUserLocation("2006-01-02", startRaw, userTZ)
+	if err != nil {
+		return time.Time{}, time.Time{}, false
+	}
+	end, err := timezone.ParseInUserLocation("2006-01-02", endRaw, userTZ)
+	if err != nil {
+		return time.Time{}, time.Time{}, false
+	}
+
+	start = timezone.StartOfDayInUserLocation(start, userTZ)
+	end = timezone.StartOfDayInUserLocation(end, userTZ)
+	if end.Before(start) {
+		return time.Time{}, time.Time{}, false
+	}
+	// Half-open upper bound: include the whole end day.
+	endExclusive := end.AddDate(0, 0, 1)
+	if spanDays := int(endExclusive.Sub(start).Hours()/24 + 0.5); spanDays > maxAPIKeyDailyUsageDays {
+		return time.Time{}, time.Time{}, false
+	}
+	return start, endExclusive, true
+}
+
 // DashboardStats handles getting user dashboard statistics
 // GET /api/v1/usage/dashboard/stats
 func (h *UsageHandler) DashboardStats(c *gin.Context) {

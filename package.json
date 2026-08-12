@@ -4,7 +4,10 @@
   "private": true,
   "description": "Mishra Miron API — one-command launcher for backend, frontend, Redis and kiro.rs",
   "scripts": {
+    "build": "powershell -ExecutionPolicy Bypass -File ./build-all.ps1",
+    "build:check": "powershell -ExecutionPolicy Bypass -File ./build-all.ps1 -Typecheck",
     "start": "powershell -ExecutionPolicy Bypass -File ./start-all.ps1",
+    "start:fast": "powershell -ExecutionPolicy Bypass -File ./start-all.ps1 -SkipBuild",
     "stop": "powershell -ExecutionPolicy Bypass -File ./stop-all.ps1"
   }
 }

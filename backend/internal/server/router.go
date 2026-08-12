@@ -116,6 +116,9 @@ func registerRoutes(
 	// 通用路由（健康检查、状态等）
 	routes.RegisterCommonRoutes(r)
 
+	// 一键安装脚本（Claude Code）：GET /install.sh 与 GET /install.ps1
+	routes.RegisterInstallScriptRoutes(r)
+
 	// API v1
 	v1 := r.Group("/api/v1")
 

@@ -1,5 +1,24 @@
 export default {
 
+  // One-command Claude Code installer (shared by the key lookup page and the Use Key modal)
+  installer: {
+    title: 'Use API Key',
+    badge: 'Claude Code',
+    description:
+      'Run the install command to configure Claude Code automatically. Your API key is already filled in.',
+    osGroupLabel: 'Operating system',
+    osUnix: 'macOS / Linux',
+    osWindows: 'Windows',
+    hint: 'Sets ANTHROPIC_BASE_URL, your API key, and Claude Code config. One command, ready to code.',
+    step1Reload: 'Reload your shell',
+    step1NewTerminal: 'Open a new terminal',
+    step2Start: 'Start coding',
+    viewSource: 'View source',
+    uninstallHint: 'Copy the uninstall command to remove the configuration.',
+    copy: 'Copy',
+    copied: 'Copied',
+  },
+
   // Subscription Progress (Header component)
   subscriptionProgress: {
     title: 'My Subscriptions',

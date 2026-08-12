@@ -1,6 +1,12 @@
 export default {
   common: {
     loading: '加载中...',
+    required: '必填',
+    tryAgain: '重试',
+    sending: '发送中...',
+    creating: '创建中...',
+    clear: '清空',
+    apply: '应用',
     submitting: '提交中...',
     justNow: '刚刚',
     peakRateTooltip: '高峰倍率：{window}',

@@ -434,6 +434,7 @@ export default {
     // Users Management
     users: {
       title: '用户管理',
+      passwordCopied: '密码已复制',
       description: '管理用户账户和权限',
       createUser: '创建用户',
       bulkLimits: {

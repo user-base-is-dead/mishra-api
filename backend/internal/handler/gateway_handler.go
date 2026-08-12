@@ -1459,9 +1459,21 @@ func (h *GatewayHandler) Usage(c *gin.Context) {
 		return
 	}
 
+	dailyStart, dailyEnd, ok := parseAPIKeyDailyUsageWindow(
+		c.Query("daily_start_date"),
+		c.Query("daily_end_date"),
+		days,
+		c.Query("timezone"),
+	)
+	if !ok {
+		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error",
+			"Invalid daily date range: provide both daily_start_date and daily_end_date as YYYY-MM-DD, start <= end, spanning at most 90 days")
+		return
+	}
+
 	// Best-effort: 获取用量统计（按当前 API Key 过滤），失败不影响基础响应
 	usageData := h.buildUsageData(ctx, apiKey.ID)
-	dailyUsage := h.buildAPIKeyDailyUsage(c, subject.UserID, apiKey.ID, days)
+	dailyUsage := h.buildAPIKeyDailyUsage(c, subject.UserID, apiKey.ID, dailyStart, dailyEnd)
 
 	// Best-effort: 获取模型统计
 	var modelStats any
@@ -1537,11 +1549,10 @@ func (h *GatewayHandler) buildUsageData(ctx context.Context, apiKeyID int64) gin
 	}
 }
 
-func (h *GatewayHandler) buildAPIKeyDailyUsage(c *gin.Context, userID, apiKeyID int64, days int) any {
+func (h *GatewayHandler) buildAPIKeyDailyUsage(c *gin.Context, userID, apiKeyID int64, startTime, endTime time.Time) any {
 	if h.usageService == nil {
 		return nil
 	}
-	startTime, endTime := apiKeyDailyUsageRange(days, c.Query("timezone"))
 	stats, err := h.usageService.GetAPIKeyDailyUsage(c.Request.Context(), userID, apiKeyID, startTime, endTime)
 	if err != nil {
 		return nil
@@ -1693,7 +1704,6 @@ func (h *GatewayHandler) usageUnrestricted(c *gin.Context, ctx context.Context, 
 	resp := gin.H{
 		"mode":      "unrestricted",
 		"isValid":   true,
-		"planName":  "钱包余额",
 		"remaining": latestUser.Balance,
 		"unit":      "USD",
 		"balance":   latestUser.Balance,

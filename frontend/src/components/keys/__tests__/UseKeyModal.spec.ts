@@ -21,6 +21,41 @@ vi.mock('@/composables/useClipboard', () => ({
 import UseKeyModal from '../UseKeyModal.vue'
 
 describe('UseKeyModal', () => {
+  it('renders the shared one-command installer for Anthropic keys', async () => {
+    const wrapper = mount(UseKeyModal, {
+      props: {
+        show: true,
+        apiKey: 'sk-anthropic-test',
+        baseUrl: 'https://example.com/v1',
+        platform: 'anthropic'
+      },
+      global: {
+        stubs: {
+          BaseDialog: {
+            template: '<div><slot /><slot name="footer" /></div>'
+          },
+          Icon: {
+            template: '<span />'
+          }
+        }
+      }
+    })
+
+    const installer = wrapper.find('[data-testid="claude-code-installer"]')
+    expect(installer.exists()).toBe(true)
+    await wrapper.get('[data-testid="installer-os-unix"]').trigger('click')
+    await nextTick()
+    expect(wrapper.get('[data-testid="installer-command"]').text()).toContain(
+      'https://example.com/install.sh?key=sk-anthropic-test'
+    )
+    // Manual env-var setup stays available behind the collapsible section.
+    expect(wrapper.text()).toContain('keys.useKeyModal.oneCommand.manualToggle')
+
+    await wrapper.setProps({ platform: 'gemini' })
+    await nextTick()
+    expect(wrapper.find('[data-testid="claude-code-installer"]').exists()).toBe(false)
+  })
+
   it('renders Grok Build and OpenCode setup for Grok groups', async () => {
     const wrapper = mount(UseKeyModal, {
       props: {

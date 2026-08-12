@@ -434,6 +434,7 @@ export default {
     // Users
     users: {
       title: 'User Management',
+      passwordCopied: 'Password copied',
       description: 'Manage users and their permissions',
       createUser: 'Create User',
       bulkLimits: {

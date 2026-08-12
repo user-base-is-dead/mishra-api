@@ -51,6 +51,26 @@
           </nav>
         </div>
 
+        <!-- One-command Claude Code installer -->
+        <div
+          v-if="showOneCommand"
+          class="rounded-xl border border-gray-200 p-4 dark:border-dark-700"
+        >
+          <div class="mb-3 flex flex-wrap items-center gap-2">
+            <p class="text-sm font-semibold text-gray-900 dark:text-white">
+              {{ t('installer.title') }}
+            </p>
+            <span class="rounded-full bg-primary-500/10 px-2 py-0.5 text-[11px] font-medium text-primary-600 dark:text-primary-400">
+              {{ t('installer.badge') }}
+            </span>
+            <p class="w-full text-xs text-gray-500 dark:text-gray-400">
+              {{ t('installer.description') }}
+            </p>
+          </div>
+
+          <ClaudeCodeInstaller :api-key="apiKey" :base-root="installBaseRoot" />
+        </div>
+
         <!-- Codex Authentication Mode -->
         <div
           v-if="showCodexAuthMode"
@@ -110,6 +130,18 @@
           </div>
         </div>
 
+        <!-- Manual setup (collapsible when the one-command installer is shown) -->
+        <details
+          class="group/manual"
+          :open="!showOneCommand"
+        >
+          <summary
+            v-show="showOneCommand"
+            class="cursor-pointer select-none py-2 text-sm font-medium text-gray-700 marker:text-gray-400 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+          >
+            {{ t('keys.useKeyModal.oneCommand.manualToggle') }}
+          </summary>
+          <div class="space-y-4" :class="showOneCommand ? 'mt-2' : ''">
         <!-- OS/Shell Tabs -->
         <div v-if="showShellTabs" class="overflow-x-auto border-b border-gray-200 dark:border-dark-700">
           <nav class="-mb-px flex min-w-max gap-4" aria-label="Tabs">
@@ -179,6 +211,8 @@
             {{ platformNote }}
           </p>
         </div>
+          </div>
+        </details>
       </template>
     </div>
 
@@ -200,6 +234,7 @@ import { ref, computed, h, watch, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
+import ClaudeCodeInstaller from '@/components/keys/ClaudeCodeInstaller.vue'
 import { useClipboard } from '@/composables/useClipboard'
 import type { GroupPlatform } from '@/types'
 
@@ -239,6 +274,16 @@ const activeTab = ref<string>('unix')
 const activeClientTab = ref<string>('claude')
 type CodexAuthMode = 'legacy' | 'api-key'
 const codexAuthMode = ref<CodexAuthMode>('legacy')
+
+// One-command Claude Code installer (curl/irm) — Anthropic + Claude Code only.
+const showOneCommand = computed(
+  () => props.platform === 'anthropic' && activeClientTab.value === 'claude'
+)
+
+const installBaseRoot = computed(() => {
+  const baseUrl = props.baseUrl || window.location.origin
+  return baseUrl.replace(/\/v1\/?$/, '').replace(/\/+$/, '')
+})
 
 // Reset tabs when platform changes
 const defaultClientTab = computed(() => {
