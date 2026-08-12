@@ -15,7 +15,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"mishra-api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/shirou/gopsutil/v4/cpu"

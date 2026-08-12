@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"mishra-api/internal/pkg/googleapi"
-	"mishra-api/internal/securityaudit"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/googleapi"
+	"github.com/Wei-Shaw/sub2api/internal/securityaudit"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	coderws "github.com/coder/websocket"
 	"github.com/gin-gonic/gin"
 )

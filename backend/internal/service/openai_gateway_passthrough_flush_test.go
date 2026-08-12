@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"mishra-api/internal/config"
-	"mishra-api/internal/pkg/apicompat"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/apicompat"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )

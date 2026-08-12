@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"mishra-api/internal/pkg/antigravity"
-	"mishra-api/internal/pkg/apicompat"
-	"mishra-api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/apicompat"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -301,6 +301,7 @@ func (s *AntigravityGatewayService) handleAntigravityCompatStream(
 				return s.handleAntigravityCompatReadError(c, session, event.err, maxLineSize, prefix)
 			}
 			resetAntigravityCompatTimer(timeoutTimer, timeout)
+			s.observeAntigravityGeminiSSELine(c, event.line)
 			session.consume(event.line)
 
 		case <-timeoutCh:

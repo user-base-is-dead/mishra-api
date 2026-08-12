@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
@@ -145,6 +145,28 @@ func TestAccountHandlerUpdateMixedChannelConflictSimplifiedResponse(t *testing.T
 	_, hasRequireConfirmation := resp["require_confirmation"]
 	require.False(t, hasDetails)
 	require.False(t, hasRequireConfirmation)
+}
+
+func TestAccountHandlerUpdateMapsUpstreamBillingRateSyncSettings(t *testing.T) {
+	adminSvc := newStubAdminService()
+	router := setupAccountMixedChannelRouter(adminSvc)
+	body, _ := json.Marshal(map[string]any{
+		"name":                               "gemini-key",
+		"upstream_billing_probe_enabled":     true,
+		"upstream_billing_rate_sync_enabled": true,
+	})
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/admin/accounts/42", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.NotNil(t, adminSvc.lastUpdateAccountInput)
+	require.NotNil(t, adminSvc.lastUpdateAccountInput.ProbeEnabled)
+	require.True(t, *adminSvc.lastUpdateAccountInput.ProbeEnabled)
+	require.NotNil(t, adminSvc.lastUpdateAccountInput.RateSyncEnabled)
+	require.True(t, *adminSvc.lastUpdateAccountInput.RateSyncEnabled)
 }
 
 func TestAccountHandlerBulkUpdateMixedChannelConflict(t *testing.T) {

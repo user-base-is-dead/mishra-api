@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 // noAccountErrorClassification describes the HTTP response to emit when

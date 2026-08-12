@@ -9,9 +9,9 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"mishra-api/ent/user"
-	"mishra-api/ent/userattributedefinition"
-	"mishra-api/ent/userattributevalue"
+	"github.com/Wei-Shaw/sub2api/ent/user"
+	"github.com/Wei-Shaw/sub2api/ent/userattributedefinition"
+	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
 )
 
 // UserAttributeValue is the model entity for the UserAttributeValue schema.

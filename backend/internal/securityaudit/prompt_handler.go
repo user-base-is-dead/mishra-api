@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/response"
-	"mishra-api/internal/server/middleware"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -228,7 +228,8 @@ func configAuditFields(request UpdateConfigRequest, saved *PublicConfig) map[str
 	}
 	return map[string]any{
 		"enabled": request.Enabled, "blocking_enabled": request.BlockingEnabled,
-		"config_version": version, "endpoint_count": len(request.Endpoints),
+		"blocking_latest_turn_only": request.BlockingLatestTurnOnly,
+		"config_version":            version, "endpoint_count": len(request.Endpoints),
 		"scanner_count": len(request.Scanners), "all_groups": request.AllGroups,
 		"group_count": len(request.GroupIDs),
 	}

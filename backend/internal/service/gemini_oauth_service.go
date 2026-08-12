@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"mishra-api/internal/config"
-	"mishra-api/internal/pkg/geminicli"
-	"mishra-api/internal/pkg/httpclient"
-	"mishra-api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/geminicli"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/httpclient"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 )
 
 const (

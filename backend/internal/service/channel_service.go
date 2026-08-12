@@ -8,9 +8,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"mishra-api/internal/pkg/ctxkey"
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"golang.org/x/sync/singleflight"
@@ -108,7 +108,7 @@ type ChannelMappingResult struct {
 	MappedModel        string // 映射后的模型名（无映射时等于原始模型名）
 	ChannelID          int64  // 渠道 ID（0 = 无渠道关联）
 	Mapped             bool   // 是否发生了映射
-	BillingModelSource string // 计费模型来源（"requested" / "upstream" / "channel_mapped"）
+	BillingModelSource string // 计费模型来源（"requested" / "upstream" / "channel_mapped" / "response_model"）
 }
 
 // BuildModelMappingChain 根据映射结果和上游实际模型构建映射链描述。

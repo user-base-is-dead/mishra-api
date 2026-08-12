@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"mishra-api/internal/config"
-	"mishra-api/internal/pkg/usagestats"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/usagestats"
 	"github.com/stretchr/testify/require"
 )
 

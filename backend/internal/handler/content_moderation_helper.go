@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	"mishra-api/internal/pkg/ctxkey"
-	middleware2 "mishra-api/internal/server/middleware"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
+	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

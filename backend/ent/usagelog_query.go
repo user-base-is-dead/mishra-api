@@ -12,13 +12,13 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"mishra-api/ent/account"
-	"mishra-api/ent/apikey"
-	"mishra-api/ent/group"
-	"mishra-api/ent/predicate"
-	"mishra-api/ent/usagelog"
-	"mishra-api/ent/user"
-	"mishra-api/ent/usersubscription"
+	"github.com/Wei-Shaw/sub2api/ent/account"
+	"github.com/Wei-Shaw/sub2api/ent/apikey"
+	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/usagelog"
+	"github.com/Wei-Shaw/sub2api/ent/user"
+	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 )
 
 // UsageLogQuery is the builder for querying UsageLog entities.

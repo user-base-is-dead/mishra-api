@@ -15,14 +15,14 @@ import (
 	"time"
 	"unicode/utf8"
 
-	dbent "mishra-api/ent"
-	dbuser "mishra-api/ent/user"
-	"mishra-api/internal/config"
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/oauth"
-	"mishra-api/internal/pkg/response"
-	servermiddleware "mishra-api/internal/server/middleware"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	dbuser "github.com/Wei-Shaw/sub2api/ent/user"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/oauth"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	servermiddleware "github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/imroc/req/v3"
@@ -82,6 +82,9 @@ func (e *linuxDoTokenExchangeError) Error() string {
 // LinuxDoOAuthStart 启动 LinuxDo Connect OAuth 登录流程。
 // GET /api/v1/auth/oauth/linuxdo/start?redirect=/dashboard
 func (h *AuthHandler) LinuxDoOAuthStart(c *gin.Context) {
+	if !h.requireActionCaptchaForOAuthLoginStart(c) {
+		return
+	}
 	cfg, err := h.getLinuxDoOAuthConfig(c.Request.Context())
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -147,7 +150,7 @@ func (h *AuthHandler) LinuxDoOAuthStart(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, authURL)
+	respondOAuthStart(c, authURL)
 }
 
 // LinuxDoOAuthCallback 处理 OAuth 回调：创建/登录用户，然后重定向到前端。

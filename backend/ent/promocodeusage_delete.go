@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"mishra-api/ent/predicate"
-	"mishra-api/ent/promocodeusage"
+	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
 )
 
 // PromoCodeUsageDelete is the builder for deleting a PromoCodeUsage entity.

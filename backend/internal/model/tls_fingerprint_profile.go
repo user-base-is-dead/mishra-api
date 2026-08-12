@@ -4,7 +4,7 @@ package model
 import (
 	"time"
 
-	"mishra-api/internal/pkg/tlsfingerprint"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/tlsfingerprint"
 )
 
 // TLSFingerprintProfile TLS 指纹配置模板

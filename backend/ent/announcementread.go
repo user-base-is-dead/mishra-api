@@ -9,9 +9,9 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"mishra-api/ent/announcement"
-	"mishra-api/ent/announcementread"
-	"mishra-api/ent/user"
+	"github.com/Wei-Shaw/sub2api/ent/announcement"
+	"github.com/Wei-Shaw/sub2api/ent/announcementread"
+	"github.com/Wei-Shaw/sub2api/ent/user"
 )
 
 // AnnouncementRead is the model entity for the AnnouncementRead schema.

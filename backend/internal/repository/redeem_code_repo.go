@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/redeemcode"
-	"mishra-api/ent/user"
-	"mishra-api/internal/pkg/pagination"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/user"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	entsql "entgo.io/ent/dialect/sql"
 )

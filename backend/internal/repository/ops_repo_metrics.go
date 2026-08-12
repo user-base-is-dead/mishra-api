@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 func (r *opsRepository) InsertSystemMetrics(ctx context.Context, input *service.OpsInsertSystemMetricsInput) error {

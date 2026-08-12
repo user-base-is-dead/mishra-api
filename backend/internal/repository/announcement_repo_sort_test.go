@@ -3,7 +3,7 @@ package repository
 import (
 	"testing"
 
-	"mishra-api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 )
 
 func TestAnnouncementListOrder(t *testing.T) {

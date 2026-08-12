@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/logger"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )

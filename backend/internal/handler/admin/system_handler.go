@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"mishra-api/internal/pkg/response"
-	"mishra-api/internal/pkg/sysutil"
-	middleware2 "mishra-api/internal/server/middleware"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/sysutil"
+	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
 )

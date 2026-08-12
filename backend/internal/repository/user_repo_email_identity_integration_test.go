@@ -5,8 +5,8 @@ package repository
 import (
 	"context"
 
-	"mishra-api/ent/authidentity"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/ent/authidentity"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 func (s *UserRepoSuite) TestCreate_CreatesEmailAuthIdentityForNormalEmail() {

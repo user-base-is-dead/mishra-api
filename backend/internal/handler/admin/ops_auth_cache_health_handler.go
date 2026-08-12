@@ -3,7 +3,7 @@ package admin
 import (
 	"net/http"
 
-	"mishra-api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/gin-gonic/gin"
 )
 

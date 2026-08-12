@@ -3,7 +3,7 @@ package service
 import (
 	"strings"
 
-	"mishra-api/internal/pkg/antigravity"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
 )
 
 const antigravitySubscriptionAbnormal = "abnormal"

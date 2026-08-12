@@ -11,9 +11,9 @@ import (
 	"strings"
 	"unsafe"
 
-	"mishra-api/internal/domain"
-	"mishra-api/internal/pkg/antigravity"
-	"mishra-api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )

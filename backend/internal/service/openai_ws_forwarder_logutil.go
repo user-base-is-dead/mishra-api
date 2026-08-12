@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	"mishra-api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	coderws "github.com/coder/websocket"
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"

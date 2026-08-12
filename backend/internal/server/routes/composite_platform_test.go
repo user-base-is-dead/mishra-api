@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	servermiddleware "mishra-api/internal/server/middleware"
-	"mishra-api/internal/service"
+	servermiddleware "github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )

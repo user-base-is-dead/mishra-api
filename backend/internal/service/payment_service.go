@@ -12,10 +12,10 @@ import (
 	"sync"
 	"time"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/paymentproviderinstance"
-	"mishra-api/internal/payment"
-	"mishra-api/internal/payment/provider"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
+	"github.com/Wei-Shaw/sub2api/internal/payment/provider"
 )
 
 // --- Order Status Constants ---

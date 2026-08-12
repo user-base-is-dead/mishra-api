@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"mishra-api/internal/pkg/apicompat"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/apicompat"
 )
 
 const (

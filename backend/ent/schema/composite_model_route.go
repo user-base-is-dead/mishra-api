@@ -1,8 +1,8 @@
 package schema
 
 import (
-	"mishra-api/ent/schema/mixins"
-	"mishra-api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"

@@ -131,7 +131,7 @@
                 v-model="formData.database.dbname"
                 type="text"
                 class="input"
-                placeholder="mishra-api"
+                placeholder="sub2api"
               />
             </div>
             <div>

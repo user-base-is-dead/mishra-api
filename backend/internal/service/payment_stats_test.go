@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	dbent "mishra-api/ent"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/stretchr/testify/require"
 )
 

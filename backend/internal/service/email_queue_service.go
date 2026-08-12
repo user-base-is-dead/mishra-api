@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"mishra-api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 )
 
 // Task type constants

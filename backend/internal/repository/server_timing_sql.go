@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"time"
 
-	"mishra-api/internal/pkg/servertiming"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/servertiming"
 )
 
 type serverTimingConnector struct {

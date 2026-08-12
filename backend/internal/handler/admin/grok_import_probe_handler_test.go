@@ -4,6 +4,7 @@ package admin
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/xai"
-	"mishra-api/internal/service"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
@@ -60,6 +61,10 @@ func (grokImportOAuthClientStub) ExchangeCode(context.Context, string, string, s
 
 func (grokImportOAuthClientStub) RefreshToken(context.Context, string, string, string) (*xai.TokenResponse, error) {
 	return &xai.TokenResponse{AccessToken: "access-token", RefreshToken: "refresh-token", ExpiresIn: 3600}, nil
+}
+
+func (grokImportOAuthClientStub) LoginWithPassword(context.Context, string, string, string) (*service.GrokPasswordLoginResult, error) {
+	return nil, errors.New("unexpected password login")
 }
 
 func (grokImportOAuthClientStub) ConvertSSOToBuild(context.Context, string, string) (*xai.TokenResponse, error) {

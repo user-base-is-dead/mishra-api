@@ -9,9 +9,9 @@ import (
 	"regexp"
 	"strings"
 
-	"mishra-api/internal/pkg/response"
-	middleware2 "mishra-api/internal/server/middleware"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 )
 

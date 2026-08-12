@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"mishra-api/ent/userplatformquota"
+	"github.com/Wei-Shaw/sub2api/ent/userplatformquota"
 	"github.com/stretchr/testify/require"
 )
 

@@ -6,8 +6,8 @@ import (
 	"context"
 	"testing"
 
-	dbent "mishra-api/ent"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/stretchr/testify/suite"
 )
 

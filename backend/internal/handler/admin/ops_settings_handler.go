@@ -3,9 +3,9 @@ package admin
 import (
 	"net/http"
 
-	"mishra-api/internal/pkg/response"
-	"mishra-api/internal/server/middleware"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 )
 

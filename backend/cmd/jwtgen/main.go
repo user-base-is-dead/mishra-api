@@ -7,10 +7,10 @@ import (
 	"log"
 	"time"
 
-	_ "mishra-api/ent/runtime"
-	"mishra-api/internal/config"
-	"mishra-api/internal/repository"
-	"mishra-api/internal/service"
+	_ "github.com/Wei-Shaw/sub2api/ent/runtime"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/repository"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 func main() {

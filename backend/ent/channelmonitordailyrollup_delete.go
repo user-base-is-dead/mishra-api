@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"mishra-api/ent/channelmonitordailyrollup"
-	"mishra-api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
+	"github.com/Wei-Shaw/sub2api/ent/predicate"
 )
 
 // ChannelMonitorDailyRollupDelete is the builder for deleting a ChannelMonitorDailyRollup entity.

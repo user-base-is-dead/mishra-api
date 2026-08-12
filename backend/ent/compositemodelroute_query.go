@@ -12,9 +12,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"mishra-api/ent/compositemodelroute"
-	"mishra-api/ent/group"
-	"mishra-api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/compositemodelroute"
+	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/predicate"
 )
 
 // CompositeModelRouteQuery is the builder for querying CompositeModelRoute entities.

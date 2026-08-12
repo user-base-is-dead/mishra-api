@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
-	"mishra-api/internal/pkg/oauth"
-	"mishra-api/internal/pkg/openai"
-	"mishra-api/internal/pkg/xai"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/oauth"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
 )
 
 // OpenAIOAuthClient interface for OpenAI OAuth operations
@@ -22,6 +22,9 @@ type OpenAIOAuthClient interface {
 type GrokOAuthClient interface {
 	ExchangeCode(ctx context.Context, code, codeVerifier, redirectURI, proxyURL, clientID string) (*xai.TokenResponse, error)
 	RefreshToken(ctx context.Context, refreshToken, proxyURL, clientID string) (*xai.TokenResponse, error)
+	// LoginWithPassword exchanges email/password for a short-lived Web SSO cookie.
+	// Callers must convert via ConvertSSOToBuild and must not persist password or raw SSO.
+	LoginWithPassword(ctx context.Context, email, password, proxyURL string) (*GrokPasswordLoginResult, error)
 	ConvertSSOToBuild(ctx context.Context, ssoToken, proxyURL string) (*xai.TokenResponse, error)
 }
 

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"mishra-api/internal/pkg/usagestats"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/usagestats"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )

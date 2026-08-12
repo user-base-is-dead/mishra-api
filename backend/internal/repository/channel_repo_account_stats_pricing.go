@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/lib/pq"
 )
 

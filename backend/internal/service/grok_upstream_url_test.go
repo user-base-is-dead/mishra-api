@@ -5,8 +5,8 @@ package service
 import (
 	"testing"
 
-	"mishra-api/internal/config"
-	"mishra-api/internal/pkg/xai"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
 	"github.com/stretchr/testify/require"
 )
 
@@ -253,6 +253,26 @@ func TestGrokOAuthURLPolicy(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, xai.DefaultCLIBaseURL+"/responses", target)
 	})
+}
+
+func TestBuildGrokBillingURLUsesCLIForOfficialAPIHosts(t *testing.T) {
+	for _, baseURL := range []string{xai.DefaultBaseURL, "https://us-west-2.api.x.ai/v1"} {
+		account := &Account{Platform: PlatformGrok, Type: AccountTypeOAuth, Credentials: map[string]any{"base_url": baseURL}}
+
+		weekly, err := buildGrokBillingURL(account, &config.Config{}, true)
+		require.NoError(t, err)
+		require.Equal(t, xai.DefaultCLIBaseURL+xai.BillingWeeklyPath, weekly)
+	}
+}
+
+func TestBuildGrokBillingURLKeepsCustomRelay(t *testing.T) {
+	account := &Account{Platform: PlatformGrok, Type: AccountTypeOAuth, Credentials: map[string]any{
+		"base_url": "https://relay.example.test/xai/v1",
+	}}
+
+	monthly, err := buildGrokBillingURL(account, &config.Config{}, false)
+	require.NoError(t, err)
+	require.Equal(t, "https://relay.example.test/xai/v1"+xai.BillingMonthlyPath, monthly)
 }
 
 func TestGrokBillingURLFollowsAccountBaseURL(t *testing.T) {

@@ -3,9 +3,9 @@ package middleware
 import (
 	"time"
 
-	"mishra-api/internal/pkg/ctxkey"
-	"mishra-api/internal/pkg/ip"
-	"mishra-api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ip"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

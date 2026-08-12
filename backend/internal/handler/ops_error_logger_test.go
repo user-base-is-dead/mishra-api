@@ -9,8 +9,8 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	middleware2 "mishra-api/internal/server/middleware"
-	"mishra-api/internal/service"
+	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )

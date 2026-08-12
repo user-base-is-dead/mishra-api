@@ -10,13 +10,13 @@ import (
 	"strings"
 	"time"
 
-	dbent "mishra-api/ent"
-	dbuser "mishra-api/ent/user"
-	"mishra-api/internal/config"
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/oauth"
-	"mishra-api/internal/pkg/response"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	dbuser "github.com/Wei-Shaw/sub2api/ent/user"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/oauth"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -113,6 +113,9 @@ func clearDingTalkCookie(c *gin.Context, name string, secure bool) {
 // DingTalkOAuthStart 启动 DingTalk Connect OAuth 登录流程。
 // GET /api/v1/auth/oauth/dingtalk/start?redirect=/dashboard&intent=login
 func (h *AuthHandler) DingTalkOAuthStart(c *gin.Context) {
+	if !h.requireActionCaptchaForOAuthLoginStart(c) {
+		return
+	}
 	cfg, err := h.getDingTalkOAuthConfig(c.Request.Context())
 	if err != nil {
 		frontendCB := dingTalkOAuthDefaultFrontendCB
@@ -165,7 +168,7 @@ func (h *AuthHandler) DingTalkOAuthStart(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, authURL)
+	respondOAuthStart(c, authURL)
 }
 
 // ─── buildDingTalkAuthorizeURL ─────────────────────────────────────────────

@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"testing"
 
-	"mishra-api/internal/payment"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
 )
 
 func TestEasyPayQueryOrderStatusMapping(t *testing.T) {

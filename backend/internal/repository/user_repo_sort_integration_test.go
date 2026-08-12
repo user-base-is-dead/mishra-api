@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"mishra-api/internal/pkg/pagination"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 func (s *UserRepoSuite) mustInsertUsageLog(userID int64, createdAt time.Time) {

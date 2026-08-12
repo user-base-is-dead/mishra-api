@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	dbent "mishra-api/ent"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
 )
 
 func TestInstanceSupportsType(t *testing.T) {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"mishra-api/internal/pkg/ctxkey"
-	"mishra-api/internal/pkg/googleapi"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/googleapi"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 )
 

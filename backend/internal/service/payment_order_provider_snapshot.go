@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	dbent "mishra-api/ent"
-	"mishra-api/internal/payment"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
 )
 
 type paymentOrderProviderSnapshot struct {

@@ -10,10 +10,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"mishra-api/ent/group"
-	"mishra-api/ent/predicate"
-	"mishra-api/ent/user"
-	"mishra-api/ent/userallowedgroup"
+	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/user"
+	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
 )
 
 // UserAllowedGroupUpdate is the builder for updating UserAllowedGroup entities.

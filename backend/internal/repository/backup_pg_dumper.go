@@ -6,8 +6,8 @@ import (
 	"io"
 	"os/exec"
 
-	"mishra-api/internal/config"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 // PgDumper implements service.DBDumper using pg_dump/psql

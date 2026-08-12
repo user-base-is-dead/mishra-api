@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"mishra-api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 )
 
 var (

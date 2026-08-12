@@ -13,11 +13,11 @@ import (
 
 	"entgo.io/ent/dialect"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/paymentauditlog"
-	"mishra-api/ent/paymentorder"
-	"mishra-api/internal/payment"
-	infraerrors "mishra-api/internal/pkg/errors"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
+	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
 // ErrOrderNotFound is returned by HandlePaymentNotification when the webhook

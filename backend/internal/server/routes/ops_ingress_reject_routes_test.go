@@ -5,9 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"mishra-api/internal/handler"
-	adminhandler "mishra-api/internal/handler/admin"
-	servermiddleware "mishra-api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/handler"
+	adminhandler "github.com/Wei-Shaw/sub2api/internal/handler/admin"
+	servermiddleware "github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )

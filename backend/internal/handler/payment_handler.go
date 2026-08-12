@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	dbent "mishra-api/ent"
-	"mishra-api/internal/payment"
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/response"
-	middleware2 "mishra-api/internal/server/middleware"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
 )

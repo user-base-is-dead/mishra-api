@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"mishra-api/internal/domain"
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 )
 
 const (

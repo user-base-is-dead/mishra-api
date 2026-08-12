@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"mishra-api/internal/payment"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
 	stripe "github.com/stripe/stripe-go/v85"
 	"github.com/stripe/stripe-go/v85/webhook"
 )
@@ -230,6 +230,7 @@ func (s *Stripe) Refund(ctx context.Context, req payment.RefundRequest) (*paymen
 		Amount:        stripe.Int64(amountInMinorUnit),
 		Reason:        stripe.String(string(stripe.RefundReasonRequestedByCustomer)),
 	}
+	params.SetIdempotencyKey(fmt.Sprintf("re-%s-%d", req.OrderID, amountInMinorUnit))
 	params.Context = ctx
 
 	r, err := s.sc.V1Refunds.Create(ctx, params)

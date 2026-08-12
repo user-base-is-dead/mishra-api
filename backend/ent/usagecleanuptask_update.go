@@ -13,8 +13,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
-	"mishra-api/ent/predicate"
-	"mishra-api/ent/usagecleanuptask"
+	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 )
 
 // UsageCleanupTaskUpdate is the builder for updating UsageCleanupTask entities.

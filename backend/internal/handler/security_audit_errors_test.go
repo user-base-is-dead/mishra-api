@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"mishra-api/internal/pkg/ctxkey"
-	"mishra-api/internal/securityaudit"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
+	"github.com/Wei-Shaw/sub2api/internal/securityaudit"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )

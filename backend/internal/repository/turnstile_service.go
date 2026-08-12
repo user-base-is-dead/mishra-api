@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"mishra-api/internal/pkg/httpclient"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/httpclient"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 const turnstileVerifyURL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"

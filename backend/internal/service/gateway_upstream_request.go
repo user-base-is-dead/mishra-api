@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"mishra-api/internal/pkg/claude"
-	"mishra-api/internal/pkg/logger"
-	"mishra-api/internal/util/urlvalidator"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/util/urlvalidator"
 	"github.com/google/uuid"
 	"github.com/tidwall/gjson"
 

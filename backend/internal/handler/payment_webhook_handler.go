@@ -11,8 +11,8 @@ import (
 	"net/url"
 	"strings"
 
-	"mishra-api/internal/payment"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
 )

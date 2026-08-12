@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"mishra-api/internal/handler"
-	"mishra-api/internal/securityaudit"
-	servermiddleware "mishra-api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/handler"
+	"github.com/Wei-Shaw/sub2api/internal/securityaudit"
+	servermiddleware "github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
@@ -41,14 +41,19 @@ func TestEveryGatewayPOSTRouteIsClassifiedForPromptAuditCoverage(t *testing.T) {
 		"/images/generations/async": {"image_task_handler.go"},
 		"/images/edits/async":       {"image_task_handler.go"},
 		"/images/batches":           {"batch_image_handler.go"},
+		"/videos":                   {"grok_media.go"},
 		"/videos/generations":       {"grok_media.go"},
 		"/videos/edits":             {"grok_media.go"},
 		"/videos/extensions":        {"grok_media.go"},
 		"/models/*modelAction":      {"gemini_v1beta_handler.go"},
+		"/tts":                      {"grok_audio.go"},
+		"/web_search":               {"gateway_web_search.go"},
 	}
 	excluded := map[string]string{
 		"/messages/count_tokens":     "tokenization only; it does not execute a model request",
 		"/images/batches/:id/cancel": "control-plane cancellation with no user prompt",
+		"/stt":                       "speech transcription is not a text-generation prompt",
+		"/custom-voices":             "voice profile management has no model prompt",
 	}
 
 	unclassified := make([]string, 0)

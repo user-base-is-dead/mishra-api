@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"mishra-api/internal/handler/quotaview"
-	"mishra-api/internal/pkg/timezone"
-	middleware2 "mishra-api/internal/server/middleware"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/handler/quotaview"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
+	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 )
 

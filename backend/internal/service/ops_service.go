@@ -12,8 +12,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"mishra-api/internal/config"
-	infraerrors "mishra-api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
 var ErrOpsDisabled = infraerrors.NotFound("OPS_DISABLED", "Ops monitoring is disabled")

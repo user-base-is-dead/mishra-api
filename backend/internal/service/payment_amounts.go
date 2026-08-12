@@ -3,7 +3,7 @@ package service
 import (
 	"math"
 
-	"mishra-api/internal/payment"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
 	"github.com/shopspring/decimal"
 )
 

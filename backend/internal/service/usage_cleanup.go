@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"mishra-api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 )
 
 const (

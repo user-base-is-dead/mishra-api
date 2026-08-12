@@ -11,7 +11,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	infraerrors "mishra-api/internal/pkg/errors"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -141,6 +141,7 @@ func TestDuplicateAccountCopiesConfigurationAndResetsRuntimeState(t *testing.T) 
 		SessionWindowStatus:     "active",
 	}
 	source.Extra[UpstreamBillingProbeEnabledExtraKey] = true
+	source.Extra[UpstreamBillingRateSyncEnabledExtraKey] = true
 	source.Extra[UpstreamBillingProbeExtraKey] = map[string]any{"status": "ok"}
 	require.NoError(t, repo.Create(ctx, source))
 
@@ -162,6 +163,7 @@ func TestDuplicateAccountCopiesConfigurationAndResetsRuntimeState(t *testing.T) 
 		"quota_limit":    float64(1000),
 		"codex_cli_only": true,
 	}, duplicate.Extra)
+	require.NotContains(t, duplicate.Extra, UpstreamBillingRateSyncEnabledExtraKey)
 	require.NotNil(t, duplicate.ExpiresAt)
 	require.True(t, source.ExpiresAt.Equal(*duplicate.ExpiresAt))
 	require.Equal(t, source.Notes, duplicate.Notes)

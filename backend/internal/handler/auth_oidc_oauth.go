@@ -19,12 +19,12 @@ import (
 	"strings"
 	"time"
 
-	dbent "mishra-api/ent"
-	"mishra-api/internal/config"
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/oauth"
-	"mishra-api/internal/pkg/response"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/oauth"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -115,6 +115,9 @@ type oidcJWK struct {
 // OIDCOAuthStart 启动通用 OIDC OAuth 登录流程。
 // GET /api/v1/auth/oauth/oidc/start?redirect=/dashboard
 func (h *AuthHandler) OIDCOAuthStart(c *gin.Context) {
+	if !h.requireActionCaptchaForOAuthLoginStart(c) {
+		return
+	}
 	cfg, err := h.getOIDCOAuthConfig(c.Request.Context())
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -190,7 +193,7 @@ func (h *AuthHandler) OIDCOAuthStart(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, authURL)
+	respondOAuthStart(c, authURL)
 }
 
 // OIDCOAuthCallback 处理 OIDC 回调：校验 id_token、创建/登录用户并重定向到前端。

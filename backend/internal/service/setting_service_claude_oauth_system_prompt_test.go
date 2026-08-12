@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"mishra-api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/stretchr/testify/require"
 )
 

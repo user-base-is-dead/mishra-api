@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 type authCacheInvalidationOutboxRepository struct {

@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/enttest"
-	"mishra-api/internal/payment"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/enttest"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 

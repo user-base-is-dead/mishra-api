@@ -3,10 +3,10 @@ package repository
 import (
 	"context"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/userattributedefinition"
-	"mishra-api/ent/userattributevalue"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/userattributedefinition"
+	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 // UserAttributeDefinitionRepository implementation

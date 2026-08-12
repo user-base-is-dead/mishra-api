@@ -9,12 +9,12 @@ import (
 	"net/url"
 	"strings"
 
-	dbent "mishra-api/ent"
-	"mishra-api/internal/config"
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/oauth"
-	"mishra-api/internal/pkg/response"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/oauth"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/imroc/req/v3"
 	"github.com/tidwall/gjson"
@@ -59,6 +59,9 @@ func (h *AuthHandler) CompleteGoogleOAuthRegistration(c *gin.Context) {
 }
 
 func (h *AuthHandler) emailOAuthStart(c *gin.Context, provider string) {
+	if !h.requireActionCaptchaForOAuthLoginStart(c) {
+		return
+	}
 	cfg, err := h.getEmailOAuthConfig(c.Request.Context(), provider)
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -90,7 +93,7 @@ func (h *AuthHandler) emailOAuthStart(c *gin.Context, provider string) {
 		response.ErrorFrom(c, infraerrors.InternalServer("OAUTH_BUILD_URL_FAILED", "failed to build oauth authorization url").WithCause(err))
 		return
 	}
-	c.Redirect(http.StatusFound, authURL)
+	respondOAuthStart(c, authURL)
 }
 
 func (h *AuthHandler) emailOAuthCallback(c *gin.Context, provider string) {

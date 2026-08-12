@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"strings"
 
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/pagination"
-	"mishra-api/internal/pkg/response"
-	"mishra-api/internal/service"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,7 +33,7 @@ type createChannelRequest struct {
 	GroupIDs                   []int64                          `json:"group_ids"`
 	ModelPricing               []channelModelPricingRequest     `json:"model_pricing"`
 	ModelMapping               map[string]map[string]string     `json:"model_mapping"`
-	BillingModelSource         string                           `json:"billing_model_source" binding:"omitempty,oneof=requested upstream channel_mapped"`
+	BillingModelSource         string                           `json:"billing_model_source" binding:"omitempty,oneof=requested upstream channel_mapped response_model"`
 	RestrictModels             bool                             `json:"restrict_models"`
 	Features                   string                           `json:"features"`
 	FeaturesConfig             map[string]any                   `json:"features_config"`
@@ -48,7 +48,7 @@ type updateChannelRequest struct {
 	GroupIDs                   *[]int64                          `json:"group_ids"`
 	ModelPricing               *[]channelModelPricingRequest     `json:"model_pricing"`
 	ModelMapping               map[string]map[string]string      `json:"model_mapping"`
-	BillingModelSource         string                            `json:"billing_model_source" binding:"omitempty,oneof=requested upstream channel_mapped"`
+	BillingModelSource         string                            `json:"billing_model_source" binding:"omitempty,oneof=requested upstream channel_mapped response_model"`
 	RestrictModels             *bool                             `json:"restrict_models"`
 	Features                   *string                           `json:"features"`
 	FeaturesConfig             map[string]any                    `json:"features_config"`

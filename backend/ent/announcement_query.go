@@ -13,9 +13,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"mishra-api/ent/announcement"
-	"mishra-api/ent/announcementread"
-	"mishra-api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/announcement"
+	"github.com/Wei-Shaw/sub2api/ent/announcementread"
+	"github.com/Wei-Shaw/sub2api/ent/predicate"
 )
 
 // AnnouncementQuery is the builder for querying Announcement entities.

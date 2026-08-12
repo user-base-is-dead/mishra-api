@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/setting"
-	dbuser "mishra-api/ent/user"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/setting"
+	dbuser "github.com/Wei-Shaw/sub2api/ent/user"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 const (

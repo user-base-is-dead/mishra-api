@@ -3,7 +3,7 @@ package securityaudit
 import (
 	"context"
 
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 type LegacyModerationAdapter struct {

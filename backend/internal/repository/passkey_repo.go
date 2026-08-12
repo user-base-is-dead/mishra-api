@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/lib/pq"
 )

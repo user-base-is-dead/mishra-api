@@ -4,11 +4,11 @@ import (
 	"context"
 	"strings"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/promocode"
-	"mishra-api/ent/promocodeusage"
-	"mishra-api/internal/pkg/pagination"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/promocode"
+	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	entsql "entgo.io/ent/dialect/sql"
 )

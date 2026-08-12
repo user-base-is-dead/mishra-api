@@ -15,8 +15,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
-	"mishra-api/internal/payment"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
 )
 
 // EasyPay constants.
@@ -477,7 +478,11 @@ func summarizeEasyPayResponse(body []byte) string {
 		return "<empty>"
 	}
 	if len(summary) > maxEasypayErrorSummary {
-		return summary[:maxEasypayErrorSummary] + "..."
+		truncated := summary[:maxEasypayErrorSummary]
+		for len(truncated) > 0 && !utf8.ValidString(truncated) {
+			truncated = truncated[:len(truncated)-1]
+		}
+		return truncated + "..."
 	}
 	return summary
 }

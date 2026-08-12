@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"mishra-api/internal/config"
-	"mishra-api/internal/pkg/logger"
-	"mishra-api/internal/repository"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/repository"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
@@ -40,7 +40,7 @@ func setupDefaultAdminConcurrency() int {
 }
 
 // GetDataDir returns the data directory for storing config and lock files.
-// Priority: DATA_DIR env > /app/data (if exists and writable) > ./data (relative, auto-created) > current directory
+// Priority: DATA_DIR env > /app/data (if exists and writable) > current directory
 func GetDataDir() string {
 	// Check DATA_DIR environment variable first
 	if dir := os.Getenv("DATA_DIR"); dir != "" {
@@ -59,15 +59,7 @@ func GetDataDir() string {
 		}
 	}
 
-	// Default: use ./data relative to current working directory
-	// This is consistent across all OS (Windows/Linux/Mac) and keeps
-	// data inside the project folder rather than scattered elsewhere.
-	relativeDataDir := "./data"
-	if err := os.MkdirAll(relativeDataDir, 0700); err == nil {
-		return relativeDataDir
-	}
-
-	// Last resort: current directory
+	// Default to current directory
 	return "."
 }
 

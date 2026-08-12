@@ -3,9 +3,9 @@ package admin
 import (
 	"strconv"
 
-	"mishra-api/internal/model"
-	"mishra-api/internal/pkg/response"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/model"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 )
 

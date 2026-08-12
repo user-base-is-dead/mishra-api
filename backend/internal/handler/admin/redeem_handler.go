@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"mishra-api/internal/handler/dto"
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/response"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
 )

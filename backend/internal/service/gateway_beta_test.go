@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"mishra-api/internal/pkg/claude"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 
 	"github.com/stretchr/testify/require"
 )

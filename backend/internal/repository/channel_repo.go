@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"mishra-api/internal/pkg/pagination"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/lib/pq"
 )
 

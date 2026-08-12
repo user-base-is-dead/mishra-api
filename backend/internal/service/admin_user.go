@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/authidentity"
-	"mishra-api/ent/authidentitychannel"
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/logger"
-	"mishra-api/internal/pkg/pagination"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/authidentity"
+	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 )
 
 // User management implementations

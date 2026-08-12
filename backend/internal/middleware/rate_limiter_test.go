@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	ippkg "mishra-api/internal/pkg/ip"
+	ippkg "github.com/Wei-Shaw/sub2api/internal/pkg/ip"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"

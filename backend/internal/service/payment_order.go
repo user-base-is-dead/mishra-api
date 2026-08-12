@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/paymentorder"
-	"mishra-api/internal/payment"
-	"mishra-api/internal/payment/provider"
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/servertiming"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
+	"github.com/Wei-Shaw/sub2api/internal/payment/provider"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/servertiming"
 	"github.com/shopspring/decimal"
 )
 

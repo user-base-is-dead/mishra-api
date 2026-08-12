@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"strings"
 
-	dbent "mishra-api/ent"
-	"mishra-api/internal/config"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/google/wire"
 )
 

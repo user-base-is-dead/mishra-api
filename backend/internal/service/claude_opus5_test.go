@@ -3,9 +3,9 @@ package service
 import (
 	"testing"
 
-	"mishra-api/internal/config"
-	"mishra-api/internal/domain"
-	"mishra-api/internal/pkg/claude"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

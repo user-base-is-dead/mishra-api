@@ -6,9 +6,9 @@ import (
 	"net/url"
 	"time"
 
-	"mishra-api/internal/config"
-	"mishra-api/internal/pkg/geminicli"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/geminicli"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/imroc/req/v3"
 )

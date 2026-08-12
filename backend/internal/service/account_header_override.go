@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	infraerrors "mishra-api/internal/pkg/errors"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 
 	"golang.org/x/net/http/httpguts"
 )

@@ -346,11 +346,11 @@ const chartColors = [
   '#ef4444',
   '#8b5cf6',
   '#ec4899',
-  '#d4a017',
+  '#14b8a6',
   '#f97316',
   '#6366f1',
   '#84cc16',
-  '#b8860b',
+  '#06b6d4',
   '#a855f7'
 ]
 
@@ -422,6 +422,7 @@ const otherRankingItem = computed<RankingDisplayItem | null>(() => {
   return {
     user_id: 0,
     email: '',
+    username: '',
     actual_cost: otherActualCost,
     requests: otherRequests,
     tokens: otherTokens,
@@ -495,7 +496,8 @@ const formatNumber = (value: number): string => {
 }
 
 const getRankingUserLabel = (item: UserSpendingRankingItem): string => {
-  if (item.email) return item.email
+  if (item.username?.trim()) return item.username.trim()
+  if (item.email?.trim()) return item.email.trim()
   return t('admin.redeem.userPrefix', { id: item.user_id })
 }
 

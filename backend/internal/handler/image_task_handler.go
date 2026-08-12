@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	infraerrors "mishra-api/internal/pkg/errors"
-	pkghttputil "mishra-api/internal/pkg/httputil"
-	"mishra-api/internal/pkg/logger"
-	middleware2 "mishra-api/internal/server/middleware"
-	"mishra-api/internal/service"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	pkghttputil "github.com/Wei-Shaw/sub2api/internal/pkg/httputil"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

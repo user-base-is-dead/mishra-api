@@ -9,9 +9,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"mishra-api/internal/config"
-	"mishra-api/internal/pkg/response"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )

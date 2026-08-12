@@ -8,8 +8,8 @@ import (
 	"sync"
 	"testing"
 
-	"mishra-api/internal/pkg/ctxkey"
-	"mishra-api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 

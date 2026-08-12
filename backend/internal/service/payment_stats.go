@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"time"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/paymentauditlog"
-	"mishra-api/ent/paymentorder"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
+	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 )
 
 // --- Dashboard & Analytics ---

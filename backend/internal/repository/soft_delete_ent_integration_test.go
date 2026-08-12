@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/apikey"
-	"mishra-api/ent/schema/mixins"
-	"mishra-api/ent/usersubscription"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/apikey"
+	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
+	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/stretchr/testify/require"
 )
 

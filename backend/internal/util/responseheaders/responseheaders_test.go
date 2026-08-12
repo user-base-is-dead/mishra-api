@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"mishra-api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/config"
 )
 
 func TestFilterHeadersDisabledUsesDefaultAllowlist(t *testing.T) {

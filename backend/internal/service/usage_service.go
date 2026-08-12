@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	dbent "mishra-api/ent"
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/pagination"
-	"mishra-api/internal/pkg/usagestats"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/usagestats"
 )
 
 var (

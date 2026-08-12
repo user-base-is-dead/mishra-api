@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"mishra-api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/config"
 )
 
 type betaPolicySettingRepoStub struct {

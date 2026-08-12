@@ -3,7 +3,7 @@ package provider
 import (
 	"fmt"
 
-	"mishra-api/internal/payment"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
 )
 
 // CreateProvider creates a Provider from a provider key, instance ID and decrypted config.

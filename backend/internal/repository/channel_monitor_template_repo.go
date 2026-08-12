@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/channelmonitor"
-	"mishra-api/ent/channelmonitorrequesttemplate"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
+	"github.com/Wei-Shaw/sub2api/ent/channelmonitorrequesttemplate"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/lib/pq"
 )
 

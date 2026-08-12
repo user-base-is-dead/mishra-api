@@ -11,14 +11,28 @@ import (
 	"testing"
 	"time"
 
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/xai"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
 
 type grokCredentialPersistingRepo struct {
 	*tokenRefreshAccountRepo
+}
+
+func TestClassifyGrokCredentialFailureBillingExhaustionIsTransient(t *testing.T) {
+	account := expiredGrokOAuthAccountForCredentialTest(9901)
+	for _, message := range []string{
+		"Grok OAuth refresh failed: spending limit reached",
+		"included free usage exhausted",
+		"credits exhausted",
+	} {
+		class := classifyGrokCredentialFailure(account, errors.New(message))
+		require.Equal(t, GrokCredentialReasonRefreshTransient, class.reason, message)
+		require.True(t, class.transient, message)
+		require.False(t, class.permanent, message)
+	}
 }
 
 func (r *grokCredentialPersistingRepo) SetError(ctx context.Context, id int64, message string) error {

@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/compositemodelroute"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/compositemodelroute"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 type compositeModelRouteRepository struct {

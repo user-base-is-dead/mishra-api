@@ -14,11 +14,11 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect"
-	dbent "mishra-api/ent"
-	"mishra-api/ent/identityadoptiondecision"
-	"mishra-api/ent/pendingauthsession"
-	dbpredicate "mishra-api/ent/predicate"
-	infraerrors "mishra-api/internal/pkg/errors"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
+	"github.com/Wei-Shaw/sub2api/ent/pendingauthsession"
+	dbpredicate "github.com/Wei-Shaw/sub2api/ent/predicate"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 
 	entsql "entgo.io/ent/dialect/sql"
 )

@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"mishra-api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/gin-gonic/gin"
 )
 

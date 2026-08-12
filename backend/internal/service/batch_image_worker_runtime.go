@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"mishra-api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/config"
 )
 
 type BatchImageWorkerRuntime struct {

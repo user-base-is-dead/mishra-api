@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"mishra-api/ent/batchimagejob"
-	"mishra-api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/batchimagejob"
+	"github.com/Wei-Shaw/sub2api/ent/predicate"
 )
 
 // BatchImageJobDelete is the builder for deleting a BatchImageJob entity.

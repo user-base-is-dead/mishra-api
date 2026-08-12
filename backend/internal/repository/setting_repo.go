@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"mishra-api/ent"
-	"mishra-api/ent/setting"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/setting"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 type settingRepository struct {

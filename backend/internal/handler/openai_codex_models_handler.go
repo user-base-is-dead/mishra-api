@@ -5,9 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	infraerrors "mishra-api/internal/pkg/errors"
-	middleware2 "mishra-api/internal/server/middleware"
-	"mishra-api/internal/service"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 // CodexModels serves the Codex models manifest for Codex clients.

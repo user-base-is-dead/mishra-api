@@ -13,9 +13,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"mishra-api/ent/predicate"
-	"mishra-api/ent/userattributedefinition"
-	"mishra-api/ent/userattributevalue"
+	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/userattributedefinition"
+	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
 )
 
 // UserAttributeDefinitionQuery is the builder for querying UserAttributeDefinition entities.

@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	dbmigrations "mishra-api/migrations"
+	dbmigrations "github.com/Wei-Shaw/sub2api/migrations"
 	"github.com/stretchr/testify/require"
 )
 

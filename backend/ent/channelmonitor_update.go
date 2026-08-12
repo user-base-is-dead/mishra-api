@@ -12,11 +12,11 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
-	"mishra-api/ent/channelmonitor"
-	"mishra-api/ent/channelmonitordailyrollup"
-	"mishra-api/ent/channelmonitorhistory"
-	"mishra-api/ent/channelmonitorrequesttemplate"
-	"mishra-api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
+	"github.com/Wei-Shaw/sub2api/ent/channelmonitordailyrollup"
+	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
+	"github.com/Wei-Shaw/sub2api/ent/channelmonitorrequesttemplate"
+	"github.com/Wei-Shaw/sub2api/ent/predicate"
 )
 
 // ChannelMonitorUpdate is the builder for updating ChannelMonitor entities.

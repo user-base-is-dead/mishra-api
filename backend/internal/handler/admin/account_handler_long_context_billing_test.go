@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/service"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
@@ -144,7 +144,7 @@ func TestApplyOAuthCredentialsRejectsMalformedOpenAILongContextBillingBeforeMuta
 
 func TestOpenAIOAuthCodexPATBoundaryRejectsMalformedOpenAILongContextBillingValueBeforeTokenValidation(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := NewOpenAIOAuthHandler(nil, newStubAdminService(), nil)
+	handler := NewOpenAIOAuthHandler(nil, newStubAdminService(), nil, nil)
 	router := gin.New()
 	router.Use(gin.Recovery())
 	router.POST("/openai/create-from-codex-pat", handler.CreateAccountFromCodexPAT)

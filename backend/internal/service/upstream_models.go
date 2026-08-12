@@ -9,9 +9,9 @@ import (
 	"sort"
 	"strings"
 
-	"mishra-api/internal/pkg/antigravity"
-	"mishra-api/internal/pkg/claude"
-	"mishra-api/internal/pkg/geminicli"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/geminicli"
 )
 
 const upstreamModelsBodyLimit int64 = 8 << 20
@@ -193,7 +193,11 @@ func (s *AccountTestService) buildGrokUpstreamModelsRequest(ctx context.Context,
 		if err != nil {
 			return nil, newUpstreamModelSyncConfigError("Invalid Grok base URL", err)
 		}
-		validatedBaseURL, err := validator(account.GetGrokBaseURL())
+		baseURL := account.GetGrokBaseURL()
+		if s.settingService != nil {
+			baseURL = s.settingService.ResolveGrokBaseURL(ctx, account)
+		}
+		validatedBaseURL, err := validator(baseURL)
 		if err != nil {
 			return nil, newUpstreamModelSyncConfigError("Invalid Grok base URL", err)
 		}

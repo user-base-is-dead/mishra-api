@@ -23,8 +23,10 @@ function initIOSViewportZoomFix() {
 }
 
 function initThemeClass() {
-  // Dark is the default brand experience; light is an explicit opt-in.
-  const shouldUseDark = localStorage.getItem('theme') !== 'light'
+  const savedTheme = localStorage.getItem('theme')
+  const shouldUseDark =
+    savedTheme === 'dark' ||
+    (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
   document.documentElement.classList.toggle('dark', shouldUseDark)
 }
 

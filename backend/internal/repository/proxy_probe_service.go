@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"mishra-api/internal/config"
-	"mishra-api/internal/pkg/httpclient"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/httpclient"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 func NewProxyExitInfoProber(cfg *config.Config) service.ProxyExitInfoProber {

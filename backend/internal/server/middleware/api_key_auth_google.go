@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"mishra-api/internal/config"
-	"mishra-api/internal/pkg/googleapi"
-	"mishra-api/internal/pkg/ip"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/googleapi"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ip"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
 )

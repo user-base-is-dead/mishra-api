@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 type batchImageSQLExecutor interface {

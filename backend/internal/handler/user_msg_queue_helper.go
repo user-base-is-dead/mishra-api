@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"

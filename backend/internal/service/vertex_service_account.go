@@ -16,9 +16,9 @@ import (
 	"strings"
 	"time"
 
-	"mishra-api/internal/pkg/proxyurl"
-	"mishra-api/internal/pkg/proxyutil"
-	"mishra-api/internal/pkg/servertiming"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/proxyurl"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/proxyutil"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/servertiming"
 	"github.com/golang-jwt/jwt/v5"
 )
 

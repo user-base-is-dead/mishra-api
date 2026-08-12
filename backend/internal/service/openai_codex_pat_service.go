@@ -8,8 +8,9 @@ import (
 	"strings"
 	"time"
 
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/httpclient"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/httpclient"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
 )
 
 const openAICodexPATWhoamiURLDefault = "https://auth.openai.com/api/accounts/v1/user-auth-credential/whoami"
@@ -58,7 +59,7 @@ func (s *OpenAIOAuthService) ValidateCodexPersonalAccessToken(ctx context.Contex
 	}
 	req.Header.Set("authorization", "Bearer "+accessToken)
 	req.Header.Set("accept", "application/json")
-	req.Header.Set("originator", "codex_cli_rs")
+	req.Header.Set("originator", openai.CodexDefaultOriginator)
 	req.Header.Set("user-agent", codexCLIUserAgent)
 
 	resp, err := client.Do(req)

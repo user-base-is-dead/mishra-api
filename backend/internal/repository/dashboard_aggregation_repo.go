@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"mishra-api/internal/pkg/timezone"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/lib/pq"
 )
 

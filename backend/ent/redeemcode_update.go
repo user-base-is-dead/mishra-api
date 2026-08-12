@@ -11,10 +11,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"mishra-api/ent/group"
-	"mishra-api/ent/predicate"
-	"mishra-api/ent/redeemcode"
-	"mishra-api/ent/user"
+	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
+	"github.com/Wei-Shaw/sub2api/ent/user"
 )
 
 // RedeemCodeUpdate is the builder for updating RedeemCode entities.

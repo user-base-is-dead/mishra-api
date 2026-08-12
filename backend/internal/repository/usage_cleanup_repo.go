@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	dbent "mishra-api/ent"
-	dbusagecleanuptask "mishra-api/ent/usagecleanuptask"
-	"mishra-api/internal/pkg/pagination"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	dbusagecleanuptask "github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 type usageCleanupRepository struct {

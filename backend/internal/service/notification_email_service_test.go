@@ -4,7 +4,10 @@ import (
 	"bufio"
 	"context"
 	"errors"
+	"io"
+	"mime/quotedprintable"
 	"net"
+	"net/mail"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -306,8 +309,8 @@ func TestNotificationEmailFallbackClassification(t *testing.T) {
 
 func TestEmailQueueTasksPreserveLocaleHints(t *testing.T) {
 	queue := &EmailQueueService{taskChan: make(chan EmailTask, 2)}
-	require.NoError(t, queue.EnqueueVerifyCode("user@example.com", "Sub2API", "zh-CN"))
-	require.NoError(t, queue.EnqueuePasswordReset("user@example.com", "Sub2API", "https://example.com/reset", "en-US"))
+	require.NoError(t, queue.EnqueueVerifyCode("user@example.com", "Mishra Miron API", "zh-CN"))
+	require.NoError(t, queue.EnqueuePasswordReset("user@example.com", "Mishra Miron API", "https://example.com/reset", "en-US"))
 
 	verifyTask := <-queue.taskChan
 	require.Equal(t, TaskTypeVerifyCode, verifyTask.TaskType)
@@ -580,7 +583,7 @@ func (s *notificationEmailTestSMTPServer) settings() map[string]string {
 		SettingKeySMTPUsername: "user",
 		SettingKeySMTPPassword: "password",
 		SettingKeySMTPFrom:     "noreply@example.com",
-		SettingKeySMTPFromName: "Sub2API",
+		SettingKeySMTPFromName: "Mishra Miron API",
 		SettingKeySMTPUseTLS:   "false",
 	}
 }
@@ -596,6 +599,21 @@ func (s *notificationEmailTestSMTPServer) lastMessage() string {
 		return ""
 	}
 	return s.messageBodies[len(s.messageBodies)-1]
+}
+
+func (s *notificationEmailTestSMTPServer) lastMessageBody(t *testing.T) string {
+	t.Helper()
+
+	message, err := mail.ReadMessage(strings.NewReader(s.lastMessage()))
+	require.NoError(t, err)
+
+	bodyReader := io.Reader(message.Body)
+	if strings.EqualFold(message.Header.Get("Content-Transfer-Encoding"), "quoted-printable") {
+		bodyReader = quotedprintable.NewReader(message.Body)
+	}
+	body, err := io.ReadAll(bodyReader)
+	require.NoError(t, err)
+	return string(body)
 }
 
 func (s *notificationEmailTestSMTPServer) close() {

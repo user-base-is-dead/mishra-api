@@ -10,10 +10,10 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"mishra-api/internal/config"
-	"mishra-api/internal/pkg/ctxkey"
-	middleware "mishra-api/internal/server/middleware"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
+	middleware "github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )

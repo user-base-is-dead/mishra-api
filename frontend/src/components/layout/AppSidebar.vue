@@ -775,7 +775,6 @@ const adminNavItems = computed((): NavItem[] => {
       path: '/admin/security-audit',
       label: t('nav.securityAudit'),
       icon: ShieldIcon,
-      hideInSimpleMode: true,
       expandOnly: true,
       featureFlag: flagRiskControl,
       children: [
@@ -912,8 +911,12 @@ function handleGroupClick(item: NavItem) {
   }
 }
 
-// Initialize theme — dark is the default brand experience; light is an explicit opt-in.
-if (localStorage.getItem('theme') !== 'light') {
+// Initialize theme
+const savedTheme = localStorage.getItem('theme')
+if (
+  savedTheme === 'dark' ||
+  (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+) {
   isDark.value = true
   document.documentElement.classList.add('dark')
 }

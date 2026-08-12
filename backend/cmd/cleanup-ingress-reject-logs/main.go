@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	_ "mishra-api/ent/runtime"
-	"mishra-api/internal/config"
-	"mishra-api/internal/repository"
+	_ "github.com/Wei-Shaw/sub2api/ent/runtime"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/repository"
 	"github.com/lib/pq"
 )
 

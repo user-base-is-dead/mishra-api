@@ -11,11 +11,11 @@ import (
 
 	"github.com/google/uuid"
 
-	dbent "mishra-api/ent"
-	"mishra-api/internal/pkg/pagination"
-	"mishra-api/internal/pkg/timezone"
-	"mishra-api/internal/pkg/usagestats"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/usagestats"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

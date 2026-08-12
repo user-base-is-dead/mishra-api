@@ -6,9 +6,9 @@ import (
 	"errors"
 	"strings"
 
-	dbent "mishra-api/ent"
-	"mishra-api/internal/pkg/logger"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 type usageBillingRepository struct {

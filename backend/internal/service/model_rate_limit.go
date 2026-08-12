@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"mishra-api/internal/pkg/ctxkey"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 )
 
 const (
@@ -117,6 +117,23 @@ func OpenAIImageGenerationIntentFromContext(ctx context.Context) bool {
 		return false
 	}
 	enabled, ok := ctx.Value(ctxkey.OpenAIImageGenerationIntent).(bool)
+	return ok && enabled
+}
+
+// WithOpenAIImagesEndpoint 标记请求从 /v1/images/* 专用生图端点入站。
+func WithOpenAIImagesEndpoint(ctx context.Context) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return context.WithValue(ctx, ctxkey.OpenAIImagesEndpoint, true)
+}
+
+// OpenAIImagesEndpointFromContext 报告请求是否来自 /v1/images/*。
+func OpenAIImagesEndpointFromContext(ctx context.Context) bool {
+	if ctx == nil {
+		return false
+	}
+	enabled, ok := ctx.Value(ctxkey.OpenAIImagesEndpoint).(bool)
 	return ok && enabled
 }
 

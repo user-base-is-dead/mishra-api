@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	dbent "mishra-api/ent"
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/pagination"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 )
 
 var (

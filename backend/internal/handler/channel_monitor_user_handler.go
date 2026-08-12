@@ -3,10 +3,10 @@ package handler
 import (
 	"time"
 
-	"mishra-api/internal/handler/admin"
-	"mishra-api/internal/handler/dto"
-	"mishra-api/internal/pkg/response"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/handler/admin"
+	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,7 +35,8 @@ func (h *ChannelMonitorUserHandler) featureEnabled(c *gin.Context) bool {
 	if h.settingService == nil {
 		return true
 	}
-	return h.settingService.GetChannelMonitorRuntime(c.Request.Context()).Enabled
+	runtime := h.settingService.GetChannelMonitorRuntime(c.Request.Context())
+	return runtime.Enabled && runtime.Mode == service.ChannelMonitorModeV1
 }
 
 // --- Response ---

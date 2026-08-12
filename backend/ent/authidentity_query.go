@@ -13,11 +13,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"mishra-api/ent/authidentity"
-	"mishra-api/ent/authidentitychannel"
-	"mishra-api/ent/identityadoptiondecision"
-	"mishra-api/ent/predicate"
-	"mishra-api/ent/user"
+	"github.com/Wei-Shaw/sub2api/ent/authidentity"
+	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
+	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/user"
 )
 
 // AuthIdentityQuery is the builder for querying AuthIdentity entities.

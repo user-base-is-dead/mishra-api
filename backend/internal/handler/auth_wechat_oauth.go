@@ -12,14 +12,14 @@ import (
 	"strings"
 	"time"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/authidentity"
-	"mishra-api/ent/authidentitychannel"
-	"mishra-api/internal/payment"
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/oauth"
-	"mishra-api/internal/pkg/response"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/authidentity"
+	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/oauth"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -96,6 +96,9 @@ type wechatPaymentOAuthContext struct {
 // WeChatOAuthStart starts the WeChat OAuth login flow and stores the short-lived
 // browser cookies required by the rebuild pending-auth bridge.
 func (h *AuthHandler) WeChatOAuthStart(c *gin.Context) {
+	if !h.requireActionCaptchaForOAuthLoginStart(c) {
+		return
+	}
 	cfg, err := h.getWeChatOAuthConfig(c.Request.Context(), c.Query("mode"), c)
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -145,7 +148,7 @@ func (h *AuthHandler) WeChatOAuthStart(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, authURL)
+	respondOAuthStart(c, authURL)
 }
 
 // WeChatOAuthCallback exchanges the code with WeChat, resolves openid/unionid,

@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"time"
 
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/httpclient"
-	"mishra-api/internal/pkg/logger"
-	"mishra-api/internal/pkg/pagination"
-	"mishra-api/internal/util/httputil"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/httpclient"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/util/httputil"
 )
 
 // Proxy management implementations

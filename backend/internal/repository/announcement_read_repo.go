@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/announcementread"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/announcementread"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 type announcementReadRepository struct {

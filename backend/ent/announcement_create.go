@@ -11,9 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"mishra-api/ent/announcement"
-	"mishra-api/ent/announcementread"
-	"mishra-api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/ent/announcement"
+	"github.com/Wei-Shaw/sub2api/ent/announcementread"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 )
 
 // AnnouncementCreate is the builder for creating a Announcement entity.

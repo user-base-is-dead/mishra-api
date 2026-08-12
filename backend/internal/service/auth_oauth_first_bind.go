@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	dbent "mishra-api/ent"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
 
 	entsql "entgo.io/ent/dialect/sql"
 )

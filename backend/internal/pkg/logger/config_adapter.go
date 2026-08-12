@@ -1,6 +1,6 @@
 package logger
 
-import "mishra-api/internal/config"
+import "github.com/Wei-Shaw/sub2api/internal/config"
 
 func OptionsFromConfig(cfg config.LogConfig) InitOptions {
 	return InitOptions{

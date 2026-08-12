@@ -15,7 +15,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"mishra-api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 

@@ -9,9 +9,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"mishra-api/internal/config"
-	"mishra-api/internal/pkg/response"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
@@ -62,6 +62,35 @@ func TestDiffSettings_NoChangeWhenEqual(t *testing.T) {
 			t.Error("equal values should not be detected as changed")
 		}
 	}
+}
+
+func TestSettingsAuditRequestDoesNotInheritStoredTencentSecrets(t *testing.T) {
+	req := UpdateSettingsRequest{
+		TencentCaptchaAppSecretKey:   "  ",
+		TencentCaptchaCloudSecretID:  "\t",
+		TencentCaptchaCloudSecretKey: "\n",
+	}
+
+	auditReq := settingsAuditRequest(req)
+	req.TencentCaptchaAppSecretKey = "stored-app-secret"
+	req.TencentCaptchaCloudSecretID = "stored-secret-id"
+	req.TencentCaptchaCloudSecretKey = "stored-secret-key"
+
+	require.Empty(t, auditReq.TencentCaptchaAppSecretKey)
+	require.Empty(t, auditReq.TencentCaptchaCloudSecretID)
+	require.Empty(t, auditReq.TencentCaptchaCloudSecretKey)
+}
+
+func TestDiffSettings_DetectsCompactHomeChange(t *testing.T) {
+	changed := diffSettings(
+		&service.SystemSettings{},
+		&service.SystemSettings{CompactHomeEnabled: true},
+		nil,
+		nil,
+		UpdateSettingsRequest{},
+	)
+
+	require.Contains(t, changed, service.SettingKeyCompactHomeEnabled)
 }
 
 func TestEqualNullableFloat(t *testing.T) {

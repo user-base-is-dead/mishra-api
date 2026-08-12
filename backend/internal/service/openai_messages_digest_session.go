@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"mishra-api/internal/pkg/apicompat"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/apicompat"
 )
 
 type openAICompatAnthropicDigestBinding struct {

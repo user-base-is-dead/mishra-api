@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	infraerrors "mishra-api/internal/pkg/errors"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
 var (

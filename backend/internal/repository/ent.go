@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"time"
 
-	"mishra-api/ent"
-	"mishra-api/internal/config"
-	"mishra-api/internal/pkg/timezone"
-	"mishra-api/migrations"
+	"github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
+	"github.com/Wei-Shaw/sub2api/migrations"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"

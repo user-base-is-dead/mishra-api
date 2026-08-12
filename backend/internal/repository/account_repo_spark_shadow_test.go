@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 func TestAccountRepoSparkShadowRoundTrip(t *testing.T) {

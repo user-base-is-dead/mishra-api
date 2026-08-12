@@ -15,13 +15,13 @@ import (
 	"syscall"
 	"time"
 
-	_ "mishra-api/ent/runtime"
-	"mishra-api/internal/config"
-	"mishra-api/internal/handler"
-	"mishra-api/internal/pkg/logger"
-	"mishra-api/internal/server/middleware"
-	"mishra-api/internal/setup"
-	"mishra-api/internal/web"
+	_ "github.com/Wei-Shaw/sub2api/ent/runtime"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/handler"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/setup"
+	"github.com/Wei-Shaw/sub2api/internal/web"
 
 	"github.com/gin-gonic/gin"
 )

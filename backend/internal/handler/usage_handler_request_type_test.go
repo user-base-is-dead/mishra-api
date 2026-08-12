@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"mishra-api/internal/pkg/pagination"
-	"mishra-api/internal/pkg/usagestats"
-	middleware2 "mishra-api/internal/server/middleware"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/usagestats"
+	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
@@ -224,6 +224,8 @@ func TestUserUsageListKeepsUserBillingAndIPWithoutAdminCostFields(t *testing.T) 
 	require.NotContains(t, body, "account_rate_multiplier")
 	require.NotContains(t, body, "account_stats_cost")
 	require.NotContains(t, body, "upstream_model")
+	require.NotContains(t, body, "upstream_response_model")
+	require.NotContains(t, body, "upstream_model_mismatch")
 	require.NotContains(t, body, "billing_tier")
 	require.NotContains(t, body, "channel_id")
 	require.NotContains(t, body, `"account":`)

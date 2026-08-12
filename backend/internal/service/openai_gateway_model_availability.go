@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"mishra-api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/config"
 )
 
 // DiagnoseModelAvailabilityForPlatform reports whether the requested model

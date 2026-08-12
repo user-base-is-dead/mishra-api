@@ -57,7 +57,7 @@ func (o InitOptions) normalized() InitOptions {
 	}
 	out.ServiceName = strings.TrimSpace(out.ServiceName)
 	if out.ServiceName == "" {
-		out.ServiceName = "mishra-api"
+		out.ServiceName = "sub2api"
 	}
 	out.Environment = strings.TrimSpace(out.Environment)
 	if out.Environment == "" {
@@ -107,7 +107,7 @@ func bootstrapOptions() InitOptions {
 	return InitOptions{
 		Level:       "info",
 		Format:      "console",
-		ServiceName: "mishra-api",
+		ServiceName: "sub2api",
 		Environment: "bootstrap",
 		Output: OutputOptions{
 			ToStdout: true,

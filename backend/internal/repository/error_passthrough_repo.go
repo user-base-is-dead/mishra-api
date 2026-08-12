@@ -3,10 +3,10 @@ package repository
 import (
 	"context"
 
-	"mishra-api/ent"
-	"mishra-api/ent/errorpassthroughrule"
-	"mishra-api/internal/model"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/errorpassthroughrule"
+	"github.com/Wei-Shaw/sub2api/internal/model"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 type errorPassthroughRepository struct {

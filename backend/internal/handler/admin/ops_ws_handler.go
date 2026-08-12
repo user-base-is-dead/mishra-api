@@ -15,9 +15,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"mishra-api/internal/pkg/logger"
-	servermiddleware "mishra-api/internal/server/middleware"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	servermiddleware "github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )

@@ -9,12 +9,12 @@ import (
 	"strconv"
 	"strings"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/paymentorder"
-	"mishra-api/ent/paymentproviderinstance"
-	"mishra-api/internal/payment"
-	"mishra-api/internal/payment/provider"
-	infraerrors "mishra-api/internal/pkg/errors"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
+	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
+	"github.com/Wei-Shaw/sub2api/internal/payment"
+	"github.com/Wei-Shaw/sub2api/internal/payment/provider"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
 // validateProviderConfig runs the provider's constructor to surface config-level

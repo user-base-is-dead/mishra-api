@@ -3,7 +3,7 @@ package service
 import (
 	"time"
 
-	infraerrors "mishra-api/internal/pkg/errors"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
 // ChannelMonitor 全局常量。
@@ -155,5 +155,20 @@ var (
 	)
 	ErrChannelMonitorAPIKeyDecryptFailed = infraerrors.InternalServer(
 		"CHANNEL_MONITOR_KEY_DECRYPT_FAILED", "api key decryption failed; please re-edit the monitor with a fresh key",
+	)
+)
+
+var (
+	ErrChannelMonitorDisabled = infraerrors.Forbidden(
+		"CHANNEL_MONITOR_DISABLED",
+		"channel monitor feature is disabled",
+	)
+	ErrChannelMonitorActiveProbesRetired = infraerrors.Forbidden(
+		"CHANNEL_MONITOR_ACTIVE_PROBES_RETIRED",
+		"channel monitor active probes are retired in v2 mode",
+	)
+	ErrChannelMonitorModeMismatch = infraerrors.Forbidden(
+		"CHANNEL_MONITOR_MODE_MISMATCH",
+		"channel monitor mode does not allow this operation",
 	)
 )

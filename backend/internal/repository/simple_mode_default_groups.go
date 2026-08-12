@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/group"
-	"mishra-api/internal/service"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 const simpleModeDefaultGroupDescription = "Auto-created default group"

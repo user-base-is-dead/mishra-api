@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 func TestOpsErrorLogInsertDoesNotPersistRequestReplayFields(t *testing.T) {

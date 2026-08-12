@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/userplatformquota"
-	"mishra-api/internal/pkg/timezone"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/userplatformquota"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"github.com/lib/pq"
 )
 

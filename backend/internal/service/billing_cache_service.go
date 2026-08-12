@@ -8,10 +8,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"mishra-api/internal/config"
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/logger"
-	"mishra-api/internal/pkg/timezone"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"golang.org/x/sync/singleflight"
 )
 

@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	dbent "mishra-api/ent"
-	"mishra-api/ent/authidentity"
-	infraerrors "mishra-api/internal/pkg/errors"
-	"mishra-api/internal/pkg/logger"
+	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/authidentity"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 )
 
 // BindEmailIdentity verifies and binds a local email/password identity to the

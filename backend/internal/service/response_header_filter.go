@@ -1,8 +1,8 @@
 package service
 
 import (
-	"mishra-api/internal/config"
-	"mishra-api/internal/util/responseheaders"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/util/responseheaders"
 )
 
 func compileResponseHeaderFilter(cfg *config.Config) *responseheaders.CompiledHeaderFilter {

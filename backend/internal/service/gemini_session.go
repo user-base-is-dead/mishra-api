@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"mishra-api/internal/pkg/antigravity"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
 	"github.com/cespare/xxhash/v2"
 )
 

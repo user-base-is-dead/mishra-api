@@ -3,10 +3,10 @@ package repository
 import (
 	"context"
 
-	"mishra-api/ent"
-	"mishra-api/ent/tlsfingerprintprofile"
-	"mishra-api/internal/model"
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
+	"github.com/Wei-Shaw/sub2api/internal/model"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 type tlsFingerprintProfileRepository struct {

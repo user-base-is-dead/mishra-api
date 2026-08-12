@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"mishra-api/internal/config"
-	"mishra-api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"go.uber.org/zap"
 )
 

@@ -3,7 +3,7 @@ package admin
 import (
 	"context"
 
-	"mishra-api/internal/service"
+	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 // enrichShadowParentInfo 把母账号的展示信息回填到影子行的 parent_* 字段。

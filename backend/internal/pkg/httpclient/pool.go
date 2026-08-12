@@ -23,10 +23,10 @@ import (
 	"sync"
 	"time"
 
-	"mishra-api/internal/pkg/proxyurl"
-	"mishra-api/internal/pkg/proxyutil"
-	"mishra-api/internal/pkg/servertiming"
-	"mishra-api/internal/util/urlvalidator"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/proxyurl"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/proxyutil"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/servertiming"
+	"github.com/Wei-Shaw/sub2api/internal/util/urlvalidator"
 )
 
 // Transport 连接池默认配置

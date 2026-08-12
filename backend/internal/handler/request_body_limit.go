@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"mishra-api/internal/config"
-	pkghttputil "mishra-api/internal/pkg/httputil"
+	"github.com/Wei-Shaw/sub2api/internal/config"
+	pkghttputil "github.com/Wei-Shaw/sub2api/internal/pkg/httputil"
 )
 
 func extractMaxBytesError(err error) (*http.MaxBytesError, bool) {
