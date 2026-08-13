@@ -5,7 +5,15 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
-      - "8990:8990"
+      - "127.0.0.1:8990:8990"
     volumes:
       - ./data/:/app/config/
     restart: unless-stopped
+    networks:
+      - default
+      - sub2api-network
+
+networks:
+  sub2api-network:
+    external: true
+    name: deploy_sub2api-network
