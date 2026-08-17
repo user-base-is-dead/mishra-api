@@ -220,13 +220,13 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 				abortWithAPIKeyQuotaError(c)
 				return
 			case service.StatusAPIKeyExpired:
-				AbortWithError(c, 403, "API_KEY_EXPIRED", "API key 已过期")
+				AbortWithError(c, 403, "API_KEY_EXPIRED", "API key has expired")
 				return
 			}
 
 			// 运行时过期/配额检查（即使状态是 active，也要检查时间和用量）
 			if apiKey.IsExpired() {
-				AbortWithError(c, 403, "API_KEY_EXPIRED", "API key 已过期")
+				AbortWithError(c, 403, "API_KEY_EXPIRED", "API key has expired")
 				return
 			}
 			if apiKey.IsQuotaExhausted() {
@@ -306,7 +306,7 @@ func hasAPIKeyCredentialInput(c *gin.Context) bool {
 }
 
 func abortWithAPIKeyQuotaError(c *gin.Context) {
-	const message = "API key 额度已用完"
+	const message = "API key quota exhausted"
 	if isOpenAICompatibleAPIKeyRequest(c) {
 		abortWithOpenAIQuotaError(c, http.StatusTooManyRequests, message)
 		return
@@ -419,7 +419,7 @@ func abortIfAPIKeyGroupNotAllowed(c *gin.Context, apiKey *service.APIKey) bool {
 	}
 	service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonAPIKeyGroupUnavailable)
 	MarkIngressRejected(c, IngressRejectGroupNotAllowed)
-	AbortWithError(c, 403, "GROUP_NOT_ALLOWED", "API Key 所属专属分组不再允许当前用户使用")
+	AbortWithError(c, 403, "GROUP_NOT_ALLOWED", "The API key's dedicated group is no longer available to the current user")
 	return true
 }
 
@@ -440,10 +440,10 @@ func validateAPIKeyGroupAvailable(apiKey *service.APIKey) (string, string, bool)
 	}
 	group := apiKey.Group
 	if group == nil || strings.EqualFold(group.Status, "deleted") {
-		return "GROUP_DELETED", "API Key 所属分组已删除", false
+		return "GROUP_DELETED", "The API key's group has been deleted", false
 	}
 	if !group.IsActive() {
-		return "GROUP_DISABLED", "API Key 所属分组已停用", false
+		return "GROUP_DISABLED", "The API key's group is disabled", false
 	}
 	return "", "", true
 }

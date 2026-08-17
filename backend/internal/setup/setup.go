@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -40,7 +41,8 @@ func setupDefaultAdminConcurrency() int {
 }
 
 // GetDataDir returns the data directory for storing config and lock files.
-// Priority: DATA_DIR env > /app/data (if exists and writable) > current directory
+// Priority: DATA_DIR env > /app/data (if exists and writable) >
+// a directory that already holds an install > current directory
 func GetDataDir() string {
 	// Check DATA_DIR environment variable first
 	if dir := os.Getenv("DATA_DIR"); dir != "" {
@@ -59,8 +61,51 @@ func GetDataDir() string {
 		}
 	}
 
+	// Falling back to the working directory silently re-triggers the setup
+	// wizard whenever the binary is launched from somewhere else, even though
+	// a perfectly good install exists elsewhere. Prefer an existing install.
+	if dir := findExistingInstallDir(); dir != "" {
+		return dir
+	}
+
 	// Default to current directory
 	return "."
+}
+
+// findExistingInstallDir looks for a directory that already contains an
+// install (config.yaml or .installed) near the working directory and the
+// executable. Returns "" when none is found.
+func findExistingInstallDir() string {
+	var candidates []string
+	if cwd, err := os.Getwd(); err == nil {
+		candidates = append(candidates, cwd, filepath.Join(cwd, "data"), filepath.Join(cwd, "backend", "data"))
+	}
+	if exe, err := os.Executable(); err == nil {
+		exeDir := filepath.Dir(exe)
+		parent := filepath.Dir(exeDir)
+		candidates = append(candidates,
+			exeDir,
+			filepath.Join(exeDir, "data"),
+			filepath.Join(parent, "data"),
+			filepath.Join(parent, "backend", "data"),
+		)
+	}
+
+	for _, dir := range candidates {
+		if hasInstallMarkers(dir) {
+			return dir
+		}
+	}
+	return ""
+}
+
+func hasInstallMarkers(dir string) bool {
+	for _, name := range []string{ConfigFileName, InstallLockFile} {
+		if _, err := os.Stat(filepath.Join(dir, name)); err == nil {
+			return true
+		}
+	}
+	return false
 }
 
 // GetConfigFilePath returns the full path to config.yaml

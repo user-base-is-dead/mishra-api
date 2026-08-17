@@ -110,3 +110,54 @@ mishradev.com {
 		respond "{err.status_code} {err.status_text}"
 	}
 }
+
+# =============================================================================
+# kiro.rs sidecar admin + API (kiro.mishradev.com -> localhost:8990)
+# Auth is enforced by kiro.rs itself via adminApiKey (admin panel) and the
+# client-key system (/v1). Caddy only terminates TLS and proxies.
+# =============================================================================
+kiro.mishradev.com {
+	tls {
+		protocols tls1.2 tls1.3
+		ciphers TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+	}
+
+	# Optional hardening: restrict the admin panel to trusted IPs.
+	# Uncomment and set your own IP(s); /v1 stays public for API traffic.
+	# @admin path /admin*
+	# handle @admin {
+	#	@blocked not remote_ip 1.2.3.4 5.6.7.0/24
+	#	respond @blocked "403 Forbidden" 403
+	# }
+
+	reverse_proxy localhost:8990 {
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+		transport http {
+			keepalive 120s
+			keepalive_idle_conns 128
+			# SSE/streaming: keep responses unbuffered
+			compression off
+		}
+	}
+
+	request_body {
+		max_size 256MB
+	}
+
+	log {
+		output file /var/log/caddy/kiro.log {
+			roll_size 50mb
+			roll_keep 10
+			roll_keep_for 720h
+		}
+		format json
+		level INFO
+	}
+
+	handle_errors {
+		respond "{err.status_code} {err.status_text}"
+	}
+}

@@ -1606,6 +1606,8 @@ func isOpsClientAuthError(code string, msg string) bool {
 		strings.Contains(msg, "user account is not active") ||
 		strings.Contains(msg, "api key 所属分组已删除") ||
 		strings.Contains(msg, "api key 所属分组已停用") ||
+		strings.Contains(msg, "the api key's group has been deleted") ||
+		strings.Contains(msg, "the api key's group is disabled") ||
 		strings.Contains(msg, "api key is not assigned to any group")
 }
 

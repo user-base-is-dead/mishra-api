@@ -75,6 +75,7 @@ func main() {
 	}
 
 	// Check if setup is needed
+	log.Printf("Data directory: %s (config: %s)", setup.GetDataDir(), setup.GetConfigFilePath())
 	if setup.NeedsSetup() {
 		// Check if auto-setup is enabled (for Docker deployment)
 		if setup.AutoSetupEnabled() {
